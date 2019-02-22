@@ -1,0 +1,67 @@
+#pragma once
+
+#include <vector>
+
+namespace EQLib {
+
+class Dof {
+private:    // member variables
+    double* const m_ref_value;
+    double* const m_act_value;
+    double* const m_target;
+    double* const m_result;
+
+public:     // constructors
+    Dof()
+    : m_ref_value(nullptr)
+    , m_act_value(nullptr)
+    , m_target(nullptr)
+    , m_result(nullptr)
+    { }
+    
+    Dof(
+        const Dof& other)
+    : m_ref_value(other.m_ref_value)
+    , m_act_value(other.m_act_value)
+    , m_target(other.m_target)
+    , m_result(other.m_result)
+    { }
+    
+    Dof(
+        const Dof&& other)
+    : m_ref_value(std::move(other.m_ref_value))
+    , m_act_value(std::move(other.m_act_value))
+    , m_target(std::move(other.m_target))
+    , m_result(std::move(other.m_result))
+    { }
+
+    Dof(
+        double* const ref_value,
+        double* const act_value,
+        double* const target,
+        double* const result)
+    : m_ref_value(ref_value)
+    , m_act_value(act_value)
+    , m_target(target)
+    , m_result(result)
+    { }
+
+public:     // getters and setters
+    double delta() const {
+        return *m_act_value - *m_ref_value;
+    }
+    
+    void set_delta(double value) const {
+        *m_act_value = *m_ref_value + value;
+    }
+    
+    double residual() const {
+        return *m_result - *m_target;
+    }
+    
+    void set_residual(double value) const {
+        *m_result = *m_target + value;
+    }
+};
+
+} // namespace EQLib
