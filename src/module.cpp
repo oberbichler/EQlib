@@ -47,6 +47,25 @@ PYBIND11_MODULE(EQLib, m) {
         .def_property("target", &Type::target, &Type::set_target)
         .def_property("result", &Type::result, &Type::set_result)
         .def_property_readonly("dof", &Type::dof)
+        .def(py::pickle([](const Type& self) {
+                return py::make_tuple(self.ref_value(), self.act_value(),
+                    self.target(), self.result());
+            }, [](py::tuple tuple) {
+                if (tuple.size() != 4) {
+                    throw std::runtime_error("Invalid state!");
+                }
+                
+                const auto ref_value = tuple[0].cast<double>();
+                const auto act_value = tuple[1].cast<double>();
+                const auto target = tuple[2].cast<double>();
+                const auto result = tuple[3].cast<double>();
+
+                return Type(ref_value, act_value, target, result);
+            }
+        ))
+        .def("__copy__", [](const Type& self) { return Type(self); })
+        .def("__deepcopy__", [](const Type& self, py::dict& memo) {
+            return Type(self); }, "memodict"_a)
     ;
     }
 }
