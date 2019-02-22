@@ -88,5 +88,19 @@ class TestParameter(unittest.TestCase):
             self.assertEqual(parameter_b.target, 3.0)
             self.assertEqual(parameter_b.result, 4.0)
 
+    def test_parameter_dof_equality(self):
+        parameter_a = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
+        parameter_b = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
+
+        dof_a_1 = parameter_a.dof
+        dof_a_2 = parameter_a.dof
+
+        dof_b_1 = parameter_b.dof
+        dof_b_2 = parameter_b.dof
+
+        assert(dof_a_1 == dof_a_2)
+        assert(dof_a_1 != dof_b_1)
+        assert(dof_b_1 == dof_b_2)
+
 if __name__ == '__main__':
     unittest.main()

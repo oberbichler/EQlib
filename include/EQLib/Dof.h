@@ -62,6 +62,17 @@ public:     // getters and setters
     void set_residual(double value) const {
         *m_result = *m_target + value;
     }
+
+public:     // comparison
+    bool operator==(const Dof& other) const noexcept
+    {
+        return m_act_value == other.m_act_value;
+    }
+
+    size_t hash() const noexcept
+    {
+        return (size_t)m_act_value;
+    }
 };
 
 } // namespace EQLib
