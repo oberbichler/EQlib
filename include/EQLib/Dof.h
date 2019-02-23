@@ -20,7 +20,7 @@ public:     // constructors
     , m_result(nullptr)
     , m_isfixed(false)
     { }
-    
+
     Dof(
         double* const ref_value,
         double* const act_value,
@@ -38,15 +38,15 @@ public:     // getters and setters
     double delta() const {
         return *m_act_value - *m_ref_value;
     }
-    
+
     void set_delta(double value) const {
         *m_act_value = *m_ref_value + value;
     }
-    
+
     double residual() const {
         return *m_result - *m_target;
     }
-    
+
     void set_residual(double value) const {
         *m_result = *m_target + value;
     }
@@ -54,11 +54,11 @@ public:     // getters and setters
     double target() const {
         return *m_target;
     }
-    
+
     bool isfixed() const {
         return m_isfixed;
     }
-    
+
     void set_isfixed(bool value) {
         m_isfixed = value;
     }
@@ -76,3 +76,18 @@ public:     // comparison
 };
 
 } // namespace EQLib
+
+namespace std {
+
+template <>
+struct hash<EQLib::Dof>
+{
+    std::size_t
+    operator()(
+        const EQLib::Dof& dof) const noexcept
+    {
+        return dof.hash();
+    }
+};
+
+} // namespace std
