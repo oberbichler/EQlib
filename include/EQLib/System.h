@@ -43,6 +43,8 @@ private:    // variables
     Sparse m_lhs;
     Vector m_rhs;
     Vector m_x;
+    Vector m_target;
+    Vector m_residual;
 
     int m_stopping_reason;
 
@@ -188,6 +190,9 @@ public:     // methods
 
         m_x = Vector(nb_free_dofs());
 
+        m_target = Vector(nb_free_dofs());
+        m_residual = Vector(nb_free_dofs());
+
         // setup solver
 
         m_solver.analyzePattern(m_lhs);
@@ -285,15 +290,12 @@ public:     // methods
 
         // setup
 
-        Vector target(nb_free_dofs());
-        Vector residual(nb_free_dofs());
-
         for (int i = 0; i < nb_free_dofs(); i++) {
-            target[i] = m_dofs[i].target();
+            m_target[i] = m_dofs[i].target();
         }
 
         if (lambda != 1.0) {
-            target *= lambda;
+            m_target *= lambda;
         }
 
         for (int iteration = 0; iteration < maxiter; iteration++) {
@@ -303,9 +305,9 @@ public:     // methods
 
             // check residual
 
-            residual = rhs() - target;
+            m_residual = rhs() - m_target;
 
-            const double rnorm = residual.norm();
+            const double rnorm = m_residual.norm();
 
             if (rnorm < rtol) {
                 std::cout << fmt::format("{:>4} {:}", iteration, rnorm) << std::endl;
@@ -341,7 +343,7 @@ public:     // methods
         }
 
         for (int i = 0; i < nb_free_dofs(); i++) {
-            m_dofs[i].set_residual(residual(i));
+            m_dofs[i].set_residual(m_residual(i));
         }
     }
 
