@@ -26,6 +26,11 @@ PYBIND11_MODULE(EQLib, m) {
     m.attr("USE_BLAS") = false;
 #endif // EIGEN_USE_BLAS
 
+#if defined(EIGEN_USE_MKL_ALL)
+    m.attr("USE_MKL") = true;
+#else
+    m.attr("USE_MKL") = false;
+#endif // EIGEN_USE_MKL_ALL
 
     { // System
     using Type = EQLib::System;
