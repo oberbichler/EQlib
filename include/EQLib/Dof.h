@@ -51,6 +51,9 @@ public:     // getters and setters
         *m_result = *m_target + value;
     }
 
+    double target() const {
+        return *m_target;
+    }
     
     bool isfixed() const {
         return m_isfixed;
