@@ -37,6 +37,18 @@ PYBIND11_MODULE(EQLib, m) {
     ;
     }
 
+    { // Element
+    using Type = EQLib::Element;
+    using Trampoline = EQLib::PyElement;
+    using Holder = std::shared_ptr<Type>;
+
+    py::class_<Type, Trampoline, Holder>(m, "Element")
+        .def(py::init<>())
+        .def("dofs", &Type::dofs)
+        .def("compute", &Type::compute)
+    ;
+    }
+
     { // Parameter
     using Type = EQLib::Parameter;
 
