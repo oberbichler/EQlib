@@ -26,6 +26,23 @@ PYBIND11_MODULE(EQLib, m) {
     m.attr("USE_BLAS") = false;
 #endif // EIGEN_USE_BLAS
 
+
+    { // System
+    using Type = EQLib::System;
+
+    py::class_<Type>(m, "System")
+        .def(py::init<std::vector<std::shared_ptr<EQLib::Element>>, py::dict>(),
+            "elements"_a, "options"_a=py::dict())
+        .def_property_readonly("dofs", &Type::dofs)
+        .def_property_readonly("lhs", &Type::lhs)
+        .def_property_readonly("rhs", &Type::rhs)
+        .def("compute", &Type::compute, "options"_a=py::dict())
+        .def("solve", &Type::solve, "options"_a=py::dict())
+        .def_property_readonly("stopping_reason_message",
+            &Type::stopping_reason_message)
+    ;
+    }
+
     { // Dof
     using Type = EQLib::Dof;
 
