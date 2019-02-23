@@ -149,7 +149,8 @@ public:     // methods
 
                 auto hint = pattern[col_index.global].begin();
 
-                const int max_col = symmetric ? col_index.global + 1 : m_nb_free_dofs;
+                const int max_col = symmetric ? col_index.global + 1
+                    : m_nb_free_dofs;
 
                 for (const auto row_index : dof_indices) {
                     if (row_index.global >= max_col) {
@@ -265,7 +266,8 @@ public:     // methods
 
                 m_rhs(row_index.global) += local_rhs(row_index.local);
 
-                const int max_col = symmetric ? row_index.global + 1 : nb_free_dofs();
+                const int max_col = symmetric ? row_index.global + 1
+                    : nb_free_dofs();
 
                 for (const auto col_index : dof_indices) {
                     if (col_index.global >= max_col) {
@@ -310,7 +312,8 @@ public:     // methods
             const double rnorm = m_residual.norm();
 
             if (rnorm < rtol) {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm) << std::endl;
+                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
+                    << std::endl;
                 m_stopping_reason = 0;
                 break;
             }
@@ -318,10 +321,12 @@ public:     // methods
             //
 
             if (iteration + 1 == maxiter) {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm) << std::endl;
+                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
+                    << std::endl;
                 m_stopping_reason = 2;
             } else {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm) << std::endl;
+                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
+                    << std::endl;
             }
 
             // solve iteration
@@ -332,7 +337,8 @@ public:     // methods
             const double xnorm = m_x.norm();
 
             if (xnorm < xtol) {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm) << std::endl;
+                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
+                    << std::endl;
                 m_stopping_reason = 1;
                 break;
             }
