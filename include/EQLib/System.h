@@ -139,27 +139,6 @@ public:     // methods
 
         std::vector<std::set<int>> pattern(m_nb_free_dofs);
 
-        // for (const auto& dof_indices : m_index_table) {
-        //     for (const auto row_index : dof_indices) {
-        //         if (row_index.global >= m_nb_free_dofs) {
-        //             continue;
-        //         }
-
-        //         auto hint = pattern[row_index.global].begin();
-
-        //         const int max_col = symmetric ? row_index.global + 1 : m_nb_free_dofs;
-
-        //         for (const auto col_index : dof_indices) {
-        //             if (col_index.global >= max_col) {
-        //                 continue;
-        //             }
-
-        //             hint = pattern[row_index.global].insert(hint,
-        //                 col_index.global);
-        //         }
-        //     }
-        // }
-
         for (const auto& dof_indices : m_index_table) {
             for (const auto col_index : dof_indices) {
                 if (col_index.global >= m_nb_free_dofs) {
