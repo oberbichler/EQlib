@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/PardisoSupport>
 #include <Eigen/Sparse>
 
 #include <pybind11/pybind11.h>
@@ -9,7 +10,11 @@ using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
 using Vector = Eigen::Matrix<double, Eigen::Dynamic, 1>;
 using Sparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
+#if defined EIGEN_USE_MKL_ALL
 using SparseSolver = Eigen::SparseLU<Sparse>;
+#else
+using SparseSolver = Eigen::PardisoLLT<Sparse, Eigen::Lower>;
+#endif
 
 namespace py = pybind11;
 
