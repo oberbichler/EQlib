@@ -20,22 +20,6 @@ public:     // constructors
     { }
     
     Dof(
-        const Dof& other)
-    : m_ref_value(other.m_ref_value)
-    , m_act_value(other.m_act_value)
-    , m_target(other.m_target)
-    , m_result(other.m_result)
-    { }
-    
-    Dof(
-        const Dof&& other)
-    : m_ref_value(std::move(other.m_ref_value))
-    , m_act_value(std::move(other.m_act_value))
-    , m_target(std::move(other.m_target))
-    , m_result(std::move(other.m_result))
-    { }
-
-    Dof(
         double* const ref_value,
         double* const act_value,
         double* const target,
