@@ -1,1 +1,1 @@
-# EQLib
+# EQlib

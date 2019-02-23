@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace EQLib {
+namespace EQlib {
 
 class Element
 {

@@ -2,7 +2,7 @@
 
 #include "Dof.h"
 
-namespace EQLib {
+namespace EQlib {
 
 class Parameter {
 private:    // member variables
@@ -83,4 +83,4 @@ public:     // methods
     }
 };
 
-} // namespace EQLib
+} // namespace EQlib

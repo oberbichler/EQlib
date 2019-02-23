@@ -2,7 +2,7 @@
 
 #include <vector>
 
-namespace EQLib {
+namespace EQlib {
 
 class Dof {
 private:    // member variables
@@ -75,16 +75,16 @@ public:     // comparison
     }
 };
 
-} // namespace EQLib
+} // namespace EQlib
 
 namespace std {
 
 template <>
-struct hash<EQLib::Dof>
+struct hash<EQlib::Dof>
 {
     std::size_t
     operator()(
-        const EQLib::Dof& dof) const noexcept
+        const EQlib::Dof& dof) const noexcept
     {
         return dof.hash();
     }

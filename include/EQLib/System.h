@@ -10,7 +10,7 @@
 #include <unordered_set>
 #include <set>
 
-namespace EQLib {
+namespace EQlib {
 
 class System
 {
@@ -371,4 +371,4 @@ public:     // methods
     }
 };
 
-} // namespace EQLib
+} // namespace EQlib

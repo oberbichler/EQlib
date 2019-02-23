@@ -1,5 +1,5 @@
 import unittest
-import EQLib as eq
+import EQlib as eq
 
 class TestParameter(unittest.TestCase):
 

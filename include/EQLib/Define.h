@@ -18,7 +18,7 @@ using SparseSolver = Eigen::PardisoLLT<Sparse, Eigen::Lower>;
 
 namespace py = pybind11;
 
-namespace EQLib {
+namespace EQlib {
 
 template <typename T>
 T get_or_default(py::dict options, std::string key, T default_value) {

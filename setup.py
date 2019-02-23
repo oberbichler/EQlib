@@ -8,7 +8,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-EQLIB_VERSION = '0.3.0'
+EQlib_VERSION = '0.3.0'
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -36,7 +36,7 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DEQLIB_VERSION=' + EQLIB_VERSION]
+                      '-DEQlib_VERSION=' + EQlib_VERSION]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -59,13 +59,13 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 setup(
-    name='EQLib',
+    name='EQlib',
     description='Tools for finding equilibrium',
-    version=EQLIB_VERSION,
-    url='https://github.com/oberbichler/EQLib',
+    version=EQlib_VERSION,
+    url='https://github.com/oberbichler/EQlib',
     author='Thomas Oberbichler',
     author_email='thomas.oberbichler@gmail.com',
-    ext_modules=[CMakeExtension('EQLib')],
+    ext_modules=[CMakeExtension('EQlib')],
     cmdclass=dict(build_ext=CMakeBuild),
     install_requires=['cmake', 'numpy'],
     test_suite='nose.collector',

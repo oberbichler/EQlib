@@ -2,7 +2,7 @@
 
 #include "Element.h"
 
-namespace EQLib {
+namespace EQlib {
 
 class PyElement
 : public Element
@@ -23,4 +23,4 @@ public:
     }
 };
 
-} // namespace EQLib
+} // namespace EQlib

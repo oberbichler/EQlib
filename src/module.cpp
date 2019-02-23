@@ -6,16 +6,16 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include <EQLib/System.h>
-#include <EQLib/Dof.h>
-#include <EQLib/Parameter.h>
-#include <EQLib/PyElement.h>
+#include <EQlib/System.h>
+#include <EQlib/Dof.h>
+#include <EQlib/Parameter.h>
+#include <EQlib/PyElement.h>
 
-PYBIND11_MODULE(EQLib, m) {
-    m.doc() = "EQLib by Thomas Oberbichler";
+PYBIND11_MODULE(EQlib, m) {
+    m.doc() = "EQlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
     m.attr("__copyright__") = "Copyright (c) 2019, Thomas Oberbichler";
-    m.attr("__version__") = EQLIB_VERSION;
+    m.attr("__version__") = EQlib_VERSION;
     m.attr("__email__") = "thomas.oberbichler@gmail.com";
     m.attr("__status__") = "Development";
 
@@ -35,10 +35,10 @@ PYBIND11_MODULE(EQLib, m) {
 #endif // EIGEN_USE_MKL_ALL
 
     { // System
-    using Type = EQLib::System;
+    using Type = EQlib::System;
 
     py::class_<Type>(m, "System")
-        .def(py::init<std::vector<std::shared_ptr<EQLib::Element>>, py::dict>(),
+        .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
             "elements"_a, "options"_a=py::dict())
         .def_property_readonly("dofs", &Type::dofs)
         .def_property_readonly("lhs", &Type::lhs)
@@ -51,7 +51,7 @@ PYBIND11_MODULE(EQLib, m) {
     }
 
     { // Dof
-    using Type = EQLib::Dof;
+    using Type = EQlib::Dof;
 
     py::class_<Type>(m, "Dof")
         .def_property("delta", &Type::delta, &Type::set_delta)
@@ -62,8 +62,8 @@ PYBIND11_MODULE(EQLib, m) {
     }
 
     { // Element
-    using Type = EQLib::Element;
-    using Trampoline = EQLib::PyElement;
+    using Type = EQlib::Element;
+    using Trampoline = EQlib::PyElement;
     using Holder = std::shared_ptr<Type>;
 
     py::class_<Type, Trampoline, Holder>(m, "Element")
@@ -74,7 +74,7 @@ PYBIND11_MODULE(EQLib, m) {
     }
 
     { // Parameter
-    using Type = EQLib::Parameter;
+    using Type = EQlib::Parameter;
 
     py::class_<Type>(m, "Parameter")
         .def(py::init<double, double, double, double, bool>(), "ref_value"_a,
