@@ -349,27 +349,18 @@ public:     // methods
 
     std::string stopping_reason_message() const
     {
-        std::string message;
-
         switch (m_stopping_reason) {
         case -1:
-            message = "Not solved";
-            break;
+            return "Not solved";
         case 0:
-            message = "A solution was found, given rtol";
-            break;
+            return "A solution was found, given rtol";
         case 1:
-            message = "A solution was found, given xtol";
-            break;
+            return "A solution was found, given xtol";
         case 2:
-            message = "The iteration limit was reached";
-            break;
+            return "The iteration limit was reached";
         default:
-            message = "Error. Unknown stopping reason";
-            break;
+            return "Error. Unknown stopping reason";
         }
-
-        return message;
     }
 };
 
