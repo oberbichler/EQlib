@@ -21,7 +21,12 @@ add_definitions(
 
 pybind11_add_module(EQLib src/module.cpp)
 
-if(BLAS_FOUND)
+if (EXISTS $ENV{MKLROOT})
+    message("Found MKL: $ENV{MKLROOT}")
+    include_directories($ENV{MKLROOT}/include)
+    add_definitions(-DEIGEN_USE_MKL_ALL)
+    target_link_libraries(EQLib PRIVATE mkl_rt)
+elseif(BLAS_FOUND)
     add_definitions(-DEIGEN_USE_BLAS)
     target_link_libraries(EQLib PRIVATE ${BLAS_LIBRARIES})
 endif()
