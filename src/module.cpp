@@ -6,8 +6,10 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include <EQLib/System.h>
 #include <EQLib/Dof.h>
 #include <EQLib/Parameter.h>
+#include <EQLib/PyElement.h>
 
 PYBIND11_MODULE(EQLib, m) {
     m.doc() = "EQLib by Thomas Oberbichler";
@@ -91,7 +93,7 @@ PYBIND11_MODULE(EQLib, m) {
                 if (tuple.size() != 5) {
                     throw std::runtime_error("Invalid state!");
                 }
-                
+
                 const auto ref_value = tuple[0].cast<double>();
                 const auto act_value = tuple[1].cast<double>();
                 const auto target = tuple[2].cast<double>();
