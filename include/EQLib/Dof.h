@@ -6,10 +6,10 @@ namespace EQLib {
 
 class Dof {
 private:    // member variables
-    double* const m_ref_value;
-    double* const m_act_value;
-    double* const m_target;
-    double* const m_result;
+    double* m_ref_value;
+    double* m_act_value;
+    double* m_target;
+    double* m_result;
 
 public:     // constructors
     Dof()
