@@ -10,6 +10,7 @@ private:    // member variables
     double* m_act_value;
     double* m_target;
     double* m_result;
+    bool m_isfixed;
 
 public:     // constructors
     Dof()
@@ -17,17 +18,20 @@ public:     // constructors
     , m_act_value(nullptr)
     , m_target(nullptr)
     , m_result(nullptr)
+    , m_isfixed(false)
     { }
     
     Dof(
         double* const ref_value,
         double* const act_value,
         double* const target,
-        double* const result)
+        double* const result,
+        const bool isfixed)
     : m_ref_value(ref_value)
     , m_act_value(act_value)
     , m_target(target)
     , m_result(result)
+    , m_isfixed(isfixed)
     { }
 
 public:     // getters and setters
@@ -45,6 +49,15 @@ public:     // getters and setters
     
     void set_residual(double value) const {
         *m_result = *m_target + value;
+    }
+
+    
+    bool isfixed() const {
+        return m_isfixed;
+    }
+    
+    void set_isfixed(bool value) {
+        m_isfixed = value;
     }
 
 public:     // comparison
