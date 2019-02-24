@@ -6,10 +6,11 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include <EQlib/System.h>
 #include <EQlib/Dof.h>
+#include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/PyElement.h>
+#include <EQlib/System.h>
 
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
@@ -34,27 +35,6 @@ PYBIND11_MODULE(EQlib, m) {
     m.attr("USE_MKL") = false;
 #endif // EIGEN_USE_MKL_ALL
 
-    { // System
-    using Type = EQlib::System;
-
-    py::class_<Type>(m, "System")
-        .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
-            "elements"_a, "options"_a=py::dict())
-        .def_property_readonly("nb_dofs", &Type::nb_dofs)
-        .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
-        .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
-        .def_property_readonly("dofs", &Type::dofs)
-        .def_property_readonly("lhs", &Type::lhs)
-        .def_property_readonly("rhs", &Type::rhs)
-        .def("compute", &Type::compute, "options"_a=py::dict())
-        .def("compute_parallel", &Type::compute_parallel,
-            "options"_a=py::dict(), py::call_guard<py::gil_scoped_release>())
-        .def("solve", &Type::solve, "options"_a=py::dict())
-        .def_property_readonly("stopping_reason_message",
-            &Type::stopping_reason_message)
-    ;
-    }
-
     { // Dof
     using Type = EQlib::Dof;
 
@@ -77,6 +57,24 @@ PYBIND11_MODULE(EQlib, m) {
         .def(py::init<>())
         .def("dofs", &Type::dofs)
         .def("compute", &Type::compute)
+    ;
+    }
+
+    { // Node
+    using Type = EQlib::Node;
+
+    py::class_<Type>(m, "Node")
+        .def(py::init<>())
+        .def(py::init<double, double, double>(), "x"_a, "y"_a, "z"_a)
+        .def_property_readonly("x", &Type::x)
+        .def_property_readonly("y", &Type::y)
+        .def_property_readonly("z", &Type::z)
+        .def_property("ref_location", &Type::ref_location,
+            &Type::set_ref_location)
+        .def_property("act_location", &Type::act_location,
+            &Type::set_act_location)
+        .def_property("displacements", &Type::displacements,
+            &Type::set_displacements)
     ;
     }
 
@@ -113,6 +111,27 @@ PYBIND11_MODULE(EQlib, m) {
         .def("__copy__", [](const Type& self) { return Type(self); })
         .def("__deepcopy__", [](const Type& self, py::dict& memo) {
             return Type(self); }, "memodict"_a)
+    ;
+    }
+
+    { // System
+    using Type = EQlib::System;
+
+    py::class_<Type>(m, "System")
+        .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
+            "elements"_a, "options"_a=py::dict())
+        .def_property_readonly("nb_dofs", &Type::nb_dofs)
+        .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
+        .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
+        .def_property_readonly("dofs", &Type::dofs)
+        .def_property_readonly("lhs", &Type::lhs)
+        .def_property_readonly("rhs", &Type::rhs)
+        .def("compute", &Type::compute, "options"_a=py::dict())
+        .def("compute_parallel", &Type::compute_parallel,
+            "options"_a=py::dict(), py::call_guard<py::gil_scoped_release>())
+        .def("solve", &Type::solve, "options"_a=py::dict())
+        .def_property_readonly("stopping_reason_message",
+            &Type::stopping_reason_message)
     ;
     }
 }
