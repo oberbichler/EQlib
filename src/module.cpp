@@ -59,6 +59,8 @@ PYBIND11_MODULE(EQlib, m) {
     py::class_<Type>(m, "Dof")
         .def_property("delta", &Type::delta, &Type::set_delta)
         .def_property("residual", &Type::residual, &Type::set_residual)
+        .def_property_readonly("isfixed", &Type::isfixed)
+        .def_property_readonly("target", &Type::target)
         .def("__eq__", &Type::operator==)
         .def("__hash__", &Type::hash)
     ;
