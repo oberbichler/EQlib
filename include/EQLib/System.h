@@ -298,9 +298,6 @@ public:     // methods
                 }
             }
         }
-
-        std::cout << m_col_nonzeros.sum() << std::endl;
-        std::cout << m_lhs.nonZeros() << std::endl;
     }
 
     void compute_parallel(py::dict options)
