@@ -6,6 +6,8 @@
 
 #include <pybind11/pybind11.h>
 
+using Vector3D = Eigen::Vector3d;
+
 using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
 using Vector = Eigen::Matrix<double, Eigen::Dynamic, 1>;
 using Sparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
