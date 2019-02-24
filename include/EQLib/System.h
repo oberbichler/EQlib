@@ -156,6 +156,10 @@ public:     // methods
                 for (size_t col = row; col < nb_dofs; col++) {
                     const auto col_index = dof_indices[col];
 
+                    if (col_index.global >= nb_free_dofs()) {
+                        continue;
+                    }
+
                     pattern[col_index.global].insert(row_index.global);
                 }
             }
@@ -293,6 +297,10 @@ public:     // methods
                 for (size_t col = row; col < nb_dofs; col++) {
                     const auto col_index = dof_indices[col];
 
+                    if (col_index.global >= nb_free_dofs()) {
+                        continue;
+                    }
+
                     m_lhs.coeffRef(row_index.global, col_index.global) +=
                         local_lhs(row_index.local, col_index.local);
                 }
@@ -355,6 +363,10 @@ public:     // methods
 
                         for (size_t col = row; col < nb_dofs; col++) {
                             const auto col_index = dof_indices[col];
+
+                            if (col_index.global >= nb_free_dofs()) {
+                                continue;
+                            }
 
                             m_lhs.coeffRef(row_index.global, col_index.global)
                                 += local_lhs(row_index.local, col_index.local);
