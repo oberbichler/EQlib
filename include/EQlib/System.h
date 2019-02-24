@@ -3,6 +3,8 @@
 #include "Define.h"
 #include "Dof.h"
 #include "Element.h"
+#include "Solver/SolverLDLT.h"
+#include "Solver/SolverLSMR.h"
 
 #include <fmt/format.h>
 
@@ -50,7 +52,7 @@ private:    // variables
 
     int m_stopping_reason;
 
-    SparseSolver m_solver;
+    std::unique_ptr<Solver> m_solver;
 
 public:     // methods
     System(
@@ -60,7 +62,7 @@ public:     // methods
         // options
 
         const std::string linear_solver = get_or_default<std::string>(options,
-            "linear_solver", "eigen_lu");
+            "linear_solver", "ldlt");
         const bool symmetric = get_or_default(options, "symmetric", true);
 
         // get dofs
@@ -200,7 +202,15 @@ public:     // methods
 
         // setup solver
 
-        m_solver.analyzePattern(m_lhs);
+        if (linear_solver == "ldlt") {
+            m_solver = std::make_unique<SolverLDLT>();
+        } else if (linear_solver == "lsmr") {
+            m_solver = std::make_unique<SolverLSMR>(m_lhs);
+        } else {
+            std::cout << "error" << std::endl; // FIXME: throw exception
+        }
+
+        m_solver->analyze_pattern(m_lhs);
     }
 
     const std::vector<Dof>& dofs() const
@@ -406,8 +416,8 @@ public:     // methods
 
             // solve iteration
 
-            m_solver.factorize(m_lhs);
-            m_x = m_solver.solve(m_residual);
+            m_solver->set_matrix(m_lhs);
+            m_solver->solve(m_residual, m_x);
 
             // update system
 
