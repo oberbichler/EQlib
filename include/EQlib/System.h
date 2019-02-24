@@ -394,6 +394,8 @@ public:     // methods
                 break;
             }
 
+            options["iteration"] = iteration;
+
             // compute lhs and rhs
 
             compute(options);
