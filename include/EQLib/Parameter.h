@@ -53,6 +53,14 @@ public:     // getters and setters
         m_act_value = value;
     }
 
+    double delta() const {
+        return m_act_value - m_ref_value;
+    }
+
+    void set_delta(double value) {
+        m_act_value = m_ref_value + value;
+    }
+
     double target() const {
         return m_target;
     }
