@@ -75,6 +75,8 @@ PYBIND11_MODULE(EQlib, m) {
             &Type::set_act_location)
         .def_property("displacements", &Type::displacements,
             &Type::set_displacements)
+        .def_property("forces", &Type::forces,
+            &Type::set_forces)
     ;
     }
 

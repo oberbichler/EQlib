@@ -62,6 +62,16 @@ public:     // getters and setters
         m_y.set_delta(value(1));
         m_z.set_delta(value(2));
     }
+
+    Vector3D forces() const {
+        return Vector3D(m_x.target(), m_y.target(), m_z.target());
+    }
+
+    void set_forces(Vector3D value) {
+        m_x.set_target(value(0));
+        m_y.set_target(value(1));
+        m_z.set_target(value(2));
+    }
 };
 
 } // namespace EQlib
