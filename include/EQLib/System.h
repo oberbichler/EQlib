@@ -40,7 +40,7 @@ private:    // variables
     std::vector<std::vector<Index>> m_index_table;
 
     std::vector<std::set<int>> m_pattern;
-    Eigen::VectorXi m_row_nonzeros;
+    Eigen::VectorXi m_col_nonzeros;
 
     Sparse m_lhs;
     Vector m_rhs;
@@ -61,7 +61,7 @@ public:     // methods
 
         const std::string linear_solver = get_or_default<std::string>(options,
             "linear_solver", "eigen_lu");
-        const bool symmetric = get_or_default(options, "symmetric", false);
+        const bool symmetric = get_or_default(options, "symmetric", true);
 
         // get dofs
 
@@ -144,31 +144,47 @@ public:     // methods
         std::vector<std::set<int>> pattern(m_nb_free_dofs);
 
         for (const auto& dof_indices : m_index_table) {
-            for (const auto col_index : dof_indices) {
-                if (col_index.global >= m_nb_free_dofs) {
+            const size_t nb_dofs = dof_indices.size();
+
+            for (size_t row = 0; row < nb_dofs; row++) {
+                const auto row_index = dof_indices[row];
+
+                if (row_index.global >= nb_free_dofs()) {
                     continue;
                 }
 
-                auto hint = pattern[col_index.global].begin();
+                for (size_t col = row; col < nb_dofs; col++) {
+                    const auto col_index = dof_indices[col];
 
-                const int max_row = symmetric ? m_nb_free_dofs - col_index.global
-                    : m_nb_free_dofs;
-
-                for (const auto row_index : dof_indices) {
-                    if (row_index.global >= max_row) {
-                        continue;
-                    }
-
-                    hint = pattern[col_index.global].insert(hint,
-                        row_index.global);
+                    pattern[col_index.global].insert(row_index.global);
                 }
             }
+
+            // for (const auto col_index : dof_indices) {
+            //     if (col_index.global >= m_nb_free_dofs) {
+            //         continue;
+            //     }
+
+            //     auto hint = pattern[col_index.global].begin();
+
+            //     const int max_row = symmetric ? col_index.global + 1
+            //         : m_nb_free_dofs;
+
+            //     for (const auto row_index : dof_indices) {
+            //         if (row_index.global >= max_row) {
+            //             continue;
+            //         }
+
+            //         hint = pattern[col_index.global].insert(hint,
+            //             row_index.global);
+            //     }
+            // }
         }
 
-        m_row_nonzeros = Eigen::VectorXi(m_nb_free_dofs);
+        m_col_nonzeros = Eigen::VectorXi(m_nb_free_dofs);
 
         for (int i = 0; i < pattern.size(); i++) {
-            m_row_nonzeros[i] = static_cast<int>(pattern[i].size());
+            m_col_nonzeros[i] = static_cast<int>(pattern[i].size());
         }
 
         // store data
@@ -182,7 +198,7 @@ public:     // methods
         m_lhs = Sparse(nb_free_dofs(), nb_free_dofs());
 
         if (nb_free_dofs() > 0) {
-            m_lhs.reserve(m_row_nonzeros);
+            m_lhs.reserve(m_col_nonzeros);
 
             for (int col = 0; col < m_pattern.size(); col++) {
                 for (const int row : m_pattern[col]) {
@@ -242,7 +258,7 @@ public:     // methods
     {
         // options
 
-        const bool symmetric = get_or_default(options, "symmetric", false);
+        const bool symmetric = get_or_default(options, "symmetric", true);
 
         // set lhs and rhs to zero
 
@@ -263,26 +279,28 @@ public:     // methods
 
             const auto& dof_indices = m_index_table[i];
 
-            for (const auto row_index : dof_indices) {
+            const size_t nb_dofs = dof_indices.size();
+
+            for (size_t row = 0; row < nb_dofs; row++) {
+                const auto row_index = dof_indices[row];
+
                 if (row_index.global >= nb_free_dofs()) {
                     continue;
                 }
 
                 m_rhs(row_index.global) += local_rhs(row_index.local);
 
-                const int max_col = symmetric ? row_index.global + 1
-                    : nb_free_dofs();
-
-                for (const auto col_index : dof_indices) {
-                    if (col_index.global >= max_col) {
-                        continue;
-                    }
+                for (size_t col = row; col < nb_dofs; col++) {
+                    const auto col_index = dof_indices[col];
 
                     m_lhs.coeffRef(row_index.global, col_index.global) +=
                         local_lhs(row_index.local, col_index.local);
                 }
             }
         }
+
+        std::cout << m_col_nonzeros.sum() << std::endl;
+        std::cout << m_lhs.nonZeros() << std::endl;
     }
 
     void compute_parallel(py::dict options)
@@ -293,7 +311,7 @@ public:     // methods
 
         // run parallel
 
-        // py::gil_scoped_release release;
+        py::gil_scoped_release release;
 
         size_t index = 0;
 
@@ -312,9 +330,6 @@ public:     // methods
             tbb::make_filter<size_t, std::tuple<size_t, std::pair<Matrix, Vector>>>(
                 tbb::filter::parallel,
                 [&](size_t i) -> std::tuple<size_t, std::pair<Matrix, Vector>> {
-                    // std::cout << "element " << i << std::endl;
-                    // pybind11::gil_scoped_acquire acquire;
-
                     const auto& element = m_elements[i];
 
                     const auto local = element->compute(py::dict(options));
@@ -330,23 +345,22 @@ public:     // methods
 
                     const auto& dof_indices = m_index_table[i];
 
-                    for (const auto row_index : dof_indices) {
+                    const size_t nb_dofs = dof_indices.size();
+
+                    for (size_t row = 0; row < nb_dofs; row++) {
+                        const auto row_index = dof_indices[row];
+
                         if (row_index.global >= nb_free_dofs()) {
                             continue;
                         }
 
                         m_rhs(row_index.global) += local_rhs(row_index.local);
 
-                        const int max_col = symmetric ? row_index.global + 1
-                            : nb_free_dofs();
+                        for (size_t col = row; col < nb_dofs; col++) {
+                            const auto col_index = dof_indices[col];
 
-                        for (const auto col_index : dof_indices) {
-                            if (col_index.global >= max_col) {
-                                continue;
-                            }
-
-                            m_lhs.coeffRef(row_index.global, col_index.global) +=
-                                local_lhs(row_index.local, col_index.local);
+                            m_lhs.coeffRef(row_index.global, col_index.global)
+                                += local_lhs(row_index.local, col_index.local);
                         }
                     }
                 }

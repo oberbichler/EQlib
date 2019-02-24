@@ -11,9 +11,9 @@ using Vector = Eigen::Matrix<double, Eigen::Dynamic, 1>;
 using Sparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
 #if defined EIGEN_USE_MKL_ALL
-using SparseSolver = Eigen::SparseLU<Sparse>;
+using SparseSolver = Eigen::PardisoLLT<Sparse, Eigen::Upper>;
 #else
-using SparseSolver = Eigen::PardisoLLT<Sparse, Eigen::Lower>;
+using SparseSolver = Eigen::SparseLU<Sparse>;
 #endif
 
 namespace py = pybind11;
