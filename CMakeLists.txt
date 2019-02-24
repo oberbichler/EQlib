@@ -7,7 +7,7 @@ project(EQlib-py)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(BLAS)
-#find_package(TBB REQUIRED)
+find_package(TBB REQUIRED)
 
 include_directories(
     "include"
@@ -25,7 +25,7 @@ add_definitions(
 pybind11_add_module(EQlib src/module.cpp)
 
 if(EXISTS $ENV{MKLROOT})
-    message("Found MKL: $ENV{MKLROOT}")
+    message("-- Found MKL: $ENV{MKLROOT}")
     include_directories($ENV{MKLROOT}/include)
     add_definitions(-DEIGEN_USE_MKL_ALL)
     target_link_libraries(EQlib PRIVATE mkl_rt)
@@ -34,8 +34,11 @@ elseif(BLAS_FOUND)
     target_link_libraries(EQlib PRIVATE ${BLAS_LIBRARIES})
 endif()
 
-target_include_directories(EQlib PRIVATE ${TBB_INCLUDE_DIRS})
-target_compile_definitions(EQlib PRIVATE ${TBB_DEFINITIONS})
-target_link_libraries(EQlib PRIVATE ${TBB_LIBRARIES})
+if(${TBB_FOUND})
+    message("-- Found TBB: $ENV{TBBROOT}")
+    include_directories(${TBB_INCLUDE_DIRS})
+    target_compile_definitions(EQlib PRIVATE ${TBB_DEFINITIONS})
+    target_link_libraries(EQlib PRIVATE ${TBB_LIBRARIES})
+endif()
 
 install(TARGETS EQlib DESTINATION bin)
