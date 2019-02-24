@@ -47,6 +47,8 @@ PYBIND11_MODULE(EQlib, m) {
         .def_property_readonly("lhs", &Type::lhs)
         .def_property_readonly("rhs", &Type::rhs)
         .def("compute", &Type::compute, "options"_a=py::dict())
+        .def("compute_parallel", &Type::compute_parallel,
+            "options"_a=py::dict(), py::call_guard<py::gil_scoped_release>())
         .def("solve", &Type::solve, "options"_a=py::dict())
         .def_property_readonly("stopping_reason_message",
             &Type::stopping_reason_message)

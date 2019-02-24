@@ -1,14 +1,16 @@
 #pragma once
 
 #include "Define.h"
-#include "Element.h"
 #include "Dof.h"
+#include "Element.h"
 
 #include <fmt/format.h>
 
+#include <tbb/pipeline.h>
+
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
-#include <set>
 
 namespace EQlib {
 
@@ -59,7 +61,7 @@ public:     // methods
 
         const std::string linear_solver = get_or_default<std::string>(options,
             "linear_solver", "eigen_lu");
-        const bool symmetric = get_or_default(options, "symmetric", true);
+        const bool symmetric = get_or_default(options, "symmetric", false);
 
         // get dofs
 
@@ -149,11 +151,11 @@ public:     // methods
 
                 auto hint = pattern[col_index.global].begin();
 
-                const int max_col = symmetric ? col_index.global + 1
+                const int max_row = symmetric ? m_nb_free_dofs - col_index.global
                     : m_nb_free_dofs;
 
                 for (const auto row_index : dof_indices) {
-                    if (row_index.global >= max_col) {
+                    if (row_index.global >= max_row) {
                         continue;
                     }
 
@@ -179,11 +181,13 @@ public:     // methods
 
         m_lhs = Sparse(nb_free_dofs(), nb_free_dofs());
 
-        m_lhs.reserve(m_row_nonzeros);
+        if (nb_free_dofs() > 0) {
+            m_lhs.reserve(m_row_nonzeros);
 
-        for (int col = 0; col < m_pattern.size(); col++) {
-            for (const int row : m_pattern[col]) {
-                m_lhs.insert(row, col);
+            for (int col = 0; col < m_pattern.size(); col++) {
+                for (const int row : m_pattern[col]) {
+                    m_lhs.insert(row, col);
+                }
             }
         }
 
@@ -238,7 +242,7 @@ public:     // methods
     {
         // options
 
-        const bool symmetric = get_or_default(options, "symmetric", true);
+        const bool symmetric = get_or_default(options, "symmetric", false);
 
         // set lhs and rhs to zero
 
@@ -255,9 +259,9 @@ public:     // methods
         for (size_t i = 0; i < m_elements.size(); i++) {
             const auto& element = m_elements[i];
 
-            const auto& dof_indices = m_index_table[i];
-
             const auto [local_lhs, local_rhs] = element->compute(options);
+
+            const auto& dof_indices = m_index_table[i];
 
             for (const auto row_index : dof_indices) {
                 if (row_index.global >= nb_free_dofs()) {
@@ -281,6 +285,75 @@ public:     // methods
         }
     }
 
+    void compute_parallel(py::dict options)
+    {
+        // options
+
+        const bool symmetric = get_or_default(options, "symmetric", false);
+
+        // run parallel
+
+        // py::gil_scoped_release release;
+
+        size_t index = 0;
+
+        tbb::parallel_pipeline(8,
+            tbb::make_filter<void, size_t>(
+                tbb::filter::serial,
+                [&](tbb::flow_control& fc) -> size_t {
+                    if (index < m_elements.size()) {
+                        return index++;
+                    } else {
+                        fc.stop();
+                        return index;
+                    }
+                }
+            ) &
+            tbb::make_filter<size_t, std::tuple<size_t, std::pair<Matrix, Vector>>>(
+                tbb::filter::parallel,
+                [&](size_t i) -> std::tuple<size_t, std::pair<Matrix, Vector>> {
+                    // std::cout << "element " << i << std::endl;
+                    // pybind11::gil_scoped_acquire acquire;
+
+                    const auto& element = m_elements[i];
+
+                    const auto local = element->compute(py::dict(options));
+
+                    return {i, local};
+                }
+            ) &
+            tbb::make_filter<std::tuple<size_t, std::pair<Matrix, Vector>>, void>(
+                tbb::filter::serial_out_of_order,
+                [&](std::tuple<size_t, std::pair<Matrix, Vector>> results) {
+                    const auto i = std::get<0>(results);
+                    const auto& [local_lhs, local_rhs] = std::get<1>(results);
+
+                    const auto& dof_indices = m_index_table[i];
+
+                    for (const auto row_index : dof_indices) {
+                        if (row_index.global >= nb_free_dofs()) {
+                            continue;
+                        }
+
+                        m_rhs(row_index.global) += local_rhs(row_index.local);
+
+                        const int max_col = symmetric ? row_index.global + 1
+                            : nb_free_dofs();
+
+                        for (const auto col_index : dof_indices) {
+                            if (col_index.global >= max_col) {
+                                continue;
+                            }
+
+                            m_lhs.coeffRef(row_index.global, col_index.global) +=
+                                local_lhs(row_index.local, col_index.local);
+                        }
+                    }
+                }
+            )
+        );
+    }
+
     void solve(py::dict options)
     {
         // options
@@ -300,7 +373,14 @@ public:     // methods
             m_target *= lambda;
         }
 
-        for (int iteration = 0; iteration < maxiter; iteration++) {
+        for (int iteration = 0; ; iteration++) {
+            // check max iterations
+
+            if (iteration >= maxiter) {
+                m_stopping_reason = 2;
+                break;
+            }
+
             // compute lhs and rhs
 
             compute(options);
@@ -311,40 +391,34 @@ public:     // methods
 
             const double rnorm = m_residual.norm();
 
+            std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
+                << std::endl;
+
+            // check residual norm
+
             if (rnorm < rtol) {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
-                    << std::endl;
                 m_stopping_reason = 0;
                 break;
-            }
-
-            //
-
-            if (iteration + 1 == maxiter) {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
-                    << std::endl;
-                m_stopping_reason = 2;
-            } else {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
-                    << std::endl;
             }
 
             // solve iteration
 
             m_solver.factorize(m_lhs);
-            m_x = m_solver.solve(m_rhs);
+            m_x = m_solver.solve(m_residual);
+
+            // update system
+
+            for (int i = 0; i < nb_free_dofs(); i++) {
+                m_dofs[i].set_delta(m_dofs[i].delta() - m_x(i));
+            }
+
+            // check x norm
 
             const double xnorm = m_x.norm();
 
             if (xnorm < xtol) {
-                std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
-                    << std::endl;
                 m_stopping_reason = 1;
                 break;
-            }
-
-            for (int i = 0; i < nb_free_dofs(); i++) {
-                m_dofs[i].set_delta(m_dofs[i].delta() - m_x(i));
             }
         }
 
