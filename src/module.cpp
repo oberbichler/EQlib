@@ -85,8 +85,10 @@ PYBIND11_MODULE(EQlib, m) {
 
     py::class_<Type>(m, "Parameter")
         .def(py::init<double, double, double, double, bool>(), "ref_value"_a,
-            "act_value"_a, "target"_a, "result"_a, "isfixed"_a)
-        .def(py::init<double, double>(), "value"_a, "target"_a)
+            "act_value"_a, "target"_a=0, "result"_a=0, "isfixed"_a=false)
+        .def(py::init<double, double, bool>(), "value"_a, "target"_a=0,
+            "isfixed"_a=false)
+        .def(py::init<>())
         .def_property("ref_value", &Type::ref_value, &Type::set_ref_value)
         .def_property("act_value", &Type::act_value, &Type::set_act_value)
         .def_property("target", &Type::target, &Type::set_target)

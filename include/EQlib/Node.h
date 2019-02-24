@@ -13,9 +13,9 @@ private:    // variables
 
 public:     // constructors
     Node(const double x, const double y, const double z)
-    : m_x(x, 0)
-    , m_y(y, 0)
-    , m_z(z, 0)
+    : m_x(x)
+    , m_y(y)
+    , m_z(z)
     { }
 
     Node() : Node(0, 0, 0) { }

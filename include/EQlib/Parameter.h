@@ -32,8 +32,9 @@ public:     // constructors
 
     Parameter(
         double value,
-        double target)
-    : Parameter(value, value, target, 0.0, false)
+        double target=0,
+        bool isfixed=false)
+    : Parameter(value, value, target, 0, isfixed)
     { }
 
 public:     // getters and setters
