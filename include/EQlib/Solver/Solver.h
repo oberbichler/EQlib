@@ -5,7 +5,7 @@
 namespace EQlib {
 
 class Solver {
-public:
+public:     // methods
     virtual void analyze_pattern(Ref<const Sparse> a) = 0;
 
     virtual void set_matrix(Ref<const Sparse> a) = 0;
