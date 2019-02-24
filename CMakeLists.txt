@@ -4,7 +4,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 project(EQlib-py)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 find_package(BLAS)
+#find_package(TBB REQUIRED)
 
 include_directories(
     "include"
@@ -30,5 +33,9 @@ elseif(BLAS_FOUND)
     add_definitions(-DEIGEN_USE_BLAS)
     target_link_libraries(EQlib PRIVATE ${BLAS_LIBRARIES})
 endif()
+
+target_include_directories(EQlib PRIVATE ${TBB_INCLUDE_DIRS})
+target_compile_definitions(EQlib PRIVATE ${TBB_DEFINITIONS})
+target_link_libraries(EQlib PRIVATE ${TBB_LIBRARIES})
 
 install(TARGETS EQlib DESTINATION bin)
