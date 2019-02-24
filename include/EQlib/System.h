@@ -163,26 +163,6 @@ public:     // methods
                     pattern[col_index.global].insert(row_index.global);
                 }
             }
-
-            // for (const auto col_index : dof_indices) {
-            //     if (col_index.global >= m_nb_free_dofs) {
-            //         continue;
-            //     }
-
-            //     auto hint = pattern[col_index.global].begin();
-
-            //     const int max_row = symmetric ? col_index.global + 1
-            //         : m_nb_free_dofs;
-
-            //     for (const auto row_index : dof_indices) {
-            //         if (row_index.global >= max_row) {
-            //             continue;
-            //         }
-
-            //         hint = pattern[col_index.global].insert(hint,
-            //             row_index.global);
-            //     }
-            // }
         }
 
         m_col_nonzeros = Eigen::VectorXi(m_nb_free_dofs);
