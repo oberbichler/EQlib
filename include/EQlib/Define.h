@@ -12,6 +12,9 @@ using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
 using Vector = Eigen::Matrix<double, Eigen::Dynamic, 1>;
 using Sparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
+template <typename T>
+using Ref = Eigen::Ref<T>;
+
 #if defined EIGEN_USE_MKL_ALL
 using SparseSolver = Eigen::PardisoLLT<Sparse, Eigen::Upper>;
 #else
