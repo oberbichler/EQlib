@@ -15,12 +15,6 @@ using Sparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 template <typename T>
 using Ref = Eigen::Ref<T>;
 
-#if defined EIGEN_USE_MKL_ALL
-using SparseSolver = Eigen::PardisoLLT<Sparse, Eigen::Upper>;
-#else
-using SparseSolver = Eigen::SparseLU<Sparse>;
-#endif
-
 namespace py = pybind11;
 
 namespace EQlib {
