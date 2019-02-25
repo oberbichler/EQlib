@@ -93,6 +93,7 @@ PYBIND11_MODULE(EQlib, m) {
         .def_property("act_value", &Type::act_value, &Type::set_act_value)
         .def_property("target", &Type::target, &Type::set_target)
         .def_property("result", &Type::result, &Type::set_result)
+        .def_property("residual", &Type::residual, &Type::set_residual)
         .def_property("isfixed", &Type::isfixed, &Type::set_isfixed)
         .def_property_readonly("dof", &Type::dof)
         .def(py::pickle([](const Type& self) {

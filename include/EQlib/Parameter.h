@@ -78,6 +78,14 @@ public:     // getters and setters
         m_result = value;
     }
 
+    double residual() const {
+        return m_target - m_result;
+    }
+
+    void set_residual(double value) {
+        m_result = m_target - value;
+    }
+
     bool isfixed() const {
         return m_isfixed;
     }
