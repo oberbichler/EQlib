@@ -458,6 +458,40 @@ public:     // methods
             m_dofs[i].set_residual(m_residual(i));
         }
     }
+
+    void solve_linear(py::dict options)
+    {
+        // options
+
+        const double lambda = get_or_default(options, "lambda", 1.0);
+
+        // setup
+
+        for (int i = 0; i < nb_dofs(); i++) {
+            m_target[i] = m_dofs[i].target();
+        }
+
+        if (lambda != 1.0) {
+            m_target *= lambda;
+        }
+
+        m_residual = m_target + m_rhs;
+
+        // compute lhs and rhs
+
+        compute(options);
+
+        // solve
+
+        m_solver->set_matrix(m_lhs);
+        m_solver->solve(m_residual, m_x);
+
+        // update system
+
+        for (int i = 0; i < nb_free_dofs(); i++) {
+            m_dofs[i].set_delta(m_x(i));
+        }
+    }
 };
 
 } // namespace EQlib
