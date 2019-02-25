@@ -91,6 +91,7 @@ PYBIND11_MODULE(EQlib, m) {
         .def(py::init<>())
         .def_property("ref_value", &Type::ref_value, &Type::set_ref_value)
         .def_property("act_value", &Type::act_value, &Type::set_act_value)
+        .def_property("delta", &Type::delta, &Type::set_delta)
         .def_property("target", &Type::target, &Type::set_target)
         .def_property("result", &Type::result, &Type::set_result)
         .def_property("residual", &Type::residual, &Type::set_residual)
