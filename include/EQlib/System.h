@@ -419,7 +419,7 @@ public:     // methods
 
             // check residual
 
-            m_residual = rhs() - m_target;
+            m_residual = m_target + m_rhs;
 
             const double rnorm = m_residual.norm();
 
@@ -441,7 +441,7 @@ public:     // methods
             // update system
 
             for (int i = 0; i < nb_free_dofs(); i++) {
-                m_dofs[i].set_delta(m_dofs[i].delta() - m_x(i));
+                m_dofs[i].set_delta(m_dofs[i].delta() + m_x(i));
             }
 
             // check x norm
