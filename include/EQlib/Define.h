@@ -1,10 +1,11 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Eigen/PardisoSupport>
 #include <Eigen/Sparse>
 
 #include <pybind11/pybind11.h>
+
+namespace EQlib {
 
 using Vector3D = Eigen::Vector3d;
 
@@ -17,8 +18,6 @@ using Ref = Eigen::Ref<T>;
 
 namespace py = pybind11;
 
-namespace EQlib {
-
 template <typename T>
 T get_or_default(py::dict options, std::string key, T default_value) {
     if (!options.contains(key.c_str())) {
@@ -27,4 +26,4 @@ T get_or_default(py::dict options, std::string key, T default_value) {
     return options[key.c_str()].cast<T>();
 }
 
-}
+} // namespace EQlib
