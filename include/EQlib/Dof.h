@@ -35,31 +35,38 @@ public:     // constructors
     { }
 
 public:     // getters and setters
-    double delta() const {
+    double delta() const
+    {
         return *m_act_value - *m_ref_value;
     }
 
-    void set_delta(double value) const {
+    void set_delta(double value) const
+    {
         *m_act_value = *m_ref_value + value;
     }
 
-    double residual() const {
+    double residual() const
+    {
         return *m_result - *m_target;
     }
 
-    void set_residual(double value) const {
+    void set_residual(double value) const
+    {
         *m_result = *m_target + value;
     }
 
-    double target() const {
+    double target() const
+    {
         return *m_target;
     }
 
-    bool isfixed() const {
+    bool isfixed() const
+    {
         return m_isfixed;
     }
 
-    void set_isfixed(bool value) {
+    void set_isfixed(bool value)
+    {
         m_isfixed = value;
     }
 
@@ -82,9 +89,7 @@ namespace std {
 template <>
 struct hash<EQlib::Dof>
 {
-    std::size_t
-    operator()(
-        const EQlib::Dof& dof) const noexcept
+    std::size_t operator()(const EQlib::Dof& dof) const noexcept
     {
         return dof.hash();
     }
