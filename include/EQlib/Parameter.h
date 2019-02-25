@@ -4,8 +4,9 @@
 
 namespace EQlib {
 
-class Parameter {
-private:    // member variables
+class Parameter
+{
+private:    // variables
     double m_ref_value;
     double m_act_value;
     double m_target;
