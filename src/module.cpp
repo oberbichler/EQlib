@@ -65,7 +65,7 @@ PYBIND11_MODULE(EQlib, m) {
 
     py::class_<Type>(m, "Node", py::dynamic_attr())
         .def(py::init<>())
-        .def(py::init<double, double, double>(), "x"_a, "y"_a, "z"_a)
+        .def(py::init<double, double, double>(), "x"_a=0, "y"_a=0, "z"_a=0)
         .def_property_readonly("x", &Type::x)
         .def_property_readonly("y", &Type::y)
         .def_property_readonly("z", &Type::z)
