@@ -54,7 +54,7 @@ private:    // variables
 
     std::unique_ptr<Solver> m_solver;
 
-public:     // methods
+public:     // constructor
     System(
         std::vector<std::shared_ptr<Element>> elements,
         py::dict options)
@@ -63,7 +63,6 @@ public:     // methods
 
         const std::string linear_solver = get_or_default<std::string>(options,
             "linear_solver", "ldlt");
-        const bool symmetric = get_or_default(options, "symmetric", true);
 
         // get dofs
 
@@ -213,6 +212,7 @@ public:     // methods
         m_solver->analyze_pattern(m_lhs);
     }
 
+public:     // getters and setters
     const std::vector<Dof>& dofs() const
     {
         return m_dofs;
@@ -233,11 +233,6 @@ public:     // methods
         return m_nb_fixed_dofs;
     }
 
-    int dof_index(const Dof& dof) const
-    {
-        return m_dof_indices.at(dof);
-    }
-
     Sparse lhs() const
     {
         return m_lhs;
@@ -248,11 +243,33 @@ public:     // methods
         return m_rhs;
     }
 
+    std::string stopping_reason_message() const
+    {
+        switch (m_stopping_reason) {
+        case -1:
+            return "Not solved";
+        case 0:
+            return "A solution was found, given rtol";
+        case 1:
+            return "A solution was found, given xtol";
+        case 2:
+            return "The iteration limit was reached";
+        default:
+            return "Error. Unknown stopping reason";
+        }
+    }
+
+public:     // methods
+    int dof_index(const Dof& dof) const
+    {
+        return m_dof_indices.at(dof);
+    }
+
     void compute(py::dict options)
     {
         // options
 
-        const bool symmetric = get_or_default(options, "symmetric", true);
+        // ...
 
         // set lhs and rhs to zero
 
@@ -302,7 +319,7 @@ public:     // methods
     {
         // options
 
-        const bool symmetric = get_or_default(options, "symmetric", false);
+        // ...
 
         // run parallel
 
@@ -439,22 +456,6 @@ public:     // methods
 
         for (int i = 0; i < nb_free_dofs(); i++) {
             m_dofs[i].set_residual(m_residual(i));
-        }
-    }
-
-    std::string stopping_reason_message() const
-    {
-        switch (m_stopping_reason) {
-        case -1:
-            return "Not solved";
-        case 0:
-            return "A solution was found, given rtol";
-        case 1:
-            return "A solution was found, given xtol";
-        case 2:
-            return "The iteration limit was reached";
-        default:
-            return "Error. Unknown stopping reason";
         }
     }
 };
