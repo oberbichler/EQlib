@@ -4,8 +4,9 @@
 
 namespace EQlib {
 
-class Dof {
-private:    // member variables
+class Dof
+{
+private:    // variables
     double* m_ref_value;
     double* m_act_value;
     double* m_target;
