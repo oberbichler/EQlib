@@ -54,7 +54,7 @@ private:    // variables
 
     std::unique_ptr<Solver> m_solver;
 
-public:     // constructor
+public:     // constructors
     System(
         std::vector<std::shared_ptr<Element>> elements,
         py::dict options)
