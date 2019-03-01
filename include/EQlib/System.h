@@ -11,6 +11,7 @@
 #include <tbb/pipeline.h>
 
 #include <set>
+#include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -429,7 +430,7 @@ public:     // methods
             if (parallel) {
                 compute_parallel(options);
             } else {
-            compute(options);
+                compute(options);
             }
 
             // check residual
@@ -450,8 +451,13 @@ public:     // methods
 
             // solve iteration
 
-            m_solver->set_matrix(m_lhs);
-            m_solver->solve(m_residual, m_x);
+            if (!m_solver->set_matrix(m_lhs)) {
+                throw std::runtime_error("Factorization failed");
+            }
+
+            if (!m_solver->solve(m_residual, m_x)) {
+                throw std::runtime_error("Solve failed");
+            }
 
             // update system
 

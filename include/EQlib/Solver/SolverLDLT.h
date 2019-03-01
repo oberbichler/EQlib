@@ -19,12 +19,16 @@ public:     // methods
         m_solver.analyzePattern(a);
     }
 
-    void set_matrix(Ref<const Sparse> a) override {
+    bool set_matrix(Ref<const Sparse> a) override {
         m_solver.factorize(a);
+
+        return (m_solver.info() == Eigen::Success);
     }
 
-    void solve(Ref<const Vector> b, Ref<Vector> x) override {
+    bool solve(Ref<const Vector> b, Ref<Vector> x) override {
         x = m_solver.solve(b);
+
+        return (m_solver.info() == Eigen::Success);
     }
 };
 

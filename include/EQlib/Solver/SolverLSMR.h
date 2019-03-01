@@ -214,7 +214,7 @@ public:
         return m_norm_x;
     }
 
-    void solve(Ref<const Vector> vb, Ref<Vector> vx) override
+    bool solve(Ref<const Vector> vb, Ref<Vector> vx) override
     {
         const size_t m = static_cast<size_t>(vb.size());
         const size_t n = static_cast<size_t>(vx.size());
@@ -284,7 +284,7 @@ public:
 
         if (m_norm_ar == zero) {
             termination_print_out();
-            return;
+            return true;
         }
 
         // Initialization for local reorthogonalization.
@@ -615,9 +615,10 @@ public:
     void analyze_pattern(Ref<const TMatrix> value) override
     { }
 
-    void set_matrix(Ref<const TMatrix> value) override
+    bool set_matrix(Ref<const TMatrix> value) override
     {
         m_a = value;
+        return true;
     }
 };
 
