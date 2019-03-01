@@ -321,6 +321,16 @@ public:     // methods
 
         // ...
 
+        // set lhs and rhs to zero
+
+        for (int i = 0; i < m_lhs.outerSize(); i++) {
+            for (Sparse::InnerIterator it(m_lhs, i); it; ++it){
+                it.valueRef() = 0;
+            }
+        }
+
+        m_rhs.setZero();
+
         // run parallel
 
         py::gil_scoped_release release;
