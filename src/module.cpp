@@ -65,8 +65,9 @@ PYBIND11_MODULE(EQlib, m) {
     // Node
     {
         using Type = EQlib::Node;
+        using Holder = std::shared_ptr<Type>;
 
-        py::class_<Type>(m, "Node", py::dynamic_attr())
+        py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
             .def(py::init<>())
             .def(py::init<double, double, double>(), "x"_a=0, "y"_a=0, "z"_a=0)
             .def_property_readonly("x", &Type::x)
