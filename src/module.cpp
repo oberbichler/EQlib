@@ -12,6 +12,9 @@
 #include <EQlib/PyElement.h>
 #include <EQlib/System.h>
 
+#include <EQlib/IGA/LocationConstraint.h>
+#include <EQlib/IGA/Shell3D3P.h>
+
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
