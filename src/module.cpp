@@ -148,4 +148,17 @@ PYBIND11_MODULE(EQlib, m) {
                 &Type::message)
         ;
     }
+
+    // LocationConstraint
+    {
+        using Type = EQlib::LocationConstraint;
+        using Base = EQlib::Element;
+        using Holder = std::shared_ptr<Type>;
+
+        py::class_<Type, Base, Holder>(m, "LocationConstraint")
+            .def(py::init<std::vector<std::shared_ptr<EQlib::Node>>,
+                EQlib::Matrix, EQlib::Vector3D, double>(), "nodes"_a,
+                "shape_functions"_a, "target"_a, "penalty"_a=1)
+        ;
+    }
 }
