@@ -402,6 +402,7 @@ public:     // methods
         const int maxiter = get_or_default(options, "maxiter", 100);
         const double rtol = get_or_default(options, "rtol", 1e-7);
         const double xtol = get_or_default(options, "xtol", 1e-7);
+        const bool parallel = get_or_default<bool>(options, "parallel", true);
 
         // setup
 
@@ -425,7 +426,11 @@ public:     // methods
 
             // compute lhs and rhs
 
+            if (parallel) {
+                compute_parallel(options);
+            } else {
             compute(options);
+            }
 
             // check residual
 
