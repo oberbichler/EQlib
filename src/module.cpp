@@ -143,8 +143,8 @@ PYBIND11_MODULE(EQlib, m) {
                 py::call_guard<py::gil_scoped_release>())
             .def("solve", &Type::solve, "options"_a=py::dict())
             .def("solve_linear", &Type::solve_linear, "options"_a=py::dict())
-            .def_property_readonly("stopping_reason_message",
-                &Type::stopping_reason_message)
+            .def_property_readonly("message",
+                &Type::message)
         ;
     }
 }

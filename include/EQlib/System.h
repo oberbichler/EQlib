@@ -243,7 +243,7 @@ public:     // getters and setters
         return m_rhs;
     }
 
-    std::string stopping_reason_message() const
+    std::string message() const
     {
         switch (m_stopping_reason) {
         case -1:
