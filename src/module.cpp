@@ -161,4 +161,18 @@ PYBIND11_MODULE(EQlib, m) {
                 "shape_functions"_a, "target"_a, "penalty"_a=1)
         ;
     }
+
+    // Shell3D3P
+    {
+        using Type = EQlib::Shell3D3P;
+        using Base = EQlib::Element;
+        using Holder = std::shared_ptr<Type>;
+
+        py::class_<Type, Base, Holder>(m, "Shell3D3P")
+            .def(py::init<std::vector<std::shared_ptr<EQlib::Node>>,
+                EQlib::Matrix, double, double, double, double>(), "nodes"_a,
+                "shape_functions"_a, "thickness"_a, "young_modulus"_a,
+                "poisson_ratio"_a, "weight"_a)
+        ;
+    }
 }
