@@ -244,6 +244,11 @@ public:     // getters and setters
         return m_rhs;
     }
 
+    Vector residual() const
+    {
+        return m_residual;
+    }
+
     std::string message() const
     {
         switch (m_stopping_reason) {
