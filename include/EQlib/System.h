@@ -10,6 +10,8 @@
 
 #include <tbb/pipeline.h>
 
+#include <omp.h>
+
 #include <set>
 #include <stdexcept>
 #include <unordered_map>
@@ -326,6 +328,69 @@ public:     // methods
         }
     }
 
+    void compute_omp(py::dict options)
+    {
+        // options
+
+        // ...
+
+        // set lhs and rhs to zero
+
+        for (int i = 0; i < m_lhs.outerSize(); i++) {
+            for (Sparse::InnerIterator it(m_lhs, i); it; ++it){
+                it.valueRef() = 0;
+            }
+        }
+
+        m_rhs.setZero();
+
+        // compute and add local lhs and rhs
+
+        py::gil_scoped_release release;
+
+        omp_lock_t writelock;
+
+        omp_init_lock(&writelock);
+
+        #pragma omp parallel for
+        for (int i = 0; i < m_elements.size(); i++) {
+            const auto& element = m_elements[i];
+
+            const auto [local_lhs, local_rhs] = element->compute(py::dict(options));
+
+            omp_set_lock(&writelock);
+
+            const auto& dof_indices = m_index_table[i];
+
+            const size_t nb_dofs = dof_indices.size();
+
+            for (size_t row = 0; row < nb_dofs; row++) {
+                const auto row_index = dof_indices[row];
+
+                if (row_index.global >= nb_free_dofs()) {
+                    continue;
+                }
+
+                m_rhs(row_index.global) += local_rhs(row_index.local);
+
+                for (size_t col = row; col < nb_dofs; col++) {
+                    const auto col_index = dof_indices[col];
+
+                    if (col_index.global >= nb_free_dofs()) {
+                        continue;
+                    }
+
+                    m_lhs.coeffRef(row_index.global, col_index.global) +=
+                        local_lhs(row_index.local, col_index.local);
+                }
+            }
+
+            omp_unset_lock(&writelock);
+        }
+
+        omp_destroy_lock(&writelock);
+    }
+
     void compute_parallel(py::dict options)
     {
         // options
@@ -438,7 +503,7 @@ public:     // methods
             // compute lhs and rhs
 
             if (parallel) {
-                compute_parallel(options);
+                compute_omp(options);
             } else {
                 compute(options);
             }
