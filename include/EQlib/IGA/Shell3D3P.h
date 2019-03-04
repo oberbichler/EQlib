@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Eigen/Geometry>
+
 #include <EQlib/Element.h>
 #include <EQlib/Node.h>
 
@@ -18,7 +20,7 @@ class Shell3D3P : public Element
 
     template <int TRows, int TCols>
     using HyperDualMatrix = Eigen::Matrix<HyperDual, TRows, TCols>;
-    
+
 private:    // variables
     std::vector<std::shared_ptr<Node>> m_nodes;
     Matrix m_shape_functions;
@@ -178,7 +180,7 @@ public:     // constructor
         const HyperDualVector<3> eps = Tm * 0.5 * HyperDualVector<3>(a11 - A11, a22 - A22, a12 - A12);
         const HyperDualVector<3> kap = Tm *       HyperDualVector<3>(B11 - b11, B12 - b12, B22 - b22);
 
-        const HyperDualMatrix<1, 1> f = (0.5 * (eps.transpose() * Dm * eps + 
+        const HyperDualMatrix<1, 1> f = (0.5 * (eps.transpose() * Dm * eps +
                                                 kap.transpose() * Db * kap));
 
         return {f(0, 0).h(), -f(0, 0).g()};
