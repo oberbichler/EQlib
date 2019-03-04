@@ -142,6 +142,7 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("lhs", &Type::lhs)
             .def_property_readonly("rhs", &Type::rhs)
             .def_property_readonly("residual", &Type::residual)
+            .def_property_readonly("elements", &Type::elements)
             .def("compute", &Type::compute, "options"_a=py::dict())
             .def("compute_parallel", &Type::compute_parallel,
                 "options"_a=py::dict())

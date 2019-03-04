@@ -249,6 +249,11 @@ public:     // getters and setters
         return m_residual;
     }
 
+    std::vector<std::shared_ptr<Element>> elements() const
+    {
+        return m_elements;
+    }
+
     std::string message() const
     {
         switch (m_stopping_reason) {
