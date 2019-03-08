@@ -7,6 +7,7 @@
 #include <pybind11/stl_bind.h>
 
 #include <EQlib/Dof.h>
+#include <EQlib/Log.h>
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/PyElement.h>
@@ -62,6 +63,28 @@ PYBIND11_MODULE(EQlib, m) {
             .def(py::init<>())
             .def("dofs", &Type::dofs)
             .def("compute", &Type::compute, "options"_a=py::dict())
+        ;
+    }
+
+    // Log
+    {
+        using Type = EQlib::Log;
+        using Holder = std::shared_ptr<Type>;
+
+        py::class_<Type, Holder>(m, "Log")
+            .def(py::init<py::dict>(), "options"_a = py::dict())
+            .def("push_info_level", &Type::push_info_level, "value"_a)
+            .def("info_level", &Type::info_level)
+            .def("pop_info_level", &Type::pop_info_level)
+            .def("debug", &Type::debug<const std::string&>, "message"_a)
+            .def("info", py::overload_cast<const std::string&>(
+                &Type::info<const std::string&>), "message"_a)
+            .def("info", py::overload_cast<const int,
+                const std::string&>(&Type::info<const std::string&>),
+                "level"_a, "message"_a)
+            .def("error", &Type::error<const std::string&>, "message"_a)
+            .def("warn", &Type::warn<const std::string&>, "message"_a)
+            .def("critical", &Type::critical<const std::string&>, "message"_a)
         ;
     }
 
@@ -145,6 +168,8 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("elements", &Type::elements)
             .def("compute", &Type::compute, "options"_a=py::dict())
             .def("compute_parallel", &Type::compute_parallel,
+                "options"_a=py::dict())
+            .def("compute_tbb", &Type::compute_tbb,
                 "options"_a=py::dict())
             .def("solve", &Type::solve, "options"_a=py::dict())
             .def("solve_linear", &Type::solve_linear, "options"_a=py::dict())

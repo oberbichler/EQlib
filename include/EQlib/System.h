@@ -3,11 +3,15 @@
 #include "Define.h"
 #include "Dof.h"
 #include "Element.h"
+#include "Log.h"
 #include "Solver/SolverLDLT.h"
 #include "Solver/SolverLSMR.h"
+#include "Timer.h"
 
 #include <fmt/format.h>
 
+#include "tbb/blocked_range.h"
+#include "tbb/parallel_reduce.h"
 #include <tbb/pipeline.h>
 
 #include <omp.h>
@@ -44,7 +48,9 @@ private:    // variables
     std::vector<std::shared_ptr<Element>> m_elements;
     std::vector<std::vector<Index>> m_index_table;
 
-    std::vector<std::set<int>> m_pattern;
+    std::vector<std::pair<std::shared_ptr<Element>, std::vector<Index>>> m_element_index_table;
+
+    std::vector<std::vector<int>> m_pattern;
     Eigen::VectorXi m_col_nonzeros;
 
     Sparse m_lhs;
@@ -57,8 +63,84 @@ private:    // variables
 
     std::unique_ptr<Solver> m_solver;
 
+    struct Assemble
+    {
+        int* m_outerIndexPtr;
+        int* m_innerIndices;
+
+        Vector m_values;
+        Vector m_rhs;
+
+        // Eigen::Map<Sparse> lhs; //FIXME:
+        // Eigen::Map<Vector> rhs; //FIXME:
+
+        Assemble(int size, int* outer, int* inner, int nnz)
+        : m_outerIndexPtr(outer)
+        , m_innerIndices(inner)
+        , m_values(Vector::Zero(nnz))
+        , m_rhs(Vector::Zero(size))
+        { }
+
+        Assemble(Assemble& s, tbb::split)
+        : m_outerIndexPtr(s.m_outerIndexPtr)
+        , m_innerIndices(s.m_innerIndices)
+        , m_values(Vector::Zero(s.m_values.size()))
+        , m_rhs(Vector::Zero(s.m_rhs.size()))
+        { }
+
+        void operator()(const tbb::blocked_range<std::vector<std::pair<std::shared_ptr<Element>, std::vector<Index>>>::iterator>& range)
+        {
+            Eigen::Map<Sparse> m_lhs(m_rhs.size(), m_rhs.size(), m_values.size(), m_outerIndexPtr, m_innerIndices, m_values.data());
+
+            // compute and add local lhs and rhs
+
+            for (auto it = range.begin(); it != range.end(); ++it) {
+                const auto& [element, dof_indices] = *it;
+
+                const auto [local_lhs, local_rhs] = element->compute(py::dict());
+
+                const size_t nb_dofs = dof_indices.size();
+
+                for (size_t row = 0; row < nb_dofs; row++) {
+                    const auto row_index = dof_indices[row];
+
+                    if (row_index.global >= m_rhs.size()) {
+                        continue;
+                    }
+
+                    m_rhs(row_index.global) += local_rhs(row_index.local);
+
+                    for (size_t col = row; col < nb_dofs; col++) {
+                        const auto col_index = dof_indices[col];
+
+                        if (col_index.global >= m_rhs.size()) {
+                            continue;
+                        }
+
+                        m_lhs.coeffRef(row_index.global, col_index.global) +=
+                            local_lhs(row_index.local, col_index.local);
+                    }
+                }
+            }
+        }
+
+        void join(Assemble& rhs)
+        {
+            m_values += rhs.m_values;
+            m_rhs += rhs.m_rhs;
+        }
+    };
+
 public:     // constructors
     System(
+        std::vector<std::shared_ptr<Element>> elements,
+        py::dict options)
+    {
+        initialize(std::move(elements), std::move(options));
+    }
+
+private:    // methods
+    void initialize(
         std::vector<std::shared_ptr<Element>> elements,
         py::dict options)
     {
@@ -67,7 +149,14 @@ public:     // constructors
         const std::string linear_solver = get_or_default<std::string>(options,
             "linear_solver", "ldlt");
 
+        Log log(options);
+        log.info(1, "==> Initialize system...");
+
+        Timer timer;
+
         // get dofs
+
+        log.info(2, "Getting element dofs...");
 
         const auto nb_elements = elements.size();
 
@@ -80,6 +169,8 @@ public:     // constructors
         }
 
         // create set of unique dofs
+
+        log.info(2, "Creating set of unique dofs...");
 
         std::unordered_set<Dof> dof_set;
         std::vector<Dof> free_dofs;
@@ -117,6 +208,8 @@ public:     // constructors
 
         // create a {dof -> index} map
 
+        log.info(2, "Creating dof indices...");
+
         for (int i = 0; i < m_dofs.size(); i++) {
             m_dof_indices[m_dofs[i]] = i;
         }
@@ -141,11 +234,14 @@ public:     // constructors
             std::sort(dof_indices.begin(), dof_indices.end());
 
             m_index_table.push_back(dof_indices);
+            m_element_index_table.push_back(std::make_pair(element, dof_indices));
         }
 
         // analyze pattern
 
-        std::vector<std::set<int>> pattern(m_nb_free_dofs);
+        log.info(2, "Analyzing pattern...");
+
+        std::vector<std::unordered_set<int>> pattern(m_nb_free_dofs);
 
         for (const auto& dof_indices : m_index_table) {
             const size_t nb_dofs = dof_indices.size();
@@ -169,6 +265,8 @@ public:     // constructors
             }
         }
 
+        log.info(2, "Analyzing pattern...");
+
         m_col_nonzeros = Eigen::VectorXi(m_nb_free_dofs);
 
         for (int i = 0; i < pattern.size(); i++) {
@@ -177,11 +275,20 @@ public:     // constructors
 
         // store data
 
-        m_pattern = std::move(pattern);
+        m_pattern = std::vector<std::vector<int>>(pattern.size());
+
+        for (int col = 0; col < pattern.size(); col++) {
+            std::vector<int> rows;
+            rows.insert(rows.end(), pattern[col].begin(), pattern[col].end());
+            std::sort(rows.begin(), rows.end());
+            m_pattern[col] = std::move(rows);
+        }
 
         m_elements = std::move(elements);
 
         // setup system vectors and matrices
+
+        log.info(2, "Allocating memory...");
 
         m_lhs = Sparse(nb_free_dofs(), nb_free_dofs());
 
@@ -213,6 +320,8 @@ public:     // constructors
         }
 
         m_solver->analyze_pattern(m_lhs);
+        
+        log.info(2, "System initialized in {:.3f} ms", timer.ellapsed());
     }
 
 public:     // getters and setters
@@ -326,6 +435,22 @@ public:     // methods
                 }
             }
         }
+    }
+
+    void compute_tbb(py::dict options)
+    {
+        // run parallel
+
+        // py::gil_scoped_release release;
+
+        Assemble total(m_rhs.size(), m_lhs.outerIndexPtr(), m_lhs.innerIndexPtr(), m_lhs.nonZeros());
+
+        using Iterator = std::vector<std::pair<std::shared_ptr<Element>, std::vector<Index>>>::iterator;
+
+        tbb::parallel_reduce(tbb::blocked_range<Iterator>(m_element_index_table.begin(), m_element_index_table.end()), total);
+
+        m_lhs = Eigen::Map<Sparse>(total.m_rhs.size(), total.m_rhs.size(), total.m_values.size(), total.m_outerIndexPtr, total.m_innerIndices, total.m_values.data());
+        m_rhs = total.m_rhs;
     }
 
     void compute_omp(py::dict options)
@@ -482,6 +607,11 @@ public:     // methods
 
         // setup
 
+        Log log(options);
+        log.info(1, "==> Solving system...");
+
+        Timer timer;
+
         for (int i = 0; i < nb_free_dofs(); i++) {
             m_target[i] = m_dofs[i].target();
         }
@@ -495,36 +625,45 @@ public:     // methods
 
             if (iteration >= maxiter) {
                 m_stopping_reason = 2;
+                log.info(2, "Stopped because iteration >= {}", maxiter);
                 break;
             }
+            
+            log.info(2, "Iteration {}", iteration);
 
             options["iteration"] = iteration;
 
             // compute lhs and rhs
 
+            log.info(2, "Computing system...");
+
             if (parallel) {
-                compute_omp(options);
+                compute_tbb(options);
             } else {
                 compute(options);
             }
 
             // check residual
 
+            log.info(2, "Computing residual...");
+
             m_residual = m_target + m_rhs;
 
             const double rnorm = m_residual.norm();
 
-            std::cout << fmt::format("{:>4} {:}", iteration, rnorm)
-                << std::endl;
+            log.info(2, "The norm of the residual is {}", rnorm);
 
             // check residual norm
 
             if (rnorm < rtol) {
                 m_stopping_reason = 0;
+                log.info(2, "Stopped because rnorm < {}", rtol);
                 break;
             }
 
             // solve iteration
+
+            log.info(2, "Solving the linear equation system...");
 
             if (!m_solver->set_matrix(m_lhs)) {
                 throw std::runtime_error("Factorization failed");
@@ -536,6 +675,8 @@ public:     // methods
 
             // update system
 
+            log.info(2, "Updating system...");
+
             for (int i = 0; i < nb_free_dofs(); i++) {
                 m_dofs[i].set_delta(m_dofs[i].delta() + m_x(i));
             }
@@ -544,7 +685,10 @@ public:     // methods
 
             const double xnorm = m_x.norm();
 
+            log.info(2, "The norm of the step is {}", xnorm);
+
             if (xnorm < xtol) {
+                log.info(2, "Stopped because xnorm < {}", xtol);
                 m_stopping_reason = 1;
                 break;
             }
@@ -553,6 +697,8 @@ public:     // methods
         for (int i = 0; i < nb_free_dofs(); i++) {
             m_dofs[i].set_residual(m_residual(i));
         }
+        
+        log.info(2, "System solved in {:.3f} ms", timer.ellapsed());
     }
 
     void solve_linear(py::dict options)
