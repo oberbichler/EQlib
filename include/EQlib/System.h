@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Assemble.h"
 #include "Define.h"
 #include "Dof.h"
 #include "Element.h"
@@ -7,14 +8,6 @@
 #include "Solver/SolverLDLT.h"
 #include "Solver/SolverLSMR.h"
 #include "Timer.h"
-
-#include <fmt/format.h>
-
-#include "tbb/blocked_range.h"
-#include "tbb/parallel_reduce.h"
-#include <tbb/pipeline.h>
-
-#include <omp.h>
 
 #include <set>
 #include <stdexcept>
@@ -62,76 +55,6 @@ private:    // variables
     int m_stopping_reason;
 
     std::unique_ptr<Solver> m_solver;
-
-    struct Assemble
-    {
-        py::dict& m_options;
-
-        Vector m_lhs_values;
-        Vector m_rhs_values;
-
-        Eigen::Map<Sparse> m_lhs;
-        Eigen::Map<Vector> m_rhs;
-
-        Assemble(Sparse& lhs, Vector& rhs, py::dict& options)
-        : m_lhs(lhs.rows(), lhs.cols(), lhs.nonZeros(), lhs.outerIndexPtr(),
-            lhs.innerIndexPtr(), lhs.valuePtr())
-        , m_rhs(rhs.data(), rhs.size())
-        , m_options(options)
-        { }
-
-        Assemble(Assemble& s, tbb::split)
-        : m_lhs_values(Vector::Zero(s.m_lhs.nonZeros()))
-        , m_rhs_values(Vector::Zero(s.m_rhs.size()))
-        , m_lhs(s.m_lhs.rows(), s.m_lhs.cols(), s.m_lhs.nonZeros(),
-            s.m_lhs.outerIndexPtr(), s.m_lhs.innerIndexPtr(),
-            m_lhs_values.data())
-        , m_rhs(m_rhs_values.data(), s.m_rhs.size())
-        , m_options(s.m_options)
-        { }
-
-        template <typename TRange>
-        void operator()(const TRange& range)
-        {
-            // compute and add local lhs and rhs
-
-            for (auto it = range.begin(); it != range.end(); ++it) {
-                const auto& [element, dof_indices] = *it;
-
-                const auto [local_lhs, local_rhs] = element->compute(m_options);
-
-                const size_t nb_dofs = dof_indices.size();
-
-                for (size_t row = 0; row < nb_dofs; row++) {
-                    const auto row_index = dof_indices[row];
-
-                    if (row_index.global >= m_rhs.size()) {
-                        continue;
-                    }
-
-                    m_rhs(row_index.global) += local_rhs(row_index.local);
-
-                    for (size_t col = row; col < nb_dofs; col++) {
-                        const auto col_index = dof_indices[col];
-
-                        if (col_index.global >= m_rhs.size()) {
-                            continue;
-                        }
-
-                        m_lhs.coeffRef(row_index.global, col_index.global) +=
-                            local_lhs(row_index.local, col_index.local);
-                    }
-                }
-            }
-        }
-
-        void join(Assemble& rhs)
-        {
-            Eigen::Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()) +=
-                rhs.m_lhs_values;
-            Eigen::Map<Vector>(m_rhs.data(), m_rhs.size()) += rhs.m_rhs_values;
-        }
-    };
 
 public:     // constructors
     System(
@@ -393,140 +316,15 @@ public:     // methods
     {
         // options
 
-        // ...
+        const bool parallel = get_or_default<bool>(options, "parallel", true);
 
-        // set lhs and rhs to zero
+        // compute lhs and rhs
 
-        for (int i = 0; i < m_lhs.outerSize(); i++) {
-            for (Sparse::InnerIterator it(m_lhs, i); it; ++it){
-                it.valueRef() = 0;
-            }
+        if (parallel) {
+            Assemble::parallel(m_element_index_table, m_lhs, m_rhs, options);
+        } else {
+            Assemble::serial(m_element_index_table, m_lhs, m_rhs, options);
         }
-
-        m_rhs.setZero();
-
-        // compute and add local lhs and rhs
-
-        for (size_t i = 0; i < m_elements.size(); i++) {
-            const auto& element = m_elements[i];
-
-            const auto [local_lhs, local_rhs] = element->compute(options);
-
-            const auto& dof_indices = m_index_table[i];
-
-            const size_t nb_dofs = dof_indices.size();
-
-            for (size_t row = 0; row < nb_dofs; row++) {
-                const auto row_index = dof_indices[row];
-
-                if (row_index.global >= nb_free_dofs()) {
-                    continue;
-                }
-
-                m_rhs(row_index.global) += local_rhs(row_index.local);
-
-                for (size_t col = row; col < nb_dofs; col++) {
-                    const auto col_index = dof_indices[col];
-
-                    if (col_index.global >= nb_free_dofs()) {
-                        continue;
-                    }
-
-                    m_lhs.coeffRef(row_index.global, col_index.global) +=
-                        local_lhs(row_index.local, col_index.local);
-                }
-            }
-        }
-    }
-
-    void compute_tbb(py::dict options)
-    {
-        // run parallel
-
-        Assemble total(m_lhs, m_rhs, options);
-
-        using Iterator = std::vector<std::pair<std::shared_ptr<Element>, std::vector<Index>>>::iterator;
-
-        tbb::parallel_reduce(tbb::blocked_range<Iterator>(m_element_index_table.begin(), m_element_index_table.end()), total);
-    }
-
-    void compute_parallel(py::dict options)
-    {
-        // options
-
-        // ...
-
-        // set lhs and rhs to zero
-
-        for (int i = 0; i < m_lhs.outerSize(); i++) {
-            for (Sparse::InnerIterator it(m_lhs, i); it; ++it){
-                it.valueRef() = 0;
-            }
-        }
-
-        m_rhs.setZero();
-
-        // run parallel
-
-        py::gil_scoped_release release;
-
-        size_t index = 0;
-
-        tbb::parallel_pipeline(8,
-            tbb::make_filter<void, size_t>(
-                tbb::filter::serial,
-                [&](tbb::flow_control& fc) -> size_t {
-                    if (index < m_elements.size()) {
-                        return index++;
-                    } else {
-                        fc.stop();
-                        return index;
-                    }
-                }
-            ) &
-            tbb::make_filter<size_t, std::tuple<size_t, std::pair<Matrix, Vector>>>(
-                tbb::filter::parallel,
-                [&](size_t i) -> std::tuple<size_t, std::pair<Matrix, Vector>> {
-                    const auto& element = m_elements[i];
-
-                    const auto local = element->compute(py::dict(options));
-
-                    return {i, local};
-                }
-            ) &
-            tbb::make_filter<std::tuple<size_t, std::pair<Matrix, Vector>>, void>(
-                tbb::filter::serial_out_of_order,
-                [&](std::tuple<size_t, std::pair<Matrix, Vector>> results) {
-                    const auto i = std::get<0>(results);
-                    const auto& [local_lhs, local_rhs] = std::get<1>(results);
-
-                    const auto& dof_indices = m_index_table[i];
-
-                    const size_t nb_dofs = dof_indices.size();
-
-                    for (size_t row = 0; row < nb_dofs; row++) {
-                        const auto row_index = dof_indices[row];
-
-                        if (row_index.global >= nb_free_dofs()) {
-                            continue;
-                        }
-
-                        m_rhs(row_index.global) += local_rhs(row_index.local);
-
-                        for (size_t col = row; col < nb_dofs; col++) {
-                            const auto col_index = dof_indices[col];
-
-                            if (col_index.global >= nb_free_dofs()) {
-                                continue;
-                            }
-
-                            m_lhs.coeffRef(row_index.global, col_index.global)
-                                += local_lhs(row_index.local, col_index.local);
-                        }
-                    }
-                }
-            )
-        );
     }
 
     void solve(py::dict options)
@@ -572,9 +370,9 @@ public:     // methods
             log.info(2, "Computing system...");
 
             if (parallel) {
-                compute_tbb(options);
+                Assemble::parallel(m_element_index_table, m_lhs, m_rhs, options);
             } else {
-                compute(options);
+                Assemble::serial(m_element_index_table, m_lhs, m_rhs, options);
             }
 
             // check residual
