@@ -65,39 +65,40 @@ private:    // variables
 
     struct Assemble
     {
-        int* m_outerIndexPtr;
-        int* m_innerIndices;
+        py::dict& m_options;
 
-        Vector m_values;
-        Vector m_rhs;
+        Vector m_lhs_values;
+        Vector m_rhs_values;
 
-        // Eigen::Map<Sparse> lhs; //FIXME:
-        // Eigen::Map<Vector> rhs; //FIXME:
+        Eigen::Map<Sparse> m_lhs;
+        Eigen::Map<Vector> m_rhs;
 
-        Assemble(int size, int* outer, int* inner, int nnz)
-        : m_outerIndexPtr(outer)
-        , m_innerIndices(inner)
-        , m_values(Vector::Zero(nnz))
-        , m_rhs(Vector::Zero(size))
+        Assemble(Sparse& lhs, Vector& rhs, py::dict& options)
+        : m_lhs(lhs.rows(), lhs.cols(), lhs.nonZeros(), lhs.outerIndexPtr(),
+            lhs.innerIndexPtr(), lhs.valuePtr())
+        , m_rhs(rhs.data(), rhs.size())
+        , m_options(options)
         { }
 
         Assemble(Assemble& s, tbb::split)
-        : m_outerIndexPtr(s.m_outerIndexPtr)
-        , m_innerIndices(s.m_innerIndices)
-        , m_values(Vector::Zero(s.m_values.size()))
-        , m_rhs(Vector::Zero(s.m_rhs.size()))
+        : m_lhs_values(Vector::Zero(s.m_lhs.nonZeros()))
+        , m_rhs_values(Vector::Zero(s.m_rhs.size()))
+        , m_lhs(s.m_lhs.rows(), s.m_lhs.cols(), s.m_lhs.nonZeros(),
+            s.m_lhs.outerIndexPtr(), s.m_lhs.innerIndexPtr(),
+            m_lhs_values.data())
+        , m_rhs(m_rhs_values.data(), s.m_rhs.size())
+        , m_options(s.m_options)
         { }
 
-        void operator()(const tbb::blocked_range<std::vector<std::pair<std::shared_ptr<Element>, std::vector<Index>>>::iterator>& range)
+        template <typename TRange>
+        void operator()(const TRange& range)
         {
-            Eigen::Map<Sparse> m_lhs(m_rhs.size(), m_rhs.size(), m_values.size(), m_outerIndexPtr, m_innerIndices, m_values.data());
-
             // compute and add local lhs and rhs
 
             for (auto it = range.begin(); it != range.end(); ++it) {
                 const auto& [element, dof_indices] = *it;
 
-                const auto [local_lhs, local_rhs] = element->compute(py::dict());
+                const auto [local_lhs, local_rhs] = element->compute(m_options);
 
                 const size_t nb_dofs = dof_indices.size();
 
@@ -126,8 +127,9 @@ private:    // variables
 
         void join(Assemble& rhs)
         {
-            m_values += rhs.m_values;
-            m_rhs += rhs.m_rhs;
+            Eigen::Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()) +=
+                rhs.m_lhs_values;
+            Eigen::Map<Vector>(m_rhs.data(), m_rhs.size()) += rhs.m_rhs_values;
         }
     };
 
@@ -320,8 +322,8 @@ private:    // methods
         }
 
         m_solver->analyze_pattern(m_lhs);
-        
-        log.info(2, "System initialized in {:.3f} ms", timer.ellapsed());
+
+        log.info(1, "System initialized in {:.3f} ms", timer.ellapsed());
     }
 
 public:     // getters and setters
@@ -441,79 +443,11 @@ public:     // methods
     {
         // run parallel
 
-        // py::gil_scoped_release release;
-
-        Assemble total(m_rhs.size(), m_lhs.outerIndexPtr(), m_lhs.innerIndexPtr(), m_lhs.nonZeros());
+        Assemble total(m_lhs, m_rhs, options);
 
         using Iterator = std::vector<std::pair<std::shared_ptr<Element>, std::vector<Index>>>::iterator;
 
         tbb::parallel_reduce(tbb::blocked_range<Iterator>(m_element_index_table.begin(), m_element_index_table.end()), total);
-
-        m_lhs = Eigen::Map<Sparse>(total.m_rhs.size(), total.m_rhs.size(), total.m_values.size(), total.m_outerIndexPtr, total.m_innerIndices, total.m_values.data());
-        m_rhs = total.m_rhs;
-    }
-
-    void compute_omp(py::dict options)
-    {
-        // options
-
-        // ...
-
-        // set lhs and rhs to zero
-
-        for (int i = 0; i < m_lhs.outerSize(); i++) {
-            for (Sparse::InnerIterator it(m_lhs, i); it; ++it){
-                it.valueRef() = 0;
-            }
-        }
-
-        m_rhs.setZero();
-
-        // compute and add local lhs and rhs
-
-        py::gil_scoped_release release;
-
-        omp_lock_t writelock;
-
-        omp_init_lock(&writelock);
-
-        #pragma omp parallel for
-        for (int i = 0; i < m_elements.size(); i++) {
-            const auto& element = m_elements[i];
-
-            const auto [local_lhs, local_rhs] = element->compute(py::dict(options));
-
-            omp_set_lock(&writelock);
-
-            const auto& dof_indices = m_index_table[i];
-
-            const size_t nb_dofs = dof_indices.size();
-
-            for (size_t row = 0; row < nb_dofs; row++) {
-                const auto row_index = dof_indices[row];
-
-                if (row_index.global >= nb_free_dofs()) {
-                    continue;
-                }
-
-                m_rhs(row_index.global) += local_rhs(row_index.local);
-
-                for (size_t col = row; col < nb_dofs; col++) {
-                    const auto col_index = dof_indices[col];
-
-                    if (col_index.global >= nb_free_dofs()) {
-                        continue;
-                    }
-
-                    m_lhs.coeffRef(row_index.global, col_index.global) +=
-                        local_lhs(row_index.local, col_index.local);
-                }
-            }
-
-            omp_unset_lock(&writelock);
-        }
-
-        omp_destroy_lock(&writelock);
     }
 
     void compute_parallel(py::dict options)
@@ -628,7 +562,7 @@ public:     // methods
                 log.info(2, "Stopped because iteration >= {}", maxiter);
                 break;
             }
-            
+
             log.info(2, "Iteration {}", iteration);
 
             options["iteration"] = iteration;
@@ -697,8 +631,8 @@ public:     // methods
         for (int i = 0; i < nb_free_dofs(); i++) {
             m_dofs[i].set_residual(m_residual(i));
         }
-        
-        log.info(2, "System solved in {:.3f} ms", timer.ellapsed());
+
+        log.info(1, "System solved in {:.3f} ms", timer.ellapsed());
     }
 
     void solve_linear(py::dict options)
