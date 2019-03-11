@@ -76,12 +76,13 @@ private:    // methods
 
         Log log(options);
         log.info(1, "==> Initialize system...");
+        log.info(2, "The system consists of {} elements", elements.size());
 
         Timer timer;
 
         // get dofs
 
-        log.info(2, "Getting element dofs...");
+        log.info(3, "Getting element dofs...");
 
         const auto nb_elements = elements.size();
 
@@ -95,7 +96,7 @@ private:    // methods
 
         // create set of unique dofs
 
-        log.info(2, "Creating set of unique dofs...");
+        log.info(3, "Creating set of unique dofs...");
 
         std::unordered_set<Dof> dof_set;
         std::vector<Dof> free_dofs;
@@ -124,6 +125,9 @@ private:    // methods
         m_nb_free_dofs = static_cast<int>(free_dofs.size());
         m_nb_fixed_dofs = static_cast<int>(fixed_dofs.size());
 
+        log.info(2, "The system has {} free and {} fixed dofs", m_nb_free_dofs,
+            m_nb_fixed_dofs);
+
         // create a vector of unique dofs
 
         m_dofs.reserve(m_nb_free_dofs + m_nb_fixed_dofs);
@@ -133,7 +137,7 @@ private:    // methods
 
         // create a {dof -> index} map
 
-        log.info(2, "Creating dof indices...");
+        log.info(3, "Creating dof indices...");
 
         for (int i = 0; i < m_dofs.size(); i++) {
             m_dof_indices[m_dofs[i]] = i;
@@ -164,7 +168,7 @@ private:    // methods
 
         // analyze pattern
 
-        log.info(2, "Analyzing pattern...");
+        log.info(3, "Analyzing pattern...");
 
         std::vector<std::unordered_set<int>> pattern(m_nb_free_dofs);
 
@@ -190,8 +194,6 @@ private:    // methods
             }
         }
 
-        log.info(2, "Analyzing pattern...");
-
         m_col_nonzeros = Eigen::VectorXi(m_nb_free_dofs);
 
         for (int i = 0; i < pattern.size(); i++) {
@@ -213,7 +215,7 @@ private:    // methods
 
         // setup system vectors and matrices
 
-        log.info(2, "Allocating memory...");
+        log.info(3, "Allocating memory...");
 
         m_lhs = Sparse(nb_free_dofs(), nb_free_dofs());
 
@@ -227,6 +229,8 @@ private:    // methods
             }
         }
 
+        log.info(2, "The system matrix has {} nonzero entries ({:.3f}\%)", m_lhs.nonZeros(), m_lhs.nonZeros() * 100.0 / m_lhs.size());
+
         m_rhs = Vector(nb_free_dofs());
 
         m_x = Vector(nb_free_dofs());
@@ -236,7 +240,10 @@ private:    // methods
 
         // setup solver
 
+        log.info(3, "Setting up solver...");
+
         if (linear_solver == "ldlt") {
+            log.info(2, "Using MKL PARDISO LDLT solver");
             m_solver = std::make_unique<SolverLDLT>();
         } else if (linear_solver == "lsmr") {
             m_solver = std::make_unique<SolverLSMR>(m_lhs);
@@ -246,7 +253,7 @@ private:    // methods
 
         m_solver->analyze_pattern(m_lhs);
 
-        log.info(1, "System initialized in {:.3f} ms", timer.ellapsed());
+        log.info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
 
 public:     // getters and setters
@@ -314,6 +321,11 @@ public:     // methods
 
     void compute(py::dict options)
     {
+        Log log(options);
+        log.info(1, "==> Computing system...");
+
+        Timer timer;
+
         // options
 
         const bool parallel = get_or_default<bool>(options, "parallel", true);
@@ -325,6 +337,8 @@ public:     // methods
         } else {
             Assemble::serial(m_element_index_table, m_lhs, m_rhs, options);
         }
+
+        log.info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
 
     void solve(py::dict options)
@@ -430,7 +444,7 @@ public:     // methods
             m_dofs[i].set_residual(m_residual(i));
         }
 
-        log.info(1, "System solved in {:.3f} ms", timer.ellapsed());
+        log.info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
 
     void solve_linear(py::dict options)
