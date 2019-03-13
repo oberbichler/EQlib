@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Define.h"
+#include "Timer.h"
 
 #include "tbb/blocked_range.h"
 #include "tbb/parallel_reduce.h"
@@ -9,6 +10,8 @@ namespace EQlib {
 
 struct Assemble
 {
+    double m_computation_time;
+
     py::dict& m_options;
 
     Vector m_lhs_values;
@@ -22,6 +25,7 @@ struct Assemble
         lhs.innerIndexPtr(), lhs.valuePtr())
     , m_rhs(rhs.data(), rhs.size())
     , m_options(options)
+    , m_computation_time(0)
     {
         // set lhs and rhs to zero
         Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()).setZero();
@@ -36,11 +40,14 @@ struct Assemble
         m_lhs_values.data())
     , m_rhs(m_rhs_values.data(), s.m_rhs.size())
     , m_options(s.m_options)
+    , m_computation_time(0)
     { }
 
     template <typename TRange>
     void operator()(const TRange& range)
     {
+        Timer timer;
+
         // compute and add local lhs and rhs
 
         for (auto it = range.begin(); it != range.end(); ++it) {
@@ -71,12 +78,15 @@ struct Assemble
                 }
             }
         }
+
+        m_computation_time = timer.ellapsed();
     }
 
     void join(Assemble& rhs)
     {
         Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()) += rhs.m_lhs_values;
         Map<Vector>(m_rhs.data(), m_rhs.size()) += rhs.m_rhs_values;
+        m_computation_time += rhs.m_computation_time;
     }
 
     template <typename TContainer>
