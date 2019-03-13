@@ -229,7 +229,7 @@ private:    // methods
             }
         }
 
-        log.info(2, "The system matrix has {} nonzero entries ({:.3f}\%)", m_lhs.nonZeros(), m_lhs.nonZeros() * 100.0 / m_lhs.size());
+        log.info(2, "The system matrix has {} nonzero entries ({:.3f}%)", m_lhs.nonZeros(), m_lhs.nonZeros() * 100.0 / m_lhs.size());
 
         m_rhs = Vector(nb_free_dofs());
 
