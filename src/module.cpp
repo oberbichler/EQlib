@@ -162,6 +162,8 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
             .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
             .def_property_readonly("dofs", &Type::dofs)
+            .def_property("load_factor", &Type::load_factor,
+                &Type::set_load_factor)
             .def_property_readonly("lhs", &Type::lhs)
             .def_property_readonly("rhs", &Type::rhs)
             .def_property_readonly("residual", &Type::residual)

@@ -56,10 +56,13 @@ private:    // variables
 
     std::unique_ptr<Solver> m_solver;
 
+    double m_load_factor;
+
 public:     // constructors
     System(
         std::vector<std::shared_ptr<Element>> elements,
         py::dict options)
+    : m_load_factor(1)
     {
         initialize(std::move(elements), std::move(options));
     }
@@ -292,6 +295,16 @@ public:     // getters and setters
         return m_residual;
     }
 
+    double load_factor() const
+    {
+        return m_load_factor;
+    }
+
+    void set_load_factor(const double value)
+    {
+        m_load_factor = value;
+    }
+
     std::vector<std::shared_ptr<Element>> elements() const
     {
         return m_elements;
@@ -362,8 +375,9 @@ public:     // methods
             m_target[i] = m_dofs[i].target();
         }
 
-        if (lambda != 1.0) {
-            m_target *= lambda;
+
+        if (m_load_factor != 1.0) {
+            m_target *= m_load_factor;
         }
 
         for (int iteration = 0; ; iteration++) {
@@ -451,7 +465,7 @@ public:     // methods
     {
         // options
 
-        const double lambda = get_or_default(options, "lambda", 1.0);
+        // ...
 
         // setup
 
@@ -459,8 +473,8 @@ public:     // methods
             m_target[i] = m_dofs[i].target();
         }
 
-        if (lambda != 1.0) {
-            m_target *= lambda;
+        if (m_load_factor != 1.0) {
+            m_target *= m_load_factor;
         }
 
         m_residual = m_target + m_rhs;
