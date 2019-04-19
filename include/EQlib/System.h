@@ -323,6 +323,19 @@ public:     // getters and setters
         return m_elements;
     }
 
+    std::vector<int> element_indices(int index) const
+    {
+        const auto& indices = m_index_table[index];
+
+        std::vector<int> element_indices(indices.size());
+
+        for (const auto& index : indices) {
+            element_indices[index.local] = index.global;
+        }
+
+        return element_indices;
+    }
+
     std::string message() const
     {
         switch (m_stopping_reason) {
