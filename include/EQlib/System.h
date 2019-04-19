@@ -275,6 +275,28 @@ public:     // getters and setters
         return m_rhs;
     }
 
+    Vector x() const
+    {
+        Vector result(nb_free_dofs());
+
+        for (int i = 0; i < result.size(); i++) {
+            result[i] = m_dofs[i].delta();
+        }
+
+        return result;
+    }
+
+    void set_x(Ref<const Vector> value) const
+    {
+        if (value.size() != nb_free_dofs()) {
+            throw std::runtime_error("Invalid size");
+        }
+
+        for (int i = 0; i < value.size(); i++) {
+            m_dofs[i].set_delta(value[i]);
+        }
+    }
+
     Vector residual() const
     {
         return m_residual;

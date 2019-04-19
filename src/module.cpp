@@ -175,6 +175,7 @@ PYBIND11_MODULE(EQlib, m) {
             .def("solve_linear", &Type::solve_linear)
             .def_property_readonly("message",
                 &Type::message)
+            .def_property("x", &Type::x, &Type::set_x)
         ;
     }
 
