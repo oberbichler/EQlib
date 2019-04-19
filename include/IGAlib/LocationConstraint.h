@@ -68,7 +68,7 @@ public:     // methods
         return dof_list;
     }
 
-    std::pair<Matrix, Vector> compute(py::dict options) const override
+    std::pair<Matrix, Vector> compute() const override
     {
         const auto location = act_evaluate();
 

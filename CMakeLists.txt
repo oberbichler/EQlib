@@ -24,6 +24,7 @@ add_definitions(
 )
 
 pybind11_add_module(EQlib src/module.cpp)
+pybind11_add_module(IGAlib src/iga_module.cpp)
 
 if(EXISTS $ENV{MKLROOT})
     message("-- Found MKL: $ENV{MKLROOT}")
@@ -43,3 +44,4 @@ if(${TBB_FOUND})
 endif()
 
 install(TARGETS EQlib DESTINATION bin)
+install(TARGETS IGAlib DESTINATION bin)

@@ -13,9 +13,6 @@
 #include <EQlib/PyElement.h>
 #include <EQlib/System.h>
 
-// #include <EQlib/IGA/LocationConstraint.h>
-// #include <EQlib/IGA/Shell3D3P.h>
-
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
@@ -179,31 +176,4 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property("x", &Type::x, &Type::set_x)
         ;
     }
-
-    // // LocationConstraint
-    // {
-    //     using Type = EQlib::LocationConstraint;
-    //     using Base = EQlib::Element;
-    //     using Holder = std::shared_ptr<Type>;
-
-    //     py::class_<Type, Base, Holder>(m, "LocationConstraint")
-    //         .def(py::init<std::vector<std::shared_ptr<EQlib::Node>>,
-    //             EQlib::Matrix, EQlib::Vector3D, double>(), "nodes"_a,
-    //             "shape_functions"_a, "target"_a, "penalty"_a=1)
-    //     ;
-    // }
-
-    // // Shell3D3P
-    // {
-    //     using Type = EQlib::Shell3D3P;
-    //     using Base = EQlib::Element;
-    //     using Holder = std::shared_ptr<Type>;
-
-    //     py::class_<Type, Base, Holder>(m, "Shell3D3P")
-    //         .def(py::init<std::vector<std::shared_ptr<EQlib::Node>>,
-    //             EQlib::Matrix, double, double, double, double>(), "nodes"_a,
-    //             "shape_functions"_a, "thickness"_a, "young_modulus"_a,
-    //             "poisson_ratio"_a, "weight"_a)
-    //     ;
-    // }
 }

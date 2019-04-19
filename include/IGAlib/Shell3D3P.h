@@ -98,7 +98,7 @@ public:     // constructor
         return dof_list;
     }
 
-    std::pair<Matrix, Vector> compute(py::dict options) const override
+    std::pair<Matrix, Vector> compute() const override
     {
         Eigen::Matrix3d Dm;
         Dm << 1.0, m_poisson_ratio, 0,
