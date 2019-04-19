@@ -41,8 +41,6 @@ private:    // variables
     std::vector<std::shared_ptr<Element>> m_elements;
     std::vector<std::vector<Index>> m_index_table;
 
-    std::vector<std::pair<std::shared_ptr<Element>, std::vector<Index>>> m_element_index_table;
-
     std::vector<std::vector<int>> m_pattern;
     Eigen::VectorXi m_col_nonzeros;
 
@@ -161,7 +159,6 @@ private:    // methods
             std::sort(dof_indices.begin(), dof_indices.end());
 
             m_index_table.push_back(dof_indices);
-            m_element_index_table.push_back(std::make_pair(element, dof_indices));
         }
 
         // analyze pattern
@@ -356,7 +353,7 @@ public:     // methods
 
         // compute lhs and rhs
 
-        Assemble::parallel(m_nb_threads, m_element_index_table, m_lhs, m_rhs);
+        Assemble::parallel(m_nb_threads, m_elements, m_index_table, m_lhs, m_rhs);
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
@@ -393,7 +390,7 @@ public:     // methods
 
             Log::info(2, "Computing system...");
 
-            Assemble::parallel(m_nb_threads, m_element_index_table, m_lhs, m_rhs);
+            Assemble::parallel(m_nb_threads, m_elements, m_index_table, m_lhs, m_rhs);
 
             // check residual
 

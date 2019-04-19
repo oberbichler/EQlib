@@ -78,10 +78,11 @@ struct Assemble
         Map<Vector>(m_rhs.data(), m_rhs.size()) += rhs.m_rhs_values;
     }
 
-    template <typename TContainer>
+    template <typename TElements, typename TIndices>
     static void parallel(
         int nb_threads,
-        TContainer& element_indices,
+        TElements& elements,
+        TIndices& indices,
         Sparse& lhs,
         Vector& rhs)
     {
@@ -89,10 +90,15 @@ struct Assemble
 
         tbb::task_scheduler_init init(nb_threads > 0 ? nb_threads : tbb::task_scheduler_init::automatic);
 
+        using Iterator = tbb::zip_iterator<TElements::iterator,
+            TIndices::iterator>;
+
+        auto begin = tbb::make_zip_iterator(elements.begin(), indices.begin());
+        auto end = tbb::make_zip_iterator(elements.end(), indices.end());
+
         Assemble result(lhs, rhs);
 
-        tbb::parallel_reduce(tbb::blocked_range<TContainer::iterator>(
-            element_indices.begin(), element_indices.end()), result);
+        tbb::parallel_reduce(tbb::blocked_range<Iterator>(begin, end), result);
     }
 };
 
