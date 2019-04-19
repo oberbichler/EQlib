@@ -3,9 +3,10 @@
 #include "Define.h"
 #include "Timer.h"
 
-#include "tbb/blocked_range.h"
+#include <tbb/blocked_range.h>
+#include <tbb/iterators.h>
 #include <tbb/task_scheduler_init.h>
-#include "tbb/parallel_reduce.h"
+#include <tbb/parallel_reduce.h>
 
 namespace EQlib {
 
