@@ -361,15 +361,8 @@ public:     // methods
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
 
-    void solve()
+    void solve(const int maxiter, const double rtol, const double xtol)
     {
-        // options
-
-        const int maxiter = 100;
-        const double rtol = 1e-7;
-        const double xtol = 1e-7;
-        const bool parallel = true;
-
         // setup
 
         Log::info(1, "==> Solving system...");

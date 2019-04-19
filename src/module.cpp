@@ -170,7 +170,8 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("residual", &Type::residual)
             .def_property_readonly("elements", &Type::elements)
             .def("compute", &Type::compute)
-            .def("solve", &Type::solve)
+            .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
+                "xtol"_a = 1e-7)
             .def("solve_linear", &Type::solve_linear)
             .def_property_readonly("message",
                 &Type::message)
