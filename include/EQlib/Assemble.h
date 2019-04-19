@@ -10,22 +10,16 @@ namespace EQlib {
 
 struct Assemble
 {
-    double m_computation_time;
-
-    py::dict& m_options;
-
     Vector m_lhs_values;
     Vector m_rhs_values;
 
     Map<Sparse> m_lhs;
     Map<Vector> m_rhs;
 
-    Assemble(Sparse& lhs, Vector& rhs, py::dict& options)
+    Assemble(Sparse& lhs, Vector& rhs)
     : m_lhs(lhs.rows(), lhs.cols(), lhs.nonZeros(), lhs.outerIndexPtr(),
         lhs.innerIndexPtr(), lhs.valuePtr())
     , m_rhs(rhs.data(), rhs.size())
-    , m_options(options)
-    , m_computation_time(0)
     {
         // set lhs and rhs to zero
         Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()).setZero();
@@ -39,21 +33,17 @@ struct Assemble
         s.m_lhs.outerIndexPtr(), s.m_lhs.innerIndexPtr(),
         m_lhs_values.data())
     , m_rhs(m_rhs_values.data(), s.m_rhs.size())
-    , m_options(s.m_options)
-    , m_computation_time(0)
     { }
 
     template <typename TRange>
     void operator()(const TRange& range)
     {
-        Timer timer;
-
         // compute and add local lhs and rhs
 
         for (auto it = range.begin(); it != range.end(); ++it) {
             const auto& [element, dof_indices] = *it;
 
-            const auto [local_lhs, local_rhs] = element->compute(m_options);
+            const auto [local_lhs, local_rhs] = element->compute();
 
             const size_t nb_dofs = dof_indices.size();
 
@@ -78,33 +68,20 @@ struct Assemble
                 }
             }
         }
-
-        m_computation_time = timer.ellapsed();
     }
 
     void join(Assemble& rhs)
     {
         Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()) += rhs.m_lhs_values;
         Map<Vector>(m_rhs.data(), m_rhs.size()) += rhs.m_rhs_values;
-        m_computation_time += rhs.m_computation_time;
     }
 
     template <typename TContainer>
-    static void serial(TContainer& element_indices, Sparse& lhs, Vector& rhs,
-        py::dict& options)
-    {
-        Assemble result(lhs, rhs, options);
-
-        result(element_indices);
-    }
-
-    template <typename TContainer>
-    static void parallel(TContainer& element_indices, Sparse& lhs,
-        Vector& rhs, py::dict& options)
+    static void parallel(TContainer& element_indices, Sparse& lhs, Vector& rhs)
     {
         py::gil_scoped_release release;
 
-        Assemble result(lhs, rhs, options);
+        Assemble result(lhs, rhs);
 
         tbb::parallel_reduce(tbb::blocked_range<TContainer::iterator>(
             element_indices.begin(), element_indices.end()), result);

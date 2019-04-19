@@ -5,9 +5,9 @@
 #include "Dof.h"
 #include "Element.h"
 #include "Log.h"
-#include "Solver/SolverLDLT.h"
-#include "Solver/SolverLSMR.h"
 #include "Timer.h"
+
+#include <Eigen/PardisoSupport>
 
 #include <set>
 #include <stdexcept>
@@ -54,30 +54,23 @@ private:    // variables
 
     int m_stopping_reason;
 
-    std::unique_ptr<Solver> m_solver;
+    Eigen::PardisoLDLT<Sparse, Eigen::Upper> m_solver;
 
     double m_load_factor;
 
 public:     // constructors
     System(
-        std::vector<std::shared_ptr<Element>> elements,
-        py::dict options)
+        std::vector<std::shared_ptr<Element>> elements)
     : m_load_factor(1)
     {
-        initialize(std::move(elements), std::move(options));
+        initialize(std::move(elements));
     }
 
 private:    // methods
     void initialize(
-        std::vector<std::shared_ptr<Element>> elements,
-        py::dict options)
+        std::vector<std::shared_ptr<Element>> elements)
     {
-        // options
-
-        const std::string linear_solver = get_or_default<std::string>(options,
-            "linear_solver", "ldlt");
-
-        Log log(options);
+        Log log;
         log.info(1, "==> Initialize system...");
         log.info(2, "The system consists of {} elements", elements.size());
 
@@ -243,18 +236,7 @@ private:    // methods
 
         // setup solver
 
-        log.info(3, "Setting up solver...");
-
-        if (linear_solver == "ldlt") {
-            log.info(2, "Using MKL PARDISO LDLT solver");
-            m_solver = std::make_unique<SolverLDLT>();
-        } else if (linear_solver == "lsmr") {
-            m_solver = std::make_unique<SolverLSMR>(m_lhs);
-        } else {
-            std::cout << "error" << std::endl; // FIXME: throw exception
-        }
-
-        m_solver->analyze_pattern(m_lhs);
+        m_solver.analyzePattern(m_lhs);
 
         log.info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
@@ -332,41 +314,32 @@ public:     // methods
         return m_dof_indices.at(dof);
     }
 
-    void compute(py::dict options)
+    void compute()
     {
-        Log log(options);
+        Log log;
         log.info(1, "==> Computing system...");
 
         Timer timer;
 
-        // options
-
-        const bool parallel = get_or_default<bool>(options, "parallel", true);
-
         // compute lhs and rhs
 
-        if (parallel) {
-            Assemble::parallel(m_element_index_table, m_lhs, m_rhs, options);
-        } else {
-            Assemble::serial(m_element_index_table, m_lhs, m_rhs, options);
-        }
+        Assemble::parallel(m_element_index_table, m_lhs, m_rhs);
 
         log.info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
 
-    void solve(py::dict options)
+    void solve()
     {
         // options
 
-        const double lambda = get_or_default(options, "lambda", 1.0);
-        const int maxiter = get_or_default(options, "maxiter", 100);
-        const double rtol = get_or_default(options, "rtol", 1e-7);
-        const double xtol = get_or_default(options, "xtol", 1e-7);
-        const bool parallel = get_or_default<bool>(options, "parallel", true);
+        const int maxiter = 100;
+        const double rtol = 1e-7;
+        const double xtol = 1e-7;
+        const bool parallel = true;
 
         // setup
 
-        Log log(options);
+        Log log;
         log.info(1, "==> Solving system...");
 
         Timer timer;
@@ -391,17 +364,11 @@ public:     // methods
 
             log.info(2, "Iteration {}", iteration);
 
-            options["iteration"] = iteration;
-
             // compute lhs and rhs
 
             log.info(2, "Computing system...");
 
-            if (parallel) {
-                Assemble::parallel(m_element_index_table, m_lhs, m_rhs, options);
-            } else {
-                Assemble::serial(m_element_index_table, m_lhs, m_rhs, options);
-            }
+            Assemble::parallel(m_element_index_table, m_lhs, m_rhs);
 
             // check residual
 
@@ -425,11 +392,15 @@ public:     // methods
 
             log.info(2, "Solving the linear equation system...");
 
-            if (!m_solver->set_matrix(m_lhs)) {
+            m_solver.factorize(m_lhs);
+
+            if (!m_solver.info() == Eigen::Success) {
                 throw std::runtime_error("Factorization failed");
             }
 
-            if (!m_solver->solve(m_residual, m_x)) {
+            m_x = m_solver.solve(m_residual);
+
+            if (!m_solver.info() == Eigen::Success) {
                 throw std::runtime_error("Solve failed");
             }
 
@@ -461,12 +432,8 @@ public:     // methods
         log.info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
 
-    void solve_linear(py::dict options)
+    void solve_linear()
     {
-        // options
-
-        // ...
-
         // setup
 
         for (int i = 0; i < nb_dofs(); i++) {
@@ -481,12 +448,21 @@ public:     // methods
 
         // compute lhs and rhs
 
-        compute(options);
+        compute();
 
         // solve
 
-        m_solver->set_matrix(m_lhs);
-        m_solver->solve(m_residual, m_x);
+        m_solver.factorize(m_lhs);
+
+        if (!m_solver.info() == Eigen::Success) {
+            throw std::runtime_error("Factorization failed");
+        }
+
+        m_x = m_solver.solve(m_residual);
+
+        if (!m_solver.info() == Eigen::Success) {
+            throw std::runtime_error("Solve failed");
+        }
 
         // update system
 

@@ -14,7 +14,7 @@ public:     // methods
 
     virtual std::vector<Dof> dofs() const = 0;
 
-    virtual std::pair<Matrix, Vector> compute(py::dict options) const = 0;
+    virtual std::pair<Matrix, Vector> compute() const = 0;
 };
 
 } // namespace EQlib

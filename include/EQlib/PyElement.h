@@ -18,11 +18,11 @@ public:     // getters and setters
     }
 
 public:     // methods
-    std::pair<Matrix, Vector> compute(py::dict options) const override
+    std::pair<Matrix, Vector> compute() const override
     {
         using ReturnType = std::pair<Matrix, Vector>;
         pybind11::gil_scoped_acquire acquire;
-        PYBIND11_OVERLOAD_PURE(ReturnType, Element, compute, options);
+        PYBIND11_OVERLOAD_PURE(ReturnType, Element, compute);
     }
 };
 
