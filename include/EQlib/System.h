@@ -58,10 +58,13 @@ private:    // variables
 
     double m_load_factor;
 
+    int m_nb_threads;
+
 public:     // constructors
     System(
         std::vector<std::shared_ptr<Element>> elements)
     : m_load_factor(1)
+    , m_nb_threads(0)
     {
         initialize(std::move(elements));
     }
@@ -287,6 +290,16 @@ public:     // getters and setters
         m_load_factor = value;
     }
 
+    int nb_threads() const
+    {
+        return m_nb_threads;
+    }
+
+    void set_nb_threads(const int value)
+    {
+        m_nb_threads = value;
+    }
+
     std::vector<std::shared_ptr<Element>> elements() const
     {
         return m_elements;
@@ -323,7 +336,7 @@ public:     // methods
 
         // compute lhs and rhs
 
-        Assemble::parallel(m_element_index_table, m_lhs, m_rhs);
+        Assemble::parallel(m_nb_threads, m_element_index_table, m_lhs, m_rhs);
 
         log.info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
@@ -368,7 +381,7 @@ public:     // methods
 
             log.info(2, "Computing system...");
 
-            Assemble::parallel(m_element_index_table, m_lhs, m_rhs);
+            Assemble::parallel(m_nb_threads, m_element_index_table, m_lhs, m_rhs);
 
             // check residual
 

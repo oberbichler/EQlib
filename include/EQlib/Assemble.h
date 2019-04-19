@@ -4,6 +4,7 @@
 #include "Timer.h"
 
 #include "tbb/blocked_range.h"
+#include <tbb/task_scheduler_init.h>
 #include "tbb/parallel_reduce.h"
 
 namespace EQlib {
@@ -77,9 +78,15 @@ struct Assemble
     }
 
     template <typename TContainer>
-    static void parallel(TContainer& element_indices, Sparse& lhs, Vector& rhs)
+    static void parallel(
+        int nb_threads,
+        TContainer& element_indices,
+        Sparse& lhs,
+        Vector& rhs)
     {
         py::gil_scoped_release release;
+
+        tbb::task_scheduler_init init(nb_threads > 0 ? nb_threads : tbb::task_scheduler_init::automatic);
 
         Assemble result(lhs, rhs);
 
