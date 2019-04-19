@@ -69,22 +69,21 @@ PYBIND11_MODULE(EQlib, m) {
     // Log
     {
         using Type = EQlib::Log;
-        using Holder = std::shared_ptr<Type>;
 
-        py::class_<Type, Holder>(m, "Log")
-            .def(py::init<py::dict>(), "options"_a = py::dict())
-            .def("push_info_level", &Type::push_info_level, "value"_a)
-            .def("info_level", &Type::info_level)
-            .def("pop_info_level", &Type::pop_info_level)
-            .def("debug", &Type::debug<const std::string&>, "message"_a)
-            .def("info", py::overload_cast<const std::string&>(
+        py::class_<Type>(m, "Log")
+            .def_property_static("info_level", [](py::object) { return
+                Type::info_level; }, [](py::object, const int value) {
+                Type::set_info_level(value); })
+            .def_static("debug", &Type::debug<const std::string&>, "message"_a)
+            .def_static("info", py::overload_cast<const std::string&>(
                 &Type::info<const std::string&>), "message"_a)
-            .def("info", py::overload_cast<const int,
+            .def_static("info", py::overload_cast<const int,
                 const std::string&>(&Type::info<const std::string&>),
                 "level"_a, "message"_a)
-            .def("error", &Type::error<const std::string&>, "message"_a)
-            .def("warn", &Type::warn<const std::string&>, "message"_a)
-            .def("critical", &Type::critical<const std::string&>, "message"_a)
+            .def_static("error", &Type::error<const std::string&>, "message"_a)
+            .def_static("warn", &Type::warn<const std::string&>, "message"_a)
+            .def_static("critical", &Type::critical<const std::string&>,
+                "message"_a)
         ;
     }
 

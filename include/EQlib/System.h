@@ -73,15 +73,14 @@ private:    // methods
     void initialize(
         std::vector<std::shared_ptr<Element>> elements)
     {
-        Log log;
-        log.info(1, "==> Initialize system...");
-        log.info(2, "The system consists of {} elements", elements.size());
+        Log::info(1, "==> Initialize system...");
+        Log::info(2, "The system consists of {} elements", elements.size());
 
         Timer timer;
 
         // get dofs
 
-        log.info(3, "Getting element dofs...");
+        Log::info(3, "Getting element dofs...");
 
         const auto nb_elements = elements.size();
 
@@ -95,7 +94,7 @@ private:    // methods
 
         // create set of unique dofs
 
-        log.info(3, "Creating set of unique dofs...");
+        Log::info(3, "Creating set of unique dofs...");
 
         std::unordered_set<Dof> dof_set;
         std::vector<Dof> free_dofs;
@@ -124,7 +123,7 @@ private:    // methods
         m_nb_free_dofs = static_cast<int>(free_dofs.size());
         m_nb_fixed_dofs = static_cast<int>(fixed_dofs.size());
 
-        log.info(2, "The system has {} free and {} fixed dofs", m_nb_free_dofs,
+        Log::info(2, "The system has {} free and {} fixed dofs", m_nb_free_dofs,
             m_nb_fixed_dofs);
 
         // create a vector of unique dofs
@@ -136,7 +135,7 @@ private:    // methods
 
         // create a {dof -> index} map
 
-        log.info(3, "Creating dof indices...");
+        Log::info(3, "Creating dof indices...");
 
         for (int i = 0; i < m_dofs.size(); i++) {
             m_dof_indices[m_dofs[i]] = i;
@@ -167,7 +166,7 @@ private:    // methods
 
         // analyze pattern
 
-        log.info(3, "Analyzing pattern...");
+        Log::info(3, "Analyzing pattern...");
 
         std::vector<std::unordered_set<int>> pattern(m_nb_free_dofs);
 
@@ -214,7 +213,7 @@ private:    // methods
 
         // setup system vectors and matrices
 
-        log.info(3, "Allocating memory...");
+        Log::info(3, "Allocating memory...");
 
         m_lhs = Sparse(nb_free_dofs(), nb_free_dofs());
 
@@ -228,7 +227,7 @@ private:    // methods
             }
         }
 
-        log.info(2, "The system matrix has {} nonzero entries ({:.3f}%)", m_lhs.nonZeros(), m_lhs.nonZeros() * 100.0 / m_lhs.size());
+        Log::info(2, "The system matrix has {} nonzero entries ({:.3f}%)", m_lhs.nonZeros(), m_lhs.nonZeros() * 100.0 / m_lhs.size());
 
         m_rhs = Vector(nb_free_dofs());
 
@@ -241,7 +240,7 @@ private:    // methods
 
         m_solver.analyzePattern(m_lhs);
 
-        log.info(1, "System initialized in {:.3f} sec", timer.ellapsed());
+        Log::info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
 
 public:     // getters and setters
@@ -351,8 +350,7 @@ public:     // methods
 
     void compute()
     {
-        Log log;
-        log.info(1, "==> Computing system...");
+        Log::info(1, "==> Computing system...");
 
         Timer timer;
 
@@ -360,7 +358,7 @@ public:     // methods
 
         Assemble::parallel(m_nb_threads, m_element_index_table, m_lhs, m_rhs);
 
-        log.info(1, "System computed in {:.3f} sec", timer.ellapsed());
+        Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
 
     void solve()
@@ -374,8 +372,7 @@ public:     // methods
 
         // setup
 
-        Log log;
-        log.info(1, "==> Solving system...");
+        Log::info(1, "==> Solving system...");
 
         Timer timer;
 
@@ -393,39 +390,39 @@ public:     // methods
 
             if (iteration >= maxiter) {
                 m_stopping_reason = 2;
-                log.info(2, "Stopped because iteration >= {}", maxiter);
+                Log::info(2, "Stopped because iteration >= {}", maxiter);
                 break;
             }
 
-            log.info(2, "Iteration {}", iteration);
+            Log::info(2, "Iteration {}", iteration);
 
             // compute lhs and rhs
 
-            log.info(2, "Computing system...");
+            Log::info(2, "Computing system...");
 
             Assemble::parallel(m_nb_threads, m_element_index_table, m_lhs, m_rhs);
 
             // check residual
 
-            log.info(2, "Computing residual...");
+            Log::info(2, "Computing residual...");
 
             m_residual = m_target + m_rhs;
 
             const double rnorm = m_residual.norm();
 
-            log.info(2, "The norm of the residual is {}", rnorm);
+            Log::info(2, "The norm of the residual is {}", rnorm);
 
             // check residual norm
 
             if (rnorm < rtol) {
                 m_stopping_reason = 0;
-                log.info(2, "Stopped because rnorm < {}", rtol);
+                Log::info(2, "Stopped because rnorm < {}", rtol);
                 break;
             }
 
             // solve iteration
 
-            log.info(2, "Solving the linear equation system...");
+            Log::info(2, "Solving the linear equation system...");
 
             m_solver.factorize(m_lhs);
 
@@ -441,7 +438,7 @@ public:     // methods
 
             // update system
 
-            log.info(2, "Updating system...");
+            Log::info(2, "Updating system...");
 
             for (int i = 0; i < nb_free_dofs(); i++) {
                 m_dofs[i].set_delta(m_dofs[i].delta() + m_x(i));
@@ -451,10 +448,10 @@ public:     // methods
 
             const double xnorm = m_x.norm();
 
-            log.info(2, "The norm of the step is {}", xnorm);
+            Log::info(2, "The norm of the step is {}", xnorm);
 
             if (xnorm < xtol) {
-                log.info(2, "Stopped because xnorm < {}", xtol);
+                Log::info(2, "Stopped because xnorm < {}", xtol);
                 m_stopping_reason = 1;
                 break;
             }
@@ -464,7 +461,7 @@ public:     // methods
             m_dofs[i].set_residual(m_residual(i));
         }
 
-        log.info(1, "System solved in {:.3f} sec", timer.ellapsed());
+        Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
 
     void solve_linear()

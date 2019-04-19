@@ -27,60 +27,33 @@ private:    // methods
 private:    // variables
     static const inline std::shared_ptr<spdlog::logger> s_console = create();
 
-    std::stack<int> m_info_levels;
-
-public:     // constructors
-    Log(py::dict options = py::dict())
-    {
-        // options
-
-        const auto info_level = get_or_default<int>(options, "info_level", 1);
-
-        push_info_level(info_level);
-    }
+    static inline int s_info_level = 0;
 
 public:     // methods
-    void push_info_level(const int value)
+    static int info_level()
     {
-        m_info_levels.push(value);
+        return s_info_level;
     }
 
-    int pop_info_level()
+    static void set_info_level(const int value)
     {
-        const auto value = info_level();
-
-        m_info_levels.pop();
-
-        if (m_info_levels.empty()) {
-            push_info_level(1);
-        }
-
-        return value;
-    }
-
-    int info_level()
-    {
-        if (!m_info_levels.empty()) {
-            return m_info_levels.top();
-        } else {
-            return 1;
-        }
+        s_info_level = value;
     }
 
     template<class... TArgs>
-    void debug(TArgs&&... args)
+    static void debug(TArgs&&... args)
     {
         s_console->debug(std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
-    void info(TArgs&&... args)
+    static void info(TArgs&&... args)
     {
         s_console->info(std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
-    void info(const int level, TArgs&&... args)
+    static void info(const int level, TArgs&&... args)
     {
         if (level > info_level()) {
             return;
@@ -90,19 +63,19 @@ public:     // methods
     }
 
     template<class... TArgs>
-    void error(TArgs&&... args)
+    static void error(TArgs&&... args)
     {
         s_console->error(std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
-    void warn(TArgs&&... args)
+    static void warn(TArgs&&... args)
     {
         s_console->warn(std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
-    void critical(TArgs&&... args)
+    static void critical(TArgs&&... args)
     {
         s_console->critical(std::forward<TArgs>(args)...);
     }
