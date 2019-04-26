@@ -7,13 +7,11 @@
 #include <pybind11/stl_bind.h>
 
 #include <EQlib/Dof.h>
+#include <EQlib/Log.h>
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/PyElement.h>
 #include <EQlib/System.h>
-
-#include <EQlib/IGA/LocationConstraint.h>
-#include <EQlib/IGA/Shell3D3P.h>
 
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
@@ -61,7 +59,28 @@ PYBIND11_MODULE(EQlib, m) {
         py::class_<Type, Trampoline, Holder>(m, "Element", py::dynamic_attr())
             .def(py::init<>())
             .def("dofs", &Type::dofs)
-            .def("compute", &Type::compute, "options"_a=py::dict())
+            .def("compute", &Type::compute)
+        ;
+    }
+
+    // Log
+    {
+        using Type = EQlib::Log;
+
+        py::class_<Type>(m, "Log")
+            .def_property_static("info_level", [](py::object) { return
+                Type::info_level; }, [](py::object, const int value) {
+                Type::set_info_level(value); })
+            .def_static("debug", &Type::debug<const std::string&>, "message"_a)
+            .def_static("info", py::overload_cast<const std::string&>(
+                &Type::info<const std::string&>), "message"_a)
+            .def_static("info", py::overload_cast<const int,
+                const std::string&>(&Type::info<const std::string&>),
+                "level"_a, "message"_a)
+            .def_static("error", &Type::error<const std::string&>, "message"_a)
+            .def_static("warn", &Type::warn<const std::string&>, "message"_a)
+            .def_static("critical", &Type::critical<const std::string&>,
+                "message"_a)
         ;
     }
 
@@ -133,50 +152,28 @@ PYBIND11_MODULE(EQlib, m) {
         using Type = EQlib::System;
 
         py::class_<Type>(m, "System")
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
-                py::dict>(), "elements"_a, "options"_a=py::dict())
+            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>>(),
+                "elements"_a)
             .def_property_readonly("nb_dofs", &Type::nb_dofs)
             .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
             .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
+            .def_property("nb_threads", &Type::nb_threads,
+                &Type::set_nb_threads)
             .def_property_readonly("dofs", &Type::dofs)
+            .def_property("load_factor", &Type::load_factor,
+                &Type::set_load_factor)
             .def_property_readonly("lhs", &Type::lhs)
             .def_property_readonly("rhs", &Type::rhs)
             .def_property_readonly("residual", &Type::residual)
             .def_property_readonly("elements", &Type::elements)
-            .def("compute", &Type::compute, "options"_a=py::dict())
-            .def("compute_parallel", &Type::compute_parallel,
-                "options"_a=py::dict())
-            .def("solve", &Type::solve, "options"_a=py::dict())
-            .def("solve_linear", &Type::solve_linear, "options"_a=py::dict())
+            .def("element_indices", &Type::element_indices, "index"_a)
+            .def("compute", &Type::compute)
+            .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
+                "xtol"_a = 1e-7)
+            .def("solve_linear", &Type::solve_linear)
             .def_property_readonly("message",
                 &Type::message)
-        ;
-    }
-
-    // LocationConstraint
-    {
-        using Type = EQlib::LocationConstraint;
-        using Base = EQlib::Element;
-        using Holder = std::shared_ptr<Type>;
-
-        py::class_<Type, Base, Holder>(m, "LocationConstraint")
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Node>>,
-                EQlib::Matrix, EQlib::Vector3D, double>(), "nodes"_a,
-                "shape_functions"_a, "target"_a, "penalty"_a=1)
-        ;
-    }
-
-    // Shell3D3P
-    {
-        using Type = EQlib::Shell3D3P;
-        using Base = EQlib::Element;
-        using Holder = std::shared_ptr<Type>;
-
-        py::class_<Type, Base, Holder>(m, "Shell3D3P")
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Node>>,
-                EQlib::Matrix, double, double, double, double>(), "nodes"_a,
-                "shape_functions"_a, "thickness"_a, "young_modulus"_a,
-                "poisson_ratio"_a, "weight"_a)
+            .def_property("x", &Type::x, &Type::set_x)
         ;
     }
 }

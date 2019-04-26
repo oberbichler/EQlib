@@ -16,6 +16,9 @@ using Sparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 template <typename T>
 using Ref = Eigen::Ref<T>;
 
+template <typename T>
+using Map = Eigen::Map<T>;
+
 namespace py = pybind11;
 
 template <typename T>
