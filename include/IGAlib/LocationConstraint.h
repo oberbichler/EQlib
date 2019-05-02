@@ -68,7 +68,7 @@ public:     // methods
         return dof_list;
     }
 
-    std::pair<Matrix, Vector> compute() const override
+    std::tuple<double, Vector, Matrix> compute() const override
     {
         const auto location = act_evaluate();
 
@@ -76,7 +76,7 @@ public:     // methods
 
         const auto f = 0.5 * v.dot(v);
 
-        return {f.h(), -f.g()};
+        return {f.f(), f.g(), f.h()};
     }
 };
 

@@ -18,9 +18,9 @@ public:     // getters and setters
     }
 
 public:     // methods
-    std::pair<Matrix, Vector> compute() const override
+    std::tuple<double, Vector, Matrix> compute() const override
     {
-        using ReturnType = std::pair<Matrix, Vector>;
+        using ReturnType = std::tuple<double, Vector, Matrix>;
         pybind11::gil_scoped_acquire acquire;
         PYBIND11_OVERLOAD_PURE(ReturnType, Element, compute);
     }

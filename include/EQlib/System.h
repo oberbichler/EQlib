@@ -44,8 +44,10 @@ private:    // variables
     std::vector<std::vector<int>> m_pattern;
     Eigen::VectorXi m_col_nonzeros;
 
-    Sparse m_lhs;
-    Vector m_rhs;
+    double m_f;
+    Vector m_g;
+    Sparse m_h;
+
     Vector m_x;
     Vector m_target;
     Vector m_residual;
@@ -212,21 +214,22 @@ private:    // methods
 
         Log::info(3, "Allocating memory...");
 
-        m_lhs = Sparse(nb_free_dofs(), nb_free_dofs());
+        m_h = Sparse(nb_free_dofs(), nb_free_dofs());
 
         if (nb_free_dofs() > 0) {
-            m_lhs.reserve(m_col_nonzeros);
+            m_h.reserve(m_col_nonzeros);
 
             for (int col = 0; col < m_pattern.size(); col++) {
                 for (const int row : m_pattern[col]) {
-                    m_lhs.insert(row, col);
+                    m_h.insert(row, col);
                 }
             }
         }
 
-        Log::info(2, "The system matrix has {} nonzero entries ({:.3f}%)", m_lhs.nonZeros(), m_lhs.nonZeros() * 100.0 / m_lhs.size());
+        Log::info(2, "The system matrix has {} nonzero entries ({:.3f}%)",
+            m_h.nonZeros(), m_h.nonZeros() * 100.0 / m_h.size());
 
-        m_rhs = Vector(nb_free_dofs());
+        m_g = Vector(nb_free_dofs());
 
         m_x = Vector(nb_free_dofs());
 
@@ -235,7 +238,7 @@ private:    // methods
 
         // setup solver
 
-        m_solver.analyzePattern(m_lhs);
+        m_solver.analyzePattern(m_h);
 
         Log::info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
@@ -261,14 +264,19 @@ public:     // getters and setters
         return m_nb_fixed_dofs;
     }
 
-    Sparse lhs() const
+    double f() const
     {
-        return m_lhs;
+        return m_f;
     }
 
-    Vector rhs() const
+    Vector g() const
     {
-        return m_rhs;
+        return m_g;
+    }
+
+    Sparse h() const
+    {
+        return m_h;
     }
 
     Vector x() const
@@ -364,9 +372,9 @@ public:     // methods
 
         Timer timer;
 
-        // compute lhs and rhs
+        // compute g and h
 
-        Assemble::parallel(m_nb_threads, m_elements, m_index_table, m_lhs, m_rhs);
+        m_f = Assemble::run(m_nb_threads, m_elements, m_index_table, m_g, m_h);
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
@@ -399,17 +407,17 @@ public:     // methods
 
             Log::info(2, "Iteration {}", iteration);
 
-            // compute lhs and rhs
+            // compute g and h
 
             Log::info(2, "Computing system...");
 
-            Assemble::parallel(m_nb_threads, m_elements, m_index_table, m_lhs, m_rhs);
+            m_f = Assemble::run(m_nb_threads, m_elements, m_index_table, m_g, m_h);
 
             // check residual
 
             Log::info(2, "Computing residual...");
 
-            m_residual = m_target + m_rhs;
+            m_residual = m_target - m_g;
 
             const double rnorm = m_residual.norm();
 
@@ -427,7 +435,7 @@ public:     // methods
 
             Log::info(2, "Solving the linear equation system...");
 
-            m_solver.factorize(m_lhs);
+            m_solver.factorize(m_h);
 
             if (!m_solver.info() == Eigen::Success) {
                 throw std::runtime_error("Factorization failed");
@@ -479,15 +487,15 @@ public:     // methods
             m_target *= m_load_factor;
         }
 
-        m_residual = m_target + m_rhs;
+        m_residual = m_target + m_g;
 
-        // compute lhs and rhs
+        // compute g and h
 
         compute();
 
         // solve
 
-        m_solver.factorize(m_lhs);
+        m_solver.factorize(m_h);
 
         if (!m_solver.info() == Eigen::Success) {
             throw std::runtime_error("Factorization failed");
