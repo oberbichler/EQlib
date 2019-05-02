@@ -4,6 +4,7 @@
 #include "Timer.h"
 
 #include <tbb/blocked_range.h>
+#include <tbb/enumerable_thread_specific.h>
 #include <tbb/iterators.h>
 #include <tbb/task_scheduler_init.h>
 #include <tbb/parallel_reduce.h>
@@ -12,11 +13,31 @@ namespace EQlib {
 
 struct Assemble
 {
-    Vector m_lhs_values;
-    Vector m_rhs_values;
+    static inline tbb::enumerable_thread_specific<Vector> m_lhs_values;
+    static inline tbb::enumerable_thread_specific<Vector> m_rhs_values;
 
     Map<Sparse> m_lhs;
     Map<Vector> m_rhs;
+
+    static inline Map<Sparse> create_lhs(Assemble& s) {
+        auto& lhs_values = m_lhs_values.local();
+
+        lhs_values.resize(s.m_lhs.nonZeros());
+        lhs_values.setZero();
+
+        return Map<Sparse>(s.m_lhs.rows(), s.m_lhs.cols(), s.m_lhs.nonZeros(),
+            s.m_lhs.outerIndexPtr(), s.m_lhs.innerIndexPtr(),
+            lhs_values.data());
+    }
+
+    static inline Map<Vector> create_rhs(Assemble& s) {
+        auto& rhs_values = m_rhs_values.local();
+
+        rhs_values.resize(s.m_rhs.size());
+        rhs_values.setZero();
+
+        return Map<Vector>(rhs_values.data(), s.m_rhs.size());
+    }
 
     Assemble(Sparse& lhs, Vector& rhs)
     : m_lhs(lhs.rows(), lhs.cols(), lhs.nonZeros(), lhs.outerIndexPtr(),
@@ -29,12 +50,8 @@ struct Assemble
     }
 
     Assemble(Assemble& s, tbb::split)
-    : m_lhs_values(Vector::Zero(s.m_lhs.nonZeros()))
-    , m_rhs_values(Vector::Zero(s.m_rhs.size()))
-    , m_lhs(s.m_lhs.rows(), s.m_lhs.cols(), s.m_lhs.nonZeros(),
-        s.m_lhs.outerIndexPtr(), s.m_lhs.innerIndexPtr(),
-        m_lhs_values.data())
-    , m_rhs(m_rhs_values.data(), s.m_rhs.size())
+    : m_lhs(create_lhs(s))
+    , m_rhs(create_rhs(s))
     { }
 
     template <typename TRange>
@@ -74,8 +91,10 @@ struct Assemble
 
     void join(Assemble& rhs)
     {
-        Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()) += rhs.m_lhs_values;
-        Map<Vector>(m_rhs.data(), m_rhs.size()) += rhs.m_rhs_values;
+        Map<Vector>(m_lhs.valuePtr(), m_lhs.nonZeros()) +=
+            Map<Vector>(rhs.m_lhs.valuePtr(), rhs.m_lhs.nonZeros());
+        Map<Vector>(m_rhs.data(), m_rhs.size()) += 
+            Map<Vector>(rhs.m_rhs.data(), rhs.m_rhs.size());
     }
 
     template <typename TElements, typename TIndices>
