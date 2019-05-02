@@ -169,6 +169,7 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("elements", &Type::elements)
             .def("element_indices", &Type::element_indices, "index"_a)
             .def("compute", &Type::compute)
+            .def("dof_index", &Type::dof_index)
             .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
                 "xtol"_a = 1e-7)
             .def("solve_linear", &Type::solve_linear)
