@@ -13,15 +13,15 @@ namespace EQlib {
 
 struct Assemble
 {
-    static inline tbb::enumerable_thread_specific<Vector> m_h_values;
-    static inline tbb::enumerable_thread_specific<Vector> m_g_values;
+    Vector m_h_values;
+    Vector m_g_values;
 
     double m_f;
     Map<Vector> m_g;
     Map<Sparse> m_h;
 
-    static inline Map<Vector> create_g(Assemble& s) {
-        auto& g_values = m_g_values.local();
+    inline Map<Vector> create_g(Assemble& s) {
+        auto& g_values = m_g_values;
 
         g_values.resize(s.m_g.size());
         g_values.setZero();
@@ -29,8 +29,8 @@ struct Assemble
         return Map<Vector>(g_values.data(), s.m_g.size());
     }
 
-    static inline Map<Sparse> create_h(Assemble& s) {
-        auto& h_values = m_h_values.local();
+    inline Map<Sparse> create_h(Assemble& s) {
+        auto& h_values = m_h_values;
 
         h_values.resize(s.m_h.nonZeros());
         h_values.setZero();
