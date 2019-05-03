@@ -94,13 +94,13 @@ struct Assemble
         }
     }
 
-    void join(Assemble& g)
+    void join(Assemble& rhs)
     {
-        m_f += g.m_f;
+        m_f += rhs.m_f;
         Map<Vector>(m_g.data(), m_g.size()) += 
-            Map<Vector>(g.m_g.data(), g.m_g.size());
+            Map<Vector>(rhs.m_g.data(), rhs.m_g.size());
         Map<Vector>(m_h.valuePtr(), m_h.nonZeros()) +=
-            Map<Vector>(g.m_h.valuePtr(), g.m_h.nonZeros());
+            Map<Vector>(rhs.m_h.valuePtr(), rhs.m_h.nonZeros());
     }
 
     template <typename TElements, typename TIndices>
