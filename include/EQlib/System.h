@@ -279,6 +279,11 @@ public:     // getters and setters
         return m_h;
     }
 
+    Vector h_v(Ref<const Vector> v) const
+    {
+        return m_h.selfadjointView<Eigen::Upper>() * v;
+    }
+
     Vector x() const
     {
         Vector result(nb_free_dofs());

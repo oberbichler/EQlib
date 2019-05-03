@@ -165,6 +165,7 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("f", &Type::f)
             .def_property_readonly("g", &Type::g)
             .def_property_readonly("h", &Type::h)
+            .def("h_v", &Type::h_v)
             .def_property_readonly("residual", &Type::residual)
             .def_property_readonly("elements", &Type::elements)
             .def("element_indices", &Type::element_indices, "index"_a)
