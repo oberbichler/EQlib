@@ -12,7 +12,6 @@ find_package(TBB REQUIRED)
 include_directories(
     "include"
     "external_libraries"
-    "${HYPERJET_ROOT}/include"
 )
 
 add_subdirectory(external_libraries/pybind11)
