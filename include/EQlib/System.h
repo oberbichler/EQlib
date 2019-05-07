@@ -371,15 +371,75 @@ public:     // methods
         return m_dof_indices.at(dof);
     }
 
+    void assemble()
+    {
+        // compute g and h
+
+        tbb::combinable<Vector> g(Vector::Zero(m_g.size()));
+        tbb::combinable<Vector> h(Vector::Zero(m_h.nonZeros()));
+
+        auto begin = tbb::make_zip_iterator(m_elements.begin(),
+            m_index_table.begin());
+        auto end = tbb::make_zip_iterator(m_elements.end(),
+            m_index_table.end());
+
+        tbb::task_scheduler_init init(m_nb_threads > 0 ? m_nb_threads :
+            tbb::task_scheduler_init::automatic);
+
+        tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end),
+            [&](const tbb::blocked_range<decltype(begin)> &range) {
+            // compute and add local h and g
+
+            auto& local_g = g.local(); 
+            auto& local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
+                m_h.outerIndexPtr(), m_h.innerIndexPtr(), h.local().data()); 
+
+            for (auto it = range.begin(); it != range.end(); ++it) {
+                const auto& [element, dof_indices] = *it;
+
+                const auto [element_f, element_g, element_h] =
+                    element->compute();
+
+                const size_t nb_dofs = dof_indices.size();
+
+                // m_f += element_f;
+
+                for (size_t row = 0; row < nb_dofs; row++) {
+                    const auto row_index = dof_indices[row];
+
+                    if (row_index.global >= m_g.size()) {
+                        continue;
+                    }
+
+                    local_g(row_index.global) += element_g(row_index.local);
+
+                    for (size_t col = row; col < nb_dofs; col++) {
+                        const auto col_index = dof_indices[col];
+
+                        if (col_index.global >= m_g.size()) {
+                            continue;
+                        }
+
+                        local_h.coeffRef(row_index.global, col_index.global) +=
+                            element_h(row_index.local, col_index.local);
+                    }
+                }
+            }
+        });
+
+        Map<Vector>(m_g.data(), m_g.size()) =
+            g.combine([](const Vector& x, const Vector& y) { return x + y; });
+        Map<Vector>(m_h.valuePtr(), m_h.nonZeros()) =
+            h.combine([](const Vector& x, const Vector& y) { return x + y; });
+    }
+
     void compute()
     {
         Log::info(1, "==> Computing system...");
 
         Timer timer;
 
-        // compute g and h
-
-        m_f = Assemble::run(m_nb_threads, m_elements, m_index_table, m_g, m_h);
+        assemble();
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
