@@ -67,7 +67,7 @@ setup(
     author_email='thomas.oberbichler@gmail.com',
     ext_modules=[CMakeExtension('EQlib')],
     cmdclass=dict(build_ext=CMakeBuild),
-    install_requires=['cmake', 'numpy'],
+    install_requires=['cmake', 'numpy', 'mkl-devel', 'tbb-devel'],
     test_suite='nose.collector',
     tests_require=['nose'],
     zip_safe=False,
