@@ -174,6 +174,7 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
             .def_property_readonly("residual", &Type::residual)
             // methods
+            .def("add_diagonal", &Type::add_diagonal, "value"_a)
             .def("compute", &Type::compute)
             .def("dof_index", &Type::dof_index)
             .def("element_indices", &Type::element_indices, "index"_a)

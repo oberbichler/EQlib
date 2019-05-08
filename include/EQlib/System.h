@@ -381,6 +381,13 @@ public:     // getters and setters
     }
 
 public:     // methods
+    void add_diagonal(const double value)
+    {
+        for (int i = 0; i < nb_dofs(); i++) {
+            m_h.coeffRef(i, i) += value;
+        }
+    }
+
     int dof_index(const Dof& dof) const
     {
         return m_dof_indices.at(dof);
