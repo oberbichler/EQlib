@@ -175,13 +175,14 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("residual", &Type::residual)
             // methods
             .def("add_diagonal", &Type::add_diagonal, "value"_a)
-            .def("compute", &Type::compute)
+            .def("compute", &Type::compute, "order"_a=2, "parallel"_a=true)
             .def("dof_index", &Type::dof_index)
             .def("element_indices", &Type::element_indices, "index"_a)
             .def("h_v", &Type::h_v)
             .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
-                "xtol"_a = 1e-7)
-            .def("solve_linear", &Type::solve_linear)
+                "xtol"_a = 1e-7, "parallel"_a=true)
+            .def("solve_linear", &Type::solve_linear, "parallel"_a=true,
+                "update_dofs"_a=true)
         ;
     }
 }

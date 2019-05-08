@@ -393,27 +393,65 @@ public:     // methods
         return m_dof_indices.at(dof);
     }
 
-    void assemble()
+    template<int TOrder = 2>
+    void assemble(const bool parallel, double& f, Ref<Vector> g, Ref<Sparse> h)
     {
+        if (parallel) {
+            switch (TOrder) {
+            case 0:
+                assemble_parallel<0>(f, g, h);
+                break;
+            case 1:
+                assemble_parallel<1>(f, g, h);
+                break;
+            case 2:
+                assemble_parallel<2>(f, g, h);
+                break;
+            }
+        } else {
+            switch (TOrder) {
+            case 0:
+                assemble_serial<0>(f, g, h);
+                break;
+            case 1:
+                assemble_serial<1>(f, g, h);
+                break;
+            case 2:
+                assemble_serial<2>(f, g, h);
+                break;
+            }
+        }
+    }
+
+    template <int TOrder = 2>
+    void assemble_parallel(double& f, Ref<Vector> g, Ref<Sparse> h)
+    {
+        py::gil_scoped_release release;
+
+        tbb::task_scheduler_init init(m_nb_threads > 0 ? m_nb_threads :
+            tbb::task_scheduler_init::automatic);
+
         // compute g and h
 
-        tbb::combinable<double> f(0);
-        tbb::combinable<Vector> g(Vector::Zero(m_g.size()));
-        tbb::combinable<Vector> h(Vector::Zero(m_h.nonZeros()));
+        tbb::combinable<double> c_f(0);
+        tbb::combinable<Vector> c_g(Vector::Zero(m_g.size()));
+        tbb::combinable<Vector> c_h(Vector::Zero(m_h.nonZeros()));
 
         auto begin = tbb::make_zip_iterator(m_elements.begin(),
             m_index_table.begin());
         auto end = tbb::make_zip_iterator(m_elements.end(),
             m_index_table.end());
 
-        tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end),
+        tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end, 128),
             [&](const tbb::blocked_range<decltype(begin)> &range) {
+            Log::info(10, "New task with {} items", range.size());
+
             // compute and add local h and g
 
-            auto& local_f = f.local();
-            auto& local_g = g.local();
-            auto& local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
-                m_h.outerIndexPtr(), m_h.innerIndexPtr(), h.local().data());
+            auto& local_f = c_f.local();
+            auto& local_g = c_g.local();
+            auto local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
+                m_h.outerIndexPtr(), m_h.innerIndexPtr(), c_h.local().data());
 
             for (auto it = range.begin(); it != range.end(); ++it) {
                 const auto& [element, dof_indices] = *it;
@@ -448,41 +486,95 @@ public:     // methods
             }
         });
 
-        m_f = f.combine([](const double x, const double y) { return x + y; });
-        Map<Vector>(m_g.data(), m_g.size()) =
-            g.combine([](const Vector& x, const Vector& y) { return x + y; });
-        Map<Vector>(m_h.valuePtr(), m_h.nonZeros()) =
-            h.combine([](const Vector& x, const Vector& y) { return x + y; });
+        f = c_f.combine([](const double x, const double y) { return x + y; });
+        g = c_g.combine([](const Vector& x, const Vector& y) { return x + y; });
+        Map<Vector>(h.valuePtr(), h.nonZeros()) =
+            c_h.combine([](const Vector& x, const Vector& y) { return x + y; });
     }
 
-    void compute()
+    template <int TOrder = 2>
+    void assemble_serial(double& f, Ref<Vector> g, Ref<Sparse> h)
+    {
+        f = 0;
+
+        if (TOrder > 0) {
+            g.setZero();
+        }
+
+        if (TOrder > 1) {
+            Map<Vector>(h.valuePtr(), h.nonZeros()).setZero();
+        }
+
+        for (size_t i = 0; i < m_elements.size(); i++) {
+            const auto& element = m_elements[i];
+            const auto& dof_indices = m_index_table[i];
+
+            const auto [element_f, element_g, element_h] = element->compute();
+
+            const size_t nb_dofs = dof_indices.size();
+
+            f += element_f;
+
+            if (TOrder > 0) {
+                for (size_t row = 0; row < nb_dofs; row++) {
+                    const auto row_index = dof_indices[row];
+
+                    if (row_index.global >= g.size()) {
+                        continue;
+                    }
+
+                    g(row_index.global) += element_g(row_index.local);
+
+                    if (TOrder > 1) {
+                        for (size_t col = row; col < nb_dofs; col++) {
+                            const auto col_index = dof_indices[col];
+
+                            if (col_index.global >= g.size()) {
+                                continue;
+                            }
+
+                            h.coeffRef(row_index.global, col_index.global) +=
+                                element_h(row_index.local, col_index.local);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void compute(const int order, const bool parallel)
     {
         Log::info(1, "==> Computing system...");
 
         Timer timer;
 
-        assemble();
+        switch (order) {
+        case 0:
+            assemble<0>(parallel, m_f, m_g, m_h);
+            break;
+        case 1:
+            assemble<1>(parallel, m_f, m_g, m_h);
+            break;
+        case 2:
+            assemble<2>(parallel, m_f, m_g, m_h);
+            break;
+        }
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
 
-    void solve(const int maxiter, const double rtol, const double xtol)
+    void solve(const int maxiter, const double rtol, const double xtol,
+        const bool parallel)
     {
-        py::gil_scoped_release release;
-
-        tbb::task_scheduler_init init(m_nb_threads > 0 ? m_nb_threads :
-            tbb::task_scheduler_init::automatic);
-
         // setup
 
-        Log::info(1, "==> Solving system...");
+        Log::info(1, "==> Solving nonlinear system...");
 
         Timer timer;
 
         for (int i = 0; i < nb_free_dofs(); i++) {
             m_target[i] = m_dofs[i].target();
         }
-
 
         if (m_load_factor != 1.0) {
             m_target *= m_load_factor;
@@ -503,7 +595,7 @@ public:     // methods
 
             Log::info(2, "Computing system...");
 
-            assemble();
+            assemble(parallel, m_f, m_g, m_h);
 
             // check residual
 
@@ -576,9 +668,13 @@ public:     // methods
         Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
 
-    void solve_linear()
+    void solve_linear(const bool parallel, const bool update_dofs)
     {
         // setup
+
+        Log::info(1, "==> Solving linear system...");
+
+        Timer timer;
 
         for (int i = 0; i < nb_dofs(); i++) {
             m_target[i] = m_dofs[i].target();
@@ -588,11 +684,11 @@ public:     // methods
             m_target *= m_load_factor;
         }
 
-        m_residual = m_target + m_g;
+        m_residual = m_target - m_g;
 
         // compute g and h
 
-        compute();
+        assemble(parallel, m_f, m_g, m_h);
 
         // solve
 
@@ -610,9 +706,13 @@ public:     // methods
 
         // update system
 
-        for (int i = 0; i < nb_free_dofs(); i++) {
-            m_dofs[i].set_delta(m_x(i));
+        if (update_dofs) {
+            for (int i = 0; i < nb_free_dofs(); i++) {
+                m_dofs[i].set_delta(m_x(i));
+            }
         }
+
+        Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
 };
 
