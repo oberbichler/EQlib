@@ -32,7 +32,7 @@ if (DEFINED ENV{CONDA_PREFIX})
     add_definitions(-DEIGEN_USE_MKL_ALL)
 
     target_link_libraries(EQlib PRIVATE mkl_rt)
-    target_link_libraries(EQlib PRIVATE tbb.lib debug tbb_debug.lib)
+    target_link_libraries(EQlib PRIVATE tbb debug tbb_debug)
 else()
     if(EXISTS $ENV{MKLROOT})
         message("-- Found MKL: $ENV{MKLROOT}")
