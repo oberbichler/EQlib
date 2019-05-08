@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Assemble.h"
 #include "Define.h"
 #include "Dof.h"
 #include "Element.h"
@@ -388,10 +387,10 @@ public:     // methods
             [&](const tbb::blocked_range<decltype(begin)> &range) {
             // compute and add local h and g
 
-            auto& local_f = f.local(); 
-            auto& local_g = g.local(); 
+            auto& local_f = f.local();
+            auto& local_g = g.local();
             auto& local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
-                m_h.outerIndexPtr(), m_h.innerIndexPtr(), h.local().data()); 
+                m_h.outerIndexPtr(), m_h.innerIndexPtr(), h.local().data());
 
             for (auto it = range.begin(); it != range.end(); ++it) {
                 const auto& [element, dof_indices] = *it;
