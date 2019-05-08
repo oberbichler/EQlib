@@ -27,12 +27,15 @@ if (DEFINED ENV{CONDA_PREFIX})
     message("-- Found TBB: $ENV{CONDA_PREFIX}")
 
     include_directories(INTERFACE $ENV{CONDA_PREFIX}/include)
-    link_directories($ENV{CONDA_PREFIX}/lib)
 
     add_definitions(-DEIGEN_USE_MKL_ALL)
 
-    target_link_libraries(EQlib PRIVATE mkl_rt)
-    target_link_libraries(EQlib PRIVATE tbb debug tbb_debug)
+    find_library(MKL_LIBRARY mkl_rt HINTS $ENV{CONDA_PREFIX}/lib)
+    find_library(TBB_LIBRARY tbb HINTS $ENV{CONDA_PREFIX}/lib)
+    find_library(TBB_DBG_LIBRARY tbb_debug HINTS $ENV{CONDA_PREFIX}/lib)
+
+    target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
+    target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
 else()
     if(EXISTS $ENV{MKLROOT})
         message("-- Found MKL: $ENV{MKLROOT}")
