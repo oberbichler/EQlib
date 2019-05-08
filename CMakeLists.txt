@@ -23,11 +23,11 @@ pybind11_add_module(EQlib src/module.cpp)
 pybind11_add_module(IGAlib src/iga_module.cpp)
 
 if (DEFINED ENV{CONDA_PREFIX})
-    message("-- Found MKL: $ENV{CONDA_PREFIX}/Library")
-    message("-- Found TBB: $ENV{CONDA_PREFIX}/Library")
+    message("-- Found MKL: $ENV{CONDA_PREFIX}")
+    message("-- Found TBB: $ENV{CONDA_PREFIX}")
 
-    include_directories(INTERFACE $ENV{CONDA_PREFIX}/Library/include)
-    link_directories($ENV{CONDA_PREFIX}/Library/lib)
+    include_directories(INTERFACE $ENV{CONDA_PREFIX}/include)
+    link_directories($ENV{CONDA_PREFIX}/lib)
 
     add_definitions(-DEIGEN_USE_MKL_ALL)
 
