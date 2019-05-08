@@ -481,7 +481,7 @@ public:     // methods
 
             Log::info(2, "Computing system...");
 
-            m_f = Assemble::run(m_nb_threads, m_elements, m_index_table, m_g, m_h);
+            assemble();
 
             // check residual
 
