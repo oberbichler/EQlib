@@ -8,6 +8,12 @@
 
 #include <Eigen/PardisoSupport>
 
+#include <tbb/blocked_range.h>
+#include <tbb/combinable.h>
+#include <tbb/iterators.h>
+#include <tbb/task_scheduler_init.h>
+#include <tbb/parallel_for.h>
+
 #include <set>
 #include <stdexcept>
 #include <unordered_map>
