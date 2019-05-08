@@ -6,8 +6,6 @@ project(EQlib-py)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(TBB REQUIRED)
-
 include_directories(
     "include"
     INTERFACE "external_libraries"
@@ -42,6 +40,8 @@ else()
         add_definitions(-DEIGEN_USE_MKL_ALL)
         target_link_libraries(EQlib PRIVATE mkl_rt)
     endif()
+
+    find_package(TBB REQUIRED)
 
     if(${TBB_FOUND})
         message("-- Found TBB: $ENV{TBBROOT}")
