@@ -542,6 +542,15 @@ public:     // methods
             m_dofs[i].set_residual(m_residual(i));
         }
 
+        switch (m_stopping_reason) {
+        case 2:
+            Log::warn("The maximum number of iterations has been reached");
+            break;
+        case 3:
+            Log::error("An unknown error has occurred");
+            break;
+        }
+
         Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
 
