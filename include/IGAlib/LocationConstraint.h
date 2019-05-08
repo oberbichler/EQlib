@@ -3,7 +3,7 @@
 #include <EQlib/Element.h>
 #include <EQlib/Node.h>
 
-#include <HyperJet/HyperJet.h>
+#include <hyperjet/HyperJet.h>
 
 #include <vector>
 
@@ -30,7 +30,7 @@ public:     // constructor
     { }
 
 public:     // methods
-    Eigen::Matrix<HyperJet::HyperJet<double>, 3, 1> act_evaluate() const
+    Eigen::Matrix<hyperjet::HyperJet<double>, 3, 1> act_evaluate() const
     {
         const size_t nb_dofs = m_nodes.size() * 3;
 
@@ -46,11 +46,11 @@ public:     // methods
             dz[i * 3 + 2] = m_shape_functions(0, i);
         }
 
-        Eigen::Matrix<HyperJet::HyperJet<double>, 3, 1> result;
+        Eigen::Matrix<hyperjet::HyperJet<double>, 3, 1> result;
 
-        result[0] = HyperJet::HyperJet<double>(xyz(0), dx);
-        result[1] = HyperJet::HyperJet<double>(xyz(1), dy);
-        result[2] = HyperJet::HyperJet<double>(xyz(2), dz);
+        result[0] = hyperjet::HyperJet<double>(xyz(0), dx);
+        result[1] = hyperjet::HyperJet<double>(xyz(1), dy);
+        result[2] = hyperjet::HyperJet<double>(xyz(2), dz);
 
         return result;
     }
