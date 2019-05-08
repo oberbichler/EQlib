@@ -156,10 +156,12 @@ PYBIND11_MODULE(EQlib, m) {
             .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>>(),
                 "elements"_a)
             // properties
+            .def_property("delta", &Type::delta, &Type::set_delta)
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
             .def_property("nb_threads", &Type::nb_threads,
                 &Type::set_nb_threads)
+            .def_property("x", &Type::x, &Type::set_x)
             // readonly properties
             .def_property_readonly("dofs", &Type::dofs)
             .def_property_readonly("nb_dofs", &Type::nb_dofs)
@@ -171,7 +173,6 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
             .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
             .def_property_readonly("residual", &Type::residual)
-            .def_property("x", &Type::x, &Type::set_x)
             // methods
             .def("compute", &Type::compute)
             .def("dof_index", &Type::dof_index)
