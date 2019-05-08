@@ -4,7 +4,7 @@ from numpy.testing import assert_almost_equal
 
 class TestElement(unittest.TestCase):
 
-    def test_element__dynamic_attributes(self):
+    def test_element_dynamic_attributes(self):
         element = eq.Element()
 
         element.test_attribute = 'test value'
