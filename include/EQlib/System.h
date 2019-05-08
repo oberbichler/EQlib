@@ -375,6 +375,7 @@ public:     // methods
     {
         // compute g and h
 
+        tbb::combinable<double> f(0);
         tbb::combinable<Vector> g(Vector::Zero(m_g.size()));
         tbb::combinable<Vector> h(Vector::Zero(m_h.nonZeros()));
 
@@ -390,6 +391,7 @@ public:     // methods
             [&](const tbb::blocked_range<decltype(begin)> &range) {
             // compute and add local h and g
 
+            auto& local_f = f.local(); 
             auto& local_g = g.local(); 
             auto& local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
                 m_h.outerIndexPtr(), m_h.innerIndexPtr(), h.local().data()); 
@@ -402,7 +404,7 @@ public:     // methods
 
                 const size_t nb_dofs = dof_indices.size();
 
-                // m_f += element_f;
+                local_f += element_f;
 
                 for (size_t row = 0; row < nb_dofs; row++) {
                     const auto row_index = dof_indices[row];
@@ -427,6 +429,7 @@ public:     // methods
             }
         });
 
+        m_f = f.combine([](const double x, const double y) { return x + y; });
         Map<Vector>(m_g.data(), m_g.size()) =
             g.combine([](const Vector& x, const Vector& y) { return x + y; });
         Map<Vector>(m_h.valuePtr(), m_h.nonZeros()) =
