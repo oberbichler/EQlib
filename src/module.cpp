@@ -152,28 +152,34 @@ PYBIND11_MODULE(EQlib, m) {
         using Type = EQlib::System;
 
         py::class_<Type>(m, "System")
+            // constructors
             .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>>(),
                 "elements"_a)
-            .def_property_readonly("nb_dofs", &Type::nb_dofs)
-            .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
-            .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
-            .def_property("nb_threads", &Type::nb_threads,
-                &Type::set_nb_threads)
-            .def_property_readonly("dofs", &Type::dofs)
+            // properties
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
-            .def_property_readonly("lhs", &Type::lhs)
-            .def_property_readonly("rhs", &Type::rhs)
-            .def_property_readonly("residual", &Type::residual)
+            .def_property("nb_threads", &Type::nb_threads,
+                &Type::set_nb_threads)
+            // readonly properties
+            .def_property_readonly("dofs", &Type::dofs)
+            .def_property_readonly("nb_dofs", &Type::nb_dofs)
             .def_property_readonly("elements", &Type::elements)
-            .def("element_indices", &Type::element_indices, "index"_a)
+            .def_property_readonly("f", &Type::f)
+            .def_property_readonly("g", &Type::g)
+            .def_property_readonly("h", &Type::h)
+            .def_property_readonly("message", &Type::message)
+            .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
+            .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
+            .def_property_readonly("residual", &Type::residual)
+            .def_property("x", &Type::x, &Type::set_x)
+            // methods
             .def("compute", &Type::compute)
+            .def("dof_index", &Type::dof_index)
+            .def("element_indices", &Type::element_indices, "index"_a)
+            .def("h_v", &Type::h_v)
             .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
                 "xtol"_a = 1e-7)
             .def("solve_linear", &Type::solve_linear)
-            .def_property_readonly("message",
-                &Type::message)
-            .def_property("x", &Type::x, &Type::set_x)
         ;
     }
 }

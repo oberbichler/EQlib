@@ -44,8 +44,10 @@ private:    // variables
     std::vector<std::vector<int>> m_pattern;
     Eigen::VectorXi m_col_nonzeros;
 
-    Sparse m_lhs;
-    Vector m_rhs;
+    double m_f;
+    Vector m_g;
+    Sparse m_h;
+
     Vector m_x;
     Vector m_target;
     Vector m_residual;
@@ -212,21 +214,22 @@ private:    // methods
 
         Log::info(3, "Allocating memory...");
 
-        m_lhs = Sparse(nb_free_dofs(), nb_free_dofs());
+        m_h = Sparse(nb_free_dofs(), nb_free_dofs());
 
         if (nb_free_dofs() > 0) {
-            m_lhs.reserve(m_col_nonzeros);
+            m_h.reserve(m_col_nonzeros);
 
             for (int col = 0; col < m_pattern.size(); col++) {
                 for (const int row : m_pattern[col]) {
-                    m_lhs.insert(row, col);
+                    m_h.insert(row, col);
                 }
             }
         }
 
-        Log::info(2, "The system matrix has {} nonzero entries ({:.3f}%)", m_lhs.nonZeros(), m_lhs.nonZeros() * 100.0 / m_lhs.size());
+        Log::info(2, "The system matrix has {} nonzero entries ({:.3f}%)",
+            m_h.nonZeros(), m_h.nonZeros() * 100.0 / m_h.size());
 
-        m_rhs = Vector(nb_free_dofs());
+        m_g = Vector(nb_free_dofs());
 
         m_x = Vector(nb_free_dofs());
 
@@ -235,7 +238,7 @@ private:    // methods
 
         // setup solver
 
-        m_solver.analyzePattern(m_lhs);
+        m_solver.analyzePattern(m_h);
 
         Log::info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
@@ -261,14 +264,24 @@ public:     // getters and setters
         return m_nb_fixed_dofs;
     }
 
-    Sparse lhs() const
+    double f() const
     {
-        return m_lhs;
+        return m_f;
     }
 
-    Vector rhs() const
+    Vector g() const
     {
-        return m_rhs;
+        return m_g;
+    }
+
+    Sparse h() const
+    {
+        return m_h;
+    }
+
+    Vector h_v(Ref<const Vector> v) const
+    {
+        return m_h.selfadjointView<Eigen::Upper>() * v;
     }
 
     Vector x() const
@@ -358,21 +371,86 @@ public:     // methods
         return m_dof_indices.at(dof);
     }
 
+    void assemble()
+    {
+        // compute g and h
+
+        tbb::combinable<double> f(0);
+        tbb::combinable<Vector> g(Vector::Zero(m_g.size()));
+        tbb::combinable<Vector> h(Vector::Zero(m_h.nonZeros()));
+
+        auto begin = tbb::make_zip_iterator(m_elements.begin(),
+            m_index_table.begin());
+        auto end = tbb::make_zip_iterator(m_elements.end(),
+            m_index_table.end());
+
+        tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end),
+            [&](const tbb::blocked_range<decltype(begin)> &range) {
+            // compute and add local h and g
+
+            auto& local_f = f.local(); 
+            auto& local_g = g.local(); 
+            auto& local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
+                m_h.outerIndexPtr(), m_h.innerIndexPtr(), h.local().data()); 
+
+            for (auto it = range.begin(); it != range.end(); ++it) {
+                const auto& [element, dof_indices] = *it;
+
+                const auto [element_f, element_g, element_h] =
+                    element->compute();
+
+                const size_t nb_dofs = dof_indices.size();
+
+                local_f += element_f;
+
+                for (size_t row = 0; row < nb_dofs; row++) {
+                    const auto row_index = dof_indices[row];
+
+                    if (row_index.global >= m_g.size()) {
+                        continue;
+                    }
+
+                    local_g(row_index.global) += element_g(row_index.local);
+
+                    for (size_t col = row; col < nb_dofs; col++) {
+                        const auto col_index = dof_indices[col];
+
+                        if (col_index.global >= m_g.size()) {
+                            continue;
+                        }
+
+                        local_h.coeffRef(row_index.global, col_index.global) +=
+                            element_h(row_index.local, col_index.local);
+                    }
+                }
+            }
+        });
+
+        m_f = f.combine([](const double x, const double y) { return x + y; });
+        Map<Vector>(m_g.data(), m_g.size()) =
+            g.combine([](const Vector& x, const Vector& y) { return x + y; });
+        Map<Vector>(m_h.valuePtr(), m_h.nonZeros()) =
+            h.combine([](const Vector& x, const Vector& y) { return x + y; });
+    }
+
     void compute()
     {
         Log::info(1, "==> Computing system...");
 
         Timer timer;
 
-        // compute lhs and rhs
-
-        Assemble::parallel(m_nb_threads, m_elements, m_index_table, m_lhs, m_rhs);
+        assemble();
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
     }
 
     void solve(const int maxiter, const double rtol, const double xtol)
     {
+        py::gil_scoped_release release;
+
+        tbb::task_scheduler_init init(m_nb_threads > 0 ? m_nb_threads :
+            tbb::task_scheduler_init::automatic);
+
         // setup
 
         Log::info(1, "==> Solving system...");
@@ -399,17 +477,17 @@ public:     // methods
 
             Log::info(2, "Iteration {}", iteration);
 
-            // compute lhs and rhs
+            // compute g and h
 
             Log::info(2, "Computing system...");
 
-            Assemble::parallel(m_nb_threads, m_elements, m_index_table, m_lhs, m_rhs);
+            assemble();
 
             // check residual
 
             Log::info(2, "Computing residual...");
 
-            m_residual = m_target + m_rhs;
+            m_residual = m_target - m_g;
 
             const double rnorm = m_residual.norm();
 
@@ -427,7 +505,7 @@ public:     // methods
 
             Log::info(2, "Solving the linear equation system...");
 
-            m_solver.factorize(m_lhs);
+            m_solver.factorize(m_h);
 
             if (!m_solver.info() == Eigen::Success) {
                 throw std::runtime_error("Factorization failed");
@@ -464,6 +542,15 @@ public:     // methods
             m_dofs[i].set_residual(m_residual(i));
         }
 
+        switch (m_stopping_reason) {
+        case 2:
+            Log::warn("The maximum number of iterations has been reached");
+            break;
+        case 3:
+            Log::error("An unknown error has occurred");
+            break;
+        }
+
         Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
 
@@ -479,15 +566,15 @@ public:     // methods
             m_target *= m_load_factor;
         }
 
-        m_residual = m_target + m_rhs;
+        m_residual = m_target + m_g;
 
-        // compute lhs and rhs
+        // compute g and h
 
         compute();
 
         // solve
 
-        m_solver.factorize(m_lhs);
+        m_solver.factorize(m_h);
 
         if (!m_solver.info() == Eigen::Success) {
             throw std::runtime_error("Factorization failed");
