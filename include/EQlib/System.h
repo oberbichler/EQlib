@@ -619,16 +619,18 @@ public:     // methods
 
             Log::info(2, "Solving the linear equation system...");
 
-            m_solver.factorize(m_h);
+            if (nb_dofs() > 0) {
+                m_solver.factorize(m_h);
 
-            if (!m_solver.info() == Eigen::Success) {
-                throw std::runtime_error("Factorization failed");
-            }
+                if (!m_solver.info() == Eigen::Success) {
+                    throw std::runtime_error("Factorization failed");
+                }
 
-            m_x = m_solver.solve(m_residual);
+                m_x = m_solver.solve(m_residual);
 
-            if (!m_solver.info() == Eigen::Success) {
-                throw std::runtime_error("Solve failed");
+                if (!m_solver.info() == Eigen::Success) {
+                    throw std::runtime_error("Solve failed");
+                }
             }
 
             // update system
@@ -692,16 +694,18 @@ public:     // methods
 
         // solve
 
-        m_solver.factorize(m_h);
+        if (nb_dofs() > 0) {
+            m_solver.factorize(m_h);
 
-        if (!m_solver.info() == Eigen::Success) {
-            throw std::runtime_error("Factorization failed");
-        }
+            if (!m_solver.info() == Eigen::Success) {
+                throw std::runtime_error("Factorization failed");
+            }
 
-        m_x = m_solver.solve(m_residual);
+            m_x = m_solver.solve(m_residual);
 
-        if (!m_solver.info() == Eigen::Success) {
-            throw std::runtime_error("Solve failed");
+            if (!m_solver.info() == Eigen::Success) {
+                throw std::runtime_error("Solve failed");
+            }
         }
 
         // update system
