@@ -384,9 +384,6 @@ public:     // methods
         auto end = tbb::make_zip_iterator(m_elements.end(),
             m_index_table.end());
 
-        tbb::task_scheduler_init init(m_nb_threads > 0 ? m_nb_threads :
-            tbb::task_scheduler_init::automatic);
-
         tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end),
             [&](const tbb::blocked_range<decltype(begin)> &range) {
             // compute and add local h and g
@@ -449,6 +446,11 @@ public:     // methods
 
     void solve(const int maxiter, const double rtol, const double xtol)
     {
+        py::gil_scoped_release release;
+
+        tbb::task_scheduler_init init(m_nb_threads > 0 ? m_nb_threads :
+            tbb::task_scheduler_init::automatic);
+
         // setup
 
         Log::info(1, "==> Solving system...");
