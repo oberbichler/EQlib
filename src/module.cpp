@@ -69,7 +69,7 @@ PYBIND11_MODULE(EQlib, m) {
 
         py::class_<Type>(m, "Log")
             .def_property_static("info_level", [](py::object) { return
-                Type::info_level; }, [](py::object, const int value) {
+                Type::info_level(); }, [](py::object, const int value) {
                 Type::set_info_level(value); })
             .def_static("debug", &Type::debug<const std::string&>, "message"_a)
             .def_static("info", py::overload_cast<const std::string&>(
