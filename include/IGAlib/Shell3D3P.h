@@ -5,7 +5,7 @@
 #include <EQlib/Element.h>
 #include <EQlib/Node.h>
 
-#include <HyperJet/HyperJet.h>
+#include <hyperjet/HyperJet.h>
 
 #include <vector>
 
@@ -13,7 +13,7 @@ namespace EQlib {
 
 class Shell3D3P : public Element
 {
-    using HyperDual = HyperJet::HyperJet<double>;
+    using HyperDual = hyperjet::HyperJet<double>;
 
     template <int TSize>
     using HyperDualVector = Eigen::Matrix<HyperDual, TSize, 1>;
@@ -98,7 +98,7 @@ public:     // constructor
         return dof_list;
     }
 
-    std::pair<Matrix, Vector> compute() const override
+    std::tuple<double, Vector, Matrix> compute() const override
     {
         Eigen::Matrix3d Dm;
         Dm << 1.0, m_poisson_ratio, 0,
@@ -183,7 +183,7 @@ public:     // constructor
         const HyperDualMatrix<1, 1> f = (0.5 * (eps.transpose() * Dm * eps +
                                                 kap.transpose() * Db * kap));
 
-        return {f(0, 0).h(), -f(0, 0).g()};
+        return {f(0, 0).f(), f(0, 0).g(), f(0, 0).h()};
     }
 };
 
