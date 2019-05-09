@@ -524,8 +524,8 @@ public:     // methods
             const size_t nb_dofs = dof_indices.size();
 
             Ref<Vector> element_g = buffer_g.head(TOrder > 0 ? nb_dofs : 0);
-            Ref<Matrix> element_h = buffer_h.topLeftCorner(TOrder > 0 ?
-                nb_dofs : 0, TOrder > 0 ? nb_dofs : 0);
+            Ref<Matrix> element_h = buffer_h.topLeftCorner(TOrder > 1 ?
+                nb_dofs : 0, TOrder > 1 ? nb_dofs : 0);
 
             const auto element_f = element->compute(element_g, element_h);
 
