@@ -578,6 +578,8 @@ public:     // methods
         case 2:
             assemble<2>(parallel, m_f, m_g, m_h);
             break;
+        default:
+            throw std::runtime_error("Invalid order");
         }
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
