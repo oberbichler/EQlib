@@ -246,6 +246,8 @@ private:    // methods
 
         // setup solver
 
+        Log::info(3, "Initializing solver...");
+
         m_solver.analyzePattern(m_h);
 
         Log::info(1, "System initialized in {:.3f} sec", timer.ellapsed());
