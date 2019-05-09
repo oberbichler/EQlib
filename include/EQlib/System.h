@@ -475,8 +475,12 @@ public:     // methods
         tbb::combinable<Vector> c_g(Vector::Zero(m_g.size()));
         tbb::combinable<Vector> c_h(Vector::Zero(m_h.nonZeros()));
 
-        tbb::combinable<Vector> buffer_g([=]() { return Vector(m_max_element_size); });
-        tbb::combinable<Matrix> buffer_h([=]() { return Matrix(m_max_element_size, m_max_element_size); });
+        tbb::combinable<Vector> buffer_g([=]() {
+            return Vector(m_max_element_size);
+        });
+        tbb::combinable<Matrix> buffer_h([=]() {
+            return Matrix(m_max_element_size, m_max_element_size);
+        });
 
         Vector dummy_vector = Vector(0);
         Matrix dummy_matrix = Matrix(0, 0);
