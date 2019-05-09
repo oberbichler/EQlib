@@ -13,6 +13,47 @@
 #include <EQlib/PyElement.h>
 #include <EQlib/System.h>
 
+template <typename Type, typename Module>
+auto register_system(Module& m, std::string name)
+{
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    return py::class_<Type>(m, name.c_str())
+        // constructors
+        .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>>(),
+            "elements"_a)
+        // properties
+        .def_property("delta", &Type::delta, &Type::set_delta)
+        .def_property("load_factor", &Type::load_factor,
+            &Type::set_load_factor)
+        .def_property("x", &Type::x, &Type::set_x)
+        // readonly properties
+        .def_property_readonly("dofs", &Type::dofs)
+        .def_property_readonly("nb_dofs", &Type::nb_dofs)
+        .def_property_readonly("nb_elements", &Type::nb_elements)
+        .def_property_readonly("elements", &Type::elements)
+        .def_property_readonly("f", &Type::f)
+        .def_property_readonly("g", &Type::g)
+        .def_property_readonly("h", &Type::h)
+        .def_property_readonly("message", &Type::message)
+        .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
+        .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
+        .def_property_readonly("residual", &Type::residual)
+        // methods
+        .def("add_diagonal", &Type::add_diagonal, "value"_a)
+        .def("compute", &Type::compute, "order"_a=2, "parallel"_a=true)
+        .def("dof_index", &Type::dof_index)
+        .def("element_indices", &Type::element_indices, "index"_a)
+        .def("h_inv_v", &Type::h_inv_v)
+        .def("h_v", &Type::h_v)
+        .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
+            "xtol"_a = 1e-7, "parallel"_a=true)
+        .def("solve_linear", &Type::solve_linear, "parallel"_a=true,
+            "update_dofs"_a=true)
+    ;
+}
+
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
@@ -160,40 +201,15 @@ PYBIND11_MODULE(EQlib, m) {
 
     // System
     {
-        using Type = EQlib::System;
+        using Type = EQlib::System<false>;
 
-        py::class_<Type>(m, "System")
-            // constructors
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>>(),
-                "elements"_a)
-            // properties
-            .def_property("delta", &Type::delta, &Type::set_delta)
-            .def_property("load_factor", &Type::load_factor,
-                &Type::set_load_factor)
-            .def_property("x", &Type::x, &Type::set_x)
-            // readonly properties
-            .def_property_readonly("dofs", &Type::dofs)
-            .def_property_readonly("nb_dofs", &Type::nb_dofs)
-            .def_property_readonly("nb_elements", &Type::nb_elements)
-            .def_property_readonly("elements", &Type::elements)
-            .def_property_readonly("f", &Type::f)
-            .def_property_readonly("g", &Type::g)
-            .def_property_readonly("h", &Type::h)
-            .def_property_readonly("message", &Type::message)
-            .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
-            .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
-            .def_property_readonly("residual", &Type::residual)
-            // methods
-            .def("add_diagonal", &Type::add_diagonal, "value"_a)
-            .def("compute", &Type::compute, "order"_a=2, "parallel"_a=true)
-            .def("dof_index", &Type::dof_index)
-            .def("element_indices", &Type::element_indices, "index"_a)
-            .def("h_inv_v", &Type::h_inv_v)
-            .def("h_v", &Type::h_v)
-            .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
-                "xtol"_a = 1e-7, "parallel"_a=true)
-            .def("solve_linear", &Type::solve_linear, "parallel"_a=true,
-                "update_dofs"_a=true)
-        ;
+        register_system<Type>(m, "System");
+    }
+
+    // SymmetricSystem
+    {
+        using Type = EQlib::System<true>;
+
+        register_system<Type>(m, "SymmetricSystem");
     }
 }

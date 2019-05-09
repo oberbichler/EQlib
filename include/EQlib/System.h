@@ -17,6 +17,22 @@
 
 namespace EQlib {
 
+template <bool TSymmetric>
+struct Solver;
+
+template <>
+struct Solver<true>
+{
+    using Type = Eigen::PardisoLDLT<Sparse, Eigen::Upper>;
+};
+
+template <>
+struct Solver<false>
+{
+    using Type = Eigen::PardisoLU<Sparse>;
+};
+
+template <bool TSymmetric = true>
 class System
 {
 private:    // types
@@ -57,7 +73,7 @@ private:    // variables
 
     int m_stopping_reason;
 
-    Eigen::PardisoLDLT<Sparse, Eigen::Upper> m_solver;
+    typename Solver<TSymmetric>::Type m_solver;
 
     double m_load_factor;
 
@@ -187,7 +203,7 @@ private:    // methods
                     continue;
                 }
 
-                for (size_t col = row; col < nb_dofs; col++) {
+                for (size_t col = TSymmetric ? row : 0; col < nb_dofs; col++) {
                     const auto col_index = dof_indices[col];
 
                     if (col_index.global >= nb_free_dofs()) {
@@ -587,7 +603,7 @@ public:     // methods
                     continue;
                 }
 
-                for (size_t col = row; col < nb_dofs; col++) {
+                for (size_t col = TSymmetric ? row : 0; col < nb_dofs; col++) {
                     const auto col_index = dof_indices[col];
 
                     if (col_index.global >= g.size()) {
