@@ -159,8 +159,6 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property("delta", &Type::delta, &Type::set_delta)
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
-            .def_property("nb_threads", &Type::nb_threads,
-                &Type::set_nb_threads)
             .def_property("x", &Type::x, &Type::set_x)
             // readonly properties
             .def_property_readonly("dofs", &Type::dofs)

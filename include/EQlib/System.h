@@ -61,13 +61,10 @@ private:    // variables
 
     double m_load_factor;
 
-    int m_nb_threads;
-
 public:     // constructors
     System(
         std::vector<std::shared_ptr<Element>> elements)
     : m_load_factor(1)
-    , m_nb_threads(0)
     {
         initialize(std::move(elements));
     }
@@ -349,16 +346,6 @@ public:     // getters and setters
     void set_load_factor(const double value)
     {
         m_load_factor = value;
-    }
-
-    int nb_threads() const
-    {
-        return m_nb_threads;
-    }
-
-    void set_nb_threads(const int value)
-    {
-        m_nb_threads = value;
     }
 
     std::vector<std::shared_ptr<Element>> elements() const
