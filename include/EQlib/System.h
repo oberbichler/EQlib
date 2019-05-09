@@ -498,28 +498,32 @@ public:     // methods
 
             f += element_f;
 
-            if (TOrder > 0) {
-                for (size_t row = 0; row < nb_dofs; row++) {
-                    const auto row_index = dof_indices[row];
+            if (TOrder < 1) {
+                continue;
+            }
 
-                    if (row_index.global >= g.size()) {
+            for (size_t row = 0; row < nb_dofs; row++) {
+                const auto row_index = dof_indices[row];
+
+                if (row_index.global >= g.size()) {
+                    continue;
+                }
+
+                g(row_index.global) += element_g(row_index.local);
+
+                if (TOrder < 2) {
+                    continue;
+                }
+
+                for (size_t col = row; col < nb_dofs; col++) {
+                    const auto col_index = dof_indices[col];
+
+                    if (col_index.global >= g.size()) {
                         continue;
                     }
 
-                    g(row_index.global) += element_g(row_index.local);
-
-                    if (TOrder > 1) {
-                        for (size_t col = row; col < nb_dofs; col++) {
-                            const auto col_index = dof_indices[col];
-
-                            if (col_index.global >= g.size()) {
-                                continue;
-                            }
-
-                            h.coeffRef(row_index.global, col_index.global) +=
-                                element_h(row_index.local, col_index.local);
-                        }
-                    }
+                    h.coeffRef(row_index.global, col_index.global) +=
+                        element_h(row_index.local, col_index.local);
                 }
             }
         }
