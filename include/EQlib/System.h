@@ -17,19 +17,41 @@
 
 namespace EQlib {
 
-template <bool TSymmetric>
-struct Solver;
-
-template <>
-struct Solver<true>
+struct LinearSolverBase
 {
-    using Type = Eigen::PardisoLDLT<Sparse, Eigen::Upper>;
+    virtual void analyze(Ref<const Sparse> a) = 0;
+
+    virtual void factorize(Ref<const Sparse> a) = 0;
+
+    virtual void solve(Ref<const Vector> b, Ref<Vector> x) = 0;
+
+    virtual Eigen::ComputationInfo info() const = 0;
 };
 
-template <>
-struct Solver<false>
+template <typename TSolver>
+struct LinearSolver : LinearSolverBase
 {
-    using Type = Eigen::PardisoLU<Sparse>;
+    TSolver m_solver;
+
+    void analyze(Ref<const Sparse> a)
+    {
+        m_solver.analyzePattern(a);
+    }
+
+    void factorize(Ref<const Sparse> a)
+    {
+        m_solver.factorize(a);
+    }
+
+    void solve(Ref<const Vector> b, Ref<Vector> x)
+    {
+        x = m_solver.solve(b);
+    }
+
+    Eigen::ComputationInfo info() const
+    {
+        return m_solver.info();
+    }
 };
 
 template <bool TSymmetric = true>
@@ -73,21 +95,23 @@ private:    // variables
 
     int m_stopping_reason;
 
-    typename Solver<TSymmetric>::Type m_solver;
+    std::unique_ptr<LinearSolverBase> m_solver;
 
     double m_load_factor;
 
 public:     // constructors
     System(
-        std::vector<std::shared_ptr<Element>> elements)
+        std::vector<std::shared_ptr<Element>> elements,
+        py::dict linear_solver)
     : m_load_factor(1)
     {
-        initialize(std::move(elements));
+        initialize(std::move(elements), linear_solver);
     }
 
 private:    // methods
     void initialize(
-        std::vector<std::shared_ptr<Element>> elements)
+        std::vector<std::shared_ptr<Element>> elements,
+        py::dict linear_solver)
     {
         Log::info(1, "==> Initialize system...");
         Log::info(2, "The system consists of {} elements", elements.size());
@@ -264,7 +288,45 @@ private:    // methods
 
         Log::info(3, "Initializing solver...");
 
-        m_solver.analyzePattern(m_h);
+        const auto linear_solver_type =
+            get_or_default<std::string>(linear_solver, "type", "pardiso_ldlt");
+
+        if (linear_solver_type == "pardiso_ldlt") {
+            Log::info(2, "Using Pardiso LDL^T solver");
+
+            m_solver = std::make_unique<
+                LinearSolver<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>>();
+        } else if (linear_solver_type == "pardiso_llt") {
+            Log::info(2, "Using Pardiso LL^T solver");
+
+            m_solver = std::make_unique<
+                LinearSolver<Eigen::PardisoLLT<Sparse, Eigen::Upper>>>();
+        } else if (linear_solver_type == "pardiso_lu") {
+            Log::info(2, "Using Pardiso LU solver");
+
+            m_solver = std::make_unique<
+                LinearSolver<Eigen::PardisoLU<Sparse>>>();
+        } else if (linear_solver_type == "conjugate_gradient") {
+            Log::info(2, "Using Eigen Conjugate Gradient solver");
+
+            if (TSymmetric) {
+                m_solver = std::make_unique<LinearSolver<
+                    Eigen::ConjugateGradient<Sparse, Eigen::Upper>>>();
+            } else {
+                m_solver = std::make_unique<
+                    LinearSolver<Eigen::ConjugateGradient<Sparse,
+                    Eigen::Lower | Eigen::Upper>>>();
+            }
+        } else if (linear_solver_type == "sparse_lu") {
+            Log::info(2, "Using Eigen Sparse LU solver");
+
+            m_solver = std::make_unique<
+                LinearSolver<Eigen::SparseLU<Sparse>>>();
+        } else {
+            throw std::runtime_error("Unknown linear solver");
+        }
+
+        m_solver->analyze(m_h);
 
         Log::info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
@@ -313,15 +375,17 @@ public:     // getters and setters
     Vector h_inv_v(Ref<const Vector> v)
     {
         if (nb_dofs() > 0) {
-            m_solver.factorize(m_h);
+            m_solver->factorize(m_h);
 
-            if (!m_solver.info() == Eigen::Success) {
+            if (!m_solver->info() == Eigen::Success) {
                 throw std::runtime_error("Factorization failed");
             }
 
-            Vector x = m_solver.solve(v);
+            Vector x(nb_dofs());
 
-            if (!m_solver.info() == Eigen::Success) {
+            m_solver->solve(v, x);
+
+            if (!m_solver->info() == Eigen::Success) {
                 throw std::runtime_error("Solve failed");
             }
 
