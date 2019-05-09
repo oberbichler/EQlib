@@ -401,6 +401,8 @@ public:     // methods
     template<int TOrder>
     void assemble(const bool parallel, double& f, Ref<Vector> g, Ref<Sparse> h)
     {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
         auto begin = tbb::make_zip_iterator(m_elements.begin(),
             m_index_table.begin());
         auto end = tbb::make_zip_iterator(m_elements.end(),
@@ -437,6 +439,8 @@ public:     // methods
     void assemble_parallel(TIterator begin, TIterator end, double& f,
         Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
     {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
         py::gil_scoped_release release;
 
         // compute g and h
@@ -487,6 +491,8 @@ public:     // methods
     void assemble_serial(TIterator begin, TIterator end, double& f,
         Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
     {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
         Vector buffer_g(64);
         Matrix buffer_h(64, 64);
 
@@ -498,6 +504,8 @@ public:     // methods
     void assemble_serial(TIterator begin, TIterator end,
         Ref<Vector> buffer_g, Ref<Matrix> buffer_h, double& f, Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
     {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
         if (init_zero) {
             f = 0;
 
