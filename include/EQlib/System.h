@@ -452,39 +452,78 @@ public:     // methods
         tbb::combinable<Vector> buffer_g(Vector(64));
         tbb::combinable<Matrix> buffer_h(Matrix(64, 64));
 
+        Vector dummy_vector = Vector(0);
+        Matrix dummy_matrix = Matrix(0, 0);
+        Sparse dummy_sparse = Sparse(0, 0);
+
         tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end, 128),
             [&](const tbb::blocked_range<decltype(begin)> &range) {
             Log::info(10, "New task with {} items", range.size());
 
-            auto& local_f = c_f.local();
+            double& local_f = c_f.local();
+
+            if (TOrder == 0) {
+                auto& local_g = dummy_vector;
+                auto& local_h = dummy_sparse;
+
+                auto& local_buffer_g = dummy_vector;
+                auto& local_buffer_h = dummy_matrix;
+
+                assemble_serial<TOrder>(range.begin(), range.end(),
+                    local_buffer_g, local_buffer_h, local_f, local_g, local_h,
+                    false);
+            } else if (TOrder == 1) {
+                auto& local_g = c_g.local();
+                auto& local_h = dummy_sparse;
+
+                auto& local_buffer_g = buffer_g.local();
+                auto& local_buffer_h = dummy_matrix;
+
+                assemble_serial<TOrder>(range.begin(), range.end(),
+                    local_buffer_g, local_buffer_h, local_f, local_g, local_h,
+                    false);
+            } else if (TOrder == 2) {
             auto& local_g = c_g.local();
-            auto local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
-                m_h.outerIndexPtr(), m_h.innerIndexPtr(), c_h.local().data());
+                auto local_h = Map<Sparse>(m_h.rows(), m_h.cols(),
+                    m_h.nonZeros(), m_h.outerIndexPtr(), m_h.innerIndexPtr(),
+                    c_h.local().data());
 
             auto& local_buffer_g = buffer_g.local();
             auto& local_buffer_h = buffer_h.local();
 
-            assemble_serial<TOrder>(range.begin(), range.end(), local_buffer_g,
-                local_buffer_h, local_f, local_g, local_h, false);
+                assemble_serial<TOrder>(range.begin(), range.end(),
+                    local_buffer_g, local_buffer_h, local_f, local_g, local_h,
+                    false);
+            }
         });
 
         const auto sum_f = c_f.combine(std::plus<double>());
-        const auto sum_g = c_g.combine(std::plus<Vector>());
-        const auto sum_h = c_h.combine(std::plus<Vector>());
 
         if (init_zero) {
             f = sum_f;
-            if (TOrder < 1) return;
-            g = sum_g;
-            if (TOrder < 2) return;
-            Map<Vector>(h.valuePtr(), h.nonZeros()) = sum_h;
         } else {
             f += sum_f;
-            if (TOrder < 1) return;
-            g += sum_g;
-            if (TOrder < 2) return;
+        }
+
+        if (TOrder > 0) {
+        const auto sum_g = c_g.combine(std::plus<Vector>());
+
+            if (init_zero) {
+                g = sum_g;
+            } else {
+                g += sum_g;
+            }
+        }
+
+        if (TOrder > 1) {
+        const auto sum_h = c_h.combine(std::plus<Vector>());
+
+        if (init_zero) {
+            Map<Vector>(h.valuePtr(), h.nonZeros()) = sum_h;
+        } else {
             Map<Vector>(h.valuePtr(), h.nonZeros()) += sum_h;
         }
+    }
     }
 
     template <int TOrder, typename TIterator>
