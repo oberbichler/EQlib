@@ -24,7 +24,6 @@ auto register_system(Module& m, std::string name)
         .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>>(),
             "elements"_a)
         // properties
-        .def_property("delta", &Type::delta, &Type::set_delta)
         .def_property("load_factor", &Type::load_factor,
             &Type::set_load_factor)
         .def_property("x", &Type::x, &Type::set_x)

@@ -319,7 +319,7 @@ public:     // getters and setters
     }
     }
 
-    Vector delta() const
+    Vector x() const
     {
         Vector result(nb_free_dofs());
 
@@ -330,7 +330,7 @@ public:     // getters and setters
         return result;
     }
 
-    void set_delta(Ref<const Vector> value) const
+    void set_x(Ref<const Vector> value) const
     {
         if (value.size() != nb_free_dofs()) {
             throw std::runtime_error("Invalid size");
@@ -339,20 +339,6 @@ public:     // getters and setters
         for (int i = 0; i < value.size(); i++) {
             m_dofs[i].set_delta(value[i]);
         }
-    }
-
-    Vector x() const
-    {
-        return m_x;
-    }
-
-    void set_x(Ref<const Vector> value)
-    {
-        if (value.size() != nb_free_dofs()) {
-            throw std::runtime_error("Invalid size");
-        }
-
-        m_x = value;
     }
 
     Vector residual() const
