@@ -255,6 +255,11 @@ public:     // getters and setters
         return static_cast<int>(m_dofs.size());
     }
 
+    int nb_elements() const
+    {
+        return static_cast<int>(m_elements.size());
+    }
+
     int nb_free_dofs() const
     {
         return m_nb_free_dofs;

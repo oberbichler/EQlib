@@ -165,6 +165,7 @@ PYBIND11_MODULE(EQlib, m) {
             // readonly properties
             .def_property_readonly("dofs", &Type::dofs)
             .def_property_readonly("nb_dofs", &Type::nb_dofs)
+            .def_property_readonly("nb_elements", &Type::nb_elements)
             .def_property_readonly("elements", &Type::elements)
             .def_property_readonly("f", &Type::f)
             .def_property_readonly("g", &Type::g)
