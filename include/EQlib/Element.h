@@ -14,7 +14,7 @@ public:     // methods
 
     virtual std::vector<Dof> dofs() const = 0;
 
-    virtual std::tuple<double, Vector, Matrix> compute() const = 0;
+    virtual double compute(Ref<Vector> g, Ref<Matrix> h) const = 0;
 };
 
 } // namespace EQlib

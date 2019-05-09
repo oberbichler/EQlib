@@ -4,6 +4,7 @@
 #include <EQlib/Node.h>
 
 #include <hyperjet/HyperJet.h>
+#include <hyperjet/Jet.h>
 
 #include <vector>
 
@@ -55,6 +56,42 @@ public:     // methods
         return result;
     }
 
+    Eigen::Matrix<hyperjet::Jet<double>, 3, 1> act_evaluate1() const
+    {
+        const size_t nb_dofs = m_nodes.size() * 3;
+
+        Vector3D xyz = Vector3D::Zero();
+        Vector dx = Vector::Zero(nb_dofs);
+        Vector dy = Vector::Zero(nb_dofs);
+        Vector dz = Vector::Zero(nb_dofs);
+
+        for (size_t i = 0; i < m_nodes.size(); i++) {
+            xyz += m_nodes[i]->act_location() * m_shape_functions(0, i);
+            dx[i * 3 + 0] = m_shape_functions(0, i);
+            dy[i * 3 + 1] = m_shape_functions(0, i);
+            dz[i * 3 + 2] = m_shape_functions(0, i);
+        }
+
+        Eigen::Matrix<hyperjet::Jet<double>, 3, 1> result;
+
+        result[0] = hyperjet::Jet<double>(xyz(0), dx);
+        result[1] = hyperjet::Jet<double>(xyz(1), dy);
+        result[2] = hyperjet::Jet<double>(xyz(2), dz);
+
+        return result;
+    }
+
+    Eigen::Matrix<double, 3, 1> act_evaluate0() const
+    {
+        Vector3D xyz = Vector3D::Zero();
+
+        for (size_t i = 0; i < m_nodes.size(); i++) {
+            xyz += m_nodes[i]->act_location() * m_shape_functions(0, i);
+        }
+
+        return xyz;
+    }
+
     std::vector<Dof> dofs() const override
     {
         std::vector<Dof> dof_list(m_nodes.size() * 3);
@@ -68,15 +105,36 @@ public:     // methods
         return dof_list;
     }
 
-    std::tuple<double, Vector, Matrix> compute() const override
+    double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
-        const auto location = act_evaluate();
+        if (h.size() > 0) {
+            const auto location = act_evaluate();
 
-        const auto v = m_target - location;
+            const auto v = m_target - location;
 
-        const auto f = 0.5 * v.dot(v);
+            const auto f = 0.5 * v.dot(v);
 
-        return {f.f(), f.g(), f.h()};
+            g = f.g();
+            h = f.h();
+            return f.f();
+        } else if (g.size() > 0) {
+            const auto location = act_evaluate1();
+
+            const auto v = m_target - location;
+
+            const auto f = 0.5 * v.dot(v);
+
+            g = f.g();
+            return f.f();
+        } else {
+            const auto location = act_evaluate0();
+
+            const auto v = m_target - location;
+
+            const auto f = 0.5 * v.dot(v);
+
+            return f;
+        }
     }
 };
 

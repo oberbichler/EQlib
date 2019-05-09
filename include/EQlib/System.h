@@ -398,7 +398,7 @@ public:     // methods
         return m_dof_indices.at(dof);
     }
 
-    template<int TOrder = 2>
+    template<int TOrder>
     void assemble(const bool parallel, double& f, Ref<Vector> g, Ref<Sparse> h)
     {
         auto begin = tbb::make_zip_iterator(m_elements.begin(),
@@ -433,7 +433,7 @@ public:     // methods
         }
     }
 
-    template <int TOrder = 2, typename TIterator>
+    template <int TOrder, typename TIterator>
     void assemble_parallel(TIterator begin, TIterator end, double& f,
         Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
     {
@@ -445,6 +445,9 @@ public:     // methods
         tbb::combinable<Vector> c_g(Vector::Zero(m_g.size()));
         tbb::combinable<Vector> c_h(Vector::Zero(m_h.nonZeros()));
 
+        tbb::combinable<Vector> buffer_g(Vector(64));
+        tbb::combinable<Matrix> buffer_h(Matrix(64, 64));
+
         tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end, 128),
             [&](const tbb::blocked_range<decltype(begin)> &range) {
             Log::info(10, "New task with {} items", range.size());
@@ -454,8 +457,11 @@ public:     // methods
             auto local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
                 m_h.outerIndexPtr(), m_h.innerIndexPtr(), c_h.local().data());
 
-            assemble_serial<TOrder>(range.begin(), range.end(), local_f,
-                local_g, local_h, false);
+            auto& local_buffer_g = buffer_g.local();
+            auto& local_buffer_h = buffer_h.local();
+
+            assemble_serial<TOrder>(range.begin(), range.end(), local_buffer_g,
+                local_buffer_h, local_f, local_g, local_h, false);
         });
 
         const auto sum_f = c_f.combine(std::plus<double>());
@@ -464,18 +470,33 @@ public:     // methods
 
         if (init_zero) {
             f = sum_f;
+            if (TOrder < 1) return;
             g = sum_g;
+            if (TOrder < 2) return;
             Map<Vector>(h.valuePtr(), h.nonZeros()) = sum_h;
         } else {
             f += sum_f;
+            if (TOrder < 1) return;
             g += sum_g;
+            if (TOrder < 2) return;
             Map<Vector>(h.valuePtr(), h.nonZeros()) += sum_h;
         }
     }
 
-    template <int TOrder = 2, typename TIterator>
+    template <int TOrder, typename TIterator>
     void assemble_serial(TIterator begin, TIterator end, double& f,
         Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
+    {
+        Vector buffer_g(64);
+        Matrix buffer_h(64, 64);
+
+        assemble_serial<TOrder>(begin, end, buffer_g, buffer_h, f, g, h,
+            init_zero);
+    }
+
+    template <int TOrder, typename TIterator>
+    void assemble_serial(TIterator begin, TIterator end,
+        Ref<Vector> buffer_g, Ref<Matrix> buffer_h, double& f, Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
     {
         if (init_zero) {
             f = 0;
@@ -492,9 +513,13 @@ public:     // methods
         for (auto it = begin; it != end; ++it) {
             const auto& [element, dof_indices] = *it;
 
-            const auto [element_f, element_g, element_h] = element->compute();
-
             const size_t nb_dofs = dof_indices.size();
+
+            Ref<Vector> element_g = buffer_g.head(TOrder > 0 ? nb_dofs : 0);
+            Ref<Matrix> element_h = buffer_h.topLeftCorner(TOrder > 0 ?
+                nb_dofs : 0, TOrder > 0 ? nb_dofs : 0);
+
+            const auto element_f = element->compute(element_g, element_h);
 
             f += element_f;
 
@@ -599,7 +624,7 @@ public:     // methods
 
             Log::info(2, "Computing system...");
 
-            assemble(parallel, m_f, m_g, m_h);
+            assemble<2>(parallel, m_f, m_g, m_h);
 
             // check residual
 
@@ -694,7 +719,7 @@ public:     // methods
 
         // compute g and h
 
-        assemble(parallel, m_f, m_g, m_h);
+        assemble<2>(parallel, m_f, m_g, m_h);
 
         // solve
 

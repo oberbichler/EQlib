@@ -98,7 +98,7 @@ public:     // constructor
         return dof_list;
     }
 
-    std::tuple<double, Vector, Matrix> compute() const override
+    double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
         Eigen::Matrix3d Dm;
         Dm << 1.0, m_poisson_ratio, 0,
@@ -183,7 +183,10 @@ public:     // constructor
         const HyperDualMatrix<1, 1> f = (0.5 * (eps.transpose() * Dm * eps +
                                                 kap.transpose() * Db * kap));
 
-        return {f(0, 0).f(), f(0, 0).g(), f(0, 0).h()};
+        g = f(0, 0).g();
+        h = f(0, 0).h();
+
+        return f(0, 0).f();
     }
 };
 
