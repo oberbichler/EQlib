@@ -39,6 +39,8 @@ private:    // variables
     int m_nb_free_dofs;
     int m_nb_fixed_dofs;
 
+    int m_max_element_size;
+
     std::vector<std::shared_ptr<Element>> m_elements;
     std::vector<std::vector<Index>> m_index_table;
 
@@ -59,13 +61,10 @@ private:    // variables
 
     double m_load_factor;
 
-    int m_nb_threads;
-
 public:     // constructors
     System(
         std::vector<std::shared_ptr<Element>> elements)
     : m_load_factor(1)
-    , m_nb_threads(0)
     {
         initialize(std::move(elements));
     }
@@ -87,10 +86,18 @@ private:    // methods
 
         std::vector<std::vector<Dof>> element_dofs(nb_elements);
 
+        m_max_element_size = 0;
+
         for (size_t i = 0; i < nb_elements; i++) {
             const auto& element = elements[i];
 
             element_dofs[i] = element->dofs();
+
+            const auto element_size = element_dofs[i].size();
+
+            if (element_size > m_max_element_size) {
+                m_max_element_size = element_size;
+            }
         }
 
         // create set of unique dofs
@@ -341,16 +348,6 @@ public:     // getters and setters
         m_load_factor = value;
     }
 
-    int nb_threads() const
-    {
-        return m_nb_threads;
-    }
-
-    void set_nb_threads(const int value)
-    {
-        m_nb_threads = value;
-    }
-
     std::vector<std::shared_ptr<Element>> elements() const
     {
         return m_elements;
@@ -398,43 +395,50 @@ public:     // methods
         return m_dof_indices.at(dof);
     }
 
-    template<int TOrder = 2>
+    template<int TOrder>
     void assemble(const bool parallel, double& f, Ref<Vector> g, Ref<Sparse> h)
     {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
+        auto begin = tbb::make_zip_iterator(m_elements.begin(),
+            m_index_table.begin());
+        auto end = tbb::make_zip_iterator(m_elements.end(),
+            m_index_table.end());
+
         if (parallel) {
             switch (TOrder) {
             case 0:
-                assemble_parallel<0>(f, g, h);
+                assemble_parallel<0>(begin, end, f, g, h);
                 break;
             case 1:
-                assemble_parallel<1>(f, g, h);
+                assemble_parallel<1>(begin, end, f, g, h);
                 break;
             case 2:
-                assemble_parallel<2>(f, g, h);
+                assemble_parallel<2>(begin, end, f, g, h);
                 break;
             }
         } else {
             switch (TOrder) {
             case 0:
-                assemble_serial<0>(f, g, h);
+                assemble_serial<0>(begin, end, f, g, h);
                 break;
             case 1:
-                assemble_serial<1>(f, g, h);
+                assemble_serial<1>(begin, end, f, g, h);
                 break;
             case 2:
-                assemble_serial<2>(f, g, h);
+                assemble_serial<2>(begin, end, f, g, h);
                 break;
             }
         }
     }
 
-    template <int TOrder = 2>
-    void assemble_parallel(double& f, Ref<Vector> g, Ref<Sparse> h)
+    template <int TOrder, typename TIterator>
+    void assemble_parallel(TIterator begin, TIterator end, double& f,
+        Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
     {
-        py::gil_scoped_release release;
+        static_assert(0 <= TOrder && TOrder <= 2);
 
-        tbb::task_scheduler_init init(m_nb_threads > 0 ? m_nb_threads :
-            tbb::task_scheduler_init::automatic);
+        py::gil_scoped_release release;
 
         // compute g and h
 
@@ -442,106 +446,153 @@ public:     // methods
         tbb::combinable<Vector> c_g(Vector::Zero(m_g.size()));
         tbb::combinable<Vector> c_h(Vector::Zero(m_h.nonZeros()));
 
-        auto begin = tbb::make_zip_iterator(m_elements.begin(),
-            m_index_table.begin());
-        auto end = tbb::make_zip_iterator(m_elements.end(),
-            m_index_table.end());
+        tbb::combinable<Vector> buffer_g([=]() { return Vector(m_max_element_size); });
+        tbb::combinable<Matrix> buffer_h([=]() { return Matrix(m_max_element_size, m_max_element_size); });
+
+        Vector dummy_vector = Vector(0);
+        Matrix dummy_matrix = Matrix(0, 0);
+        Sparse dummy_sparse = Sparse(0, 0);
 
         tbb::parallel_for(tbb::blocked_range<decltype(begin)>(begin, end, 128),
             [&](const tbb::blocked_range<decltype(begin)> &range) {
             Log::info(10, "New task with {} items", range.size());
 
-            // compute and add local h and g
+            double& local_f = c_f.local();
 
-            auto& local_f = c_f.local();
-            auto& local_g = c_g.local();
-            auto local_h = Map<Sparse>(m_h.rows(), m_h.cols(), m_h.nonZeros(),
-                m_h.outerIndexPtr(), m_h.innerIndexPtr(), c_h.local().data());
+            if (TOrder == 0) {
+                auto& local_g = dummy_vector;
+                auto& local_h = dummy_sparse;
 
-            for (auto it = range.begin(); it != range.end(); ++it) {
-                const auto& [element, dof_indices] = *it;
+                auto& local_buffer_g = dummy_vector;
+                auto& local_buffer_h = dummy_matrix;
 
-                const auto [element_f, element_g, element_h] =
-                    element->compute();
+                assemble_serial<TOrder>(range.begin(), range.end(),
+                    local_buffer_g, local_buffer_h, local_f, local_g, local_h,
+                    false);
+            } else if (TOrder == 1) {
+                auto& local_g = c_g.local();
+                auto& local_h = dummy_sparse;
 
-                const size_t nb_dofs = dof_indices.size();
+                auto& local_buffer_g = buffer_g.local();
+                auto& local_buffer_h = dummy_matrix;
 
-                local_f += element_f;
+                assemble_serial<TOrder>(range.begin(), range.end(),
+                    local_buffer_g, local_buffer_h, local_f, local_g, local_h,
+                    false);
+            } else if (TOrder == 2) {
+                auto& local_g = c_g.local();
+                auto local_h = Map<Sparse>(m_h.rows(), m_h.cols(),
+                    m_h.nonZeros(), m_h.outerIndexPtr(), m_h.innerIndexPtr(),
+                    c_h.local().data());
 
-                for (size_t row = 0; row < nb_dofs; row++) {
-                    const auto row_index = dof_indices[row];
+                auto& local_buffer_g = buffer_g.local();
+                auto& local_buffer_h = buffer_h.local();
 
-                    if (row_index.global >= m_g.size()) {
-                        continue;
-                    }
-
-                    local_g(row_index.global) += element_g(row_index.local);
-
-                    for (size_t col = row; col < nb_dofs; col++) {
-                        const auto col_index = dof_indices[col];
-
-                        if (col_index.global >= m_g.size()) {
-                            continue;
-                        }
-
-                        local_h.coeffRef(row_index.global, col_index.global) +=
-                            element_h(row_index.local, col_index.local);
-                    }
-                }
+                assemble_serial<TOrder>(range.begin(), range.end(),
+                    local_buffer_g, local_buffer_h, local_f, local_g, local_h,
+                    false);
             }
         });
 
-        f = c_f.combine([](const double x, const double y) { return x + y; });
-        g = c_g.combine([](const Vector& x, const Vector& y) { return x + y; });
-        Map<Vector>(h.valuePtr(), h.nonZeros()) =
-            c_h.combine([](const Vector& x, const Vector& y) { return x + y; });
-    }
+        const auto sum_f = c_f.combine(std::plus<double>());
 
-    template <int TOrder = 2>
-    void assemble_serial(double& f, Ref<Vector> g, Ref<Sparse> h)
-    {
-        f = 0;
+        if (init_zero) {
+            f = sum_f;
+        } else {
+            f += sum_f;
+        }
 
         if (TOrder > 0) {
-            g.setZero();
+            const auto sum_g = c_g.combine(std::plus<Vector>());
+
+            if (init_zero) {
+                g = sum_g;
+            } else {
+                g += sum_g;
+            }
         }
 
         if (TOrder > 1) {
-            Map<Vector>(h.valuePtr(), h.nonZeros()).setZero();
+            const auto sum_h = c_h.combine(std::plus<Vector>());
+
+            if (init_zero) {
+                Map<Vector>(h.valuePtr(), h.nonZeros()) = sum_h;
+            } else {
+                Map<Vector>(h.valuePtr(), h.nonZeros()) += sum_h;
+            }
+        }
+    }
+
+    template <int TOrder, typename TIterator>
+    void assemble_serial(TIterator begin, TIterator end, double& f,
+        Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
+    {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
+        Vector buffer_g(m_max_element_size);
+        Matrix buffer_h(m_max_element_size, m_max_element_size);
+
+        assemble_serial<TOrder>(begin, end, buffer_g, buffer_h, f, g, h,
+            init_zero);
+    }
+
+    template <int TOrder, typename TIterator>
+    void assemble_serial(TIterator begin, TIterator end,
+        Ref<Vector> buffer_g, Ref<Matrix> buffer_h, double& f, Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
+    {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
+        if (init_zero) {
+            f = 0;
+
+            if (TOrder > 0) {
+                g.setZero();
+            }
+
+            if (TOrder > 1) {
+                Map<Vector>(h.valuePtr(), h.nonZeros()).setZero();
+            }
         }
 
-        for (size_t i = 0; i < m_elements.size(); i++) {
-            const auto& element = m_elements[i];
-            const auto& dof_indices = m_index_table[i];
-
-            const auto [element_f, element_g, element_h] = element->compute();
+        for (auto it = begin; it != end; ++it) {
+            const auto& [element, dof_indices] = *it;
 
             const size_t nb_dofs = dof_indices.size();
 
+            Ref<Vector> element_g = buffer_g.head(TOrder > 0 ? nb_dofs : 0);
+            Ref<Matrix> element_h = buffer_h.topLeftCorner(TOrder > 1 ?
+                nb_dofs : 0, TOrder > 1 ? nb_dofs : 0);
+
+            const auto element_f = element->compute(element_g, element_h);
+
             f += element_f;
 
-            if (TOrder > 0) {
-                for (size_t row = 0; row < nb_dofs; row++) {
-                    const auto row_index = dof_indices[row];
+            if (TOrder < 1) {
+                continue;
+            }
 
-                    if (row_index.global >= g.size()) {
+            for (size_t row = 0; row < nb_dofs; row++) {
+                const auto row_index = dof_indices[row];
+
+                if (row_index.global >= g.size()) {
+                    continue;
+                }
+
+                g(row_index.global) += element_g(row_index.local);
+
+                if (TOrder < 2) {
+                    continue;
+                }
+
+                for (size_t col = row; col < nb_dofs; col++) {
+                    const auto col_index = dof_indices[col];
+
+                    if (col_index.global >= g.size()) {
                         continue;
                     }
 
-                    g(row_index.global) += element_g(row_index.local);
-
-                    if (TOrder > 1) {
-                        for (size_t col = row; col < nb_dofs; col++) {
-                            const auto col_index = dof_indices[col];
-
-                            if (col_index.global >= g.size()) {
-                                continue;
-                            }
-
-                            h.coeffRef(row_index.global, col_index.global) +=
-                                element_h(row_index.local, col_index.local);
-                        }
-                    }
+                    h.coeffRef(row_index.global, col_index.global) +=
+                        element_h(row_index.local, col_index.local);
                 }
             }
         }
@@ -563,9 +614,28 @@ public:     // methods
         case 2:
             assemble<2>(parallel, m_f, m_g, m_h);
             break;
+        default:
+            throw std::runtime_error("Invalid order");
         }
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
+    }
+
+    void linear_solve(Ref<Vector> x)
+    {
+        if (nb_dofs() > 0) {
+            m_solver.factorize(m_h);
+
+            if (!m_solver.info() == Eigen::Success) {
+                throw std::runtime_error("Factorization failed");
+            }
+
+            x = m_solver.solve(m_residual);
+
+            if (!m_solver.info() == Eigen::Success) {
+                throw std::runtime_error("Solve failed");
+            }
+        }
     }
 
     void solve(const int maxiter, const double rtol, const double xtol,
@@ -600,7 +670,7 @@ public:     // methods
 
             Log::info(2, "Computing system...");
 
-            assemble(parallel, m_f, m_g, m_h);
+            assemble<2>(parallel, m_f, m_g, m_h);
 
             // check residual
 
@@ -695,23 +765,25 @@ public:     // methods
 
         // compute g and h
 
-        assemble(parallel, m_f, m_g, m_h);
+        assemble<2>(parallel, m_f, m_g, m_h);
 
         // solve
 
-        if (nb_dofs() > 0) {
-            m_solver.factorize(m_h);
+        linear_solve(m_x);
 
-            if (!m_solver.info() == Eigen::Success) {
-                throw std::runtime_error("Factorization failed");
-            }
+        // if (nb_dofs() > 0) {
+        //     m_solver.factorize(m_h);
 
-            m_x = m_solver.solve(m_residual);
+        //     if (!m_solver.info() == Eigen::Success) {
+        //         throw std::runtime_error("Factorization failed");
+        //     }
 
-            if (!m_solver.info() == Eigen::Success) {
-                throw std::runtime_error("Solve failed");
-            }
-        }
+        //     m_x = m_solver.solve(m_residual);
+
+        //     if (!m_solver.info() == Eigen::Success) {
+        //         throw std::runtime_error("Solve failed");
+        //     }
+        // }
 
         // update system
 
