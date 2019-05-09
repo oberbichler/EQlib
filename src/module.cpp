@@ -77,10 +77,21 @@ PYBIND11_MODULE(EQlib, m) {
             .def_static("info", py::overload_cast<const int,
                 const std::string&>(&Type::info<const std::string&>),
                 "level"_a, "message"_a)
-            .def_static("error", &Type::error<const std::string&>, "message"_a)
-            .def_static("warn", &Type::warn<const std::string&>, "message"_a)
-            .def_static("critical", &Type::critical<const std::string&>,
-                "message"_a)
+            .def_static("error", py::overload_cast<const std::string&>(
+                &Type::error<const std::string&>), "message"_a)
+            .def_static("error", py::overload_cast<const int,
+                const std::string&>(&Type::error<const std::string&>),
+                "level"_a, "message"_a)
+            .def_static("warn", py::overload_cast<const std::string&>(
+                &Type::warn<const std::string&>), "message"_a)
+            .def_static("warn", py::overload_cast<const int,
+                const std::string&>(&Type::warn<const std::string&>),
+                "level"_a, "message"_a)
+            .def_static("critical", py::overload_cast<const std::string&>(
+                &Type::critical<const std::string&>), "message"_a)
+            .def_static("critical", py::overload_cast<const int,
+                const std::string&>(&Type::critical<const std::string&>),
+                "level"_a, "message"_a)
         ;
     }
 

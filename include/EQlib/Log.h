@@ -69,14 +69,44 @@ public:     // methods
     }
 
     template<class... TArgs>
+    static void error(const int level, TArgs&&... args)
+    {
+        if (level > info_level()) {
+            return;
+        }
+
+        s_console->error(std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
     static void warn(TArgs&&... args)
     {
         s_console->warn(std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
+    static void warn(const int level, TArgs&&... args)
+    {
+        if (level > info_level()) {
+            return;
+        }
+
+        s_console->warn(std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
     static void critical(TArgs&&... args)
     {
+        s_console->critical(std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    static void critical(const int level, TArgs&&... args)
+    {
+        if (level > info_level()) {
+            return;
+        }
+
         s_console->critical(std::forward<TArgs>(args)...);
     }
 };
