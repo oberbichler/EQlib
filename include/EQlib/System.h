@@ -483,13 +483,13 @@ public:     // methods
                     local_buffer_g, local_buffer_h, local_f, local_g, local_h,
                     false);
             } else if (TOrder == 2) {
-            auto& local_g = c_g.local();
+                auto& local_g = c_g.local();
                 auto local_h = Map<Sparse>(m_h.rows(), m_h.cols(),
                     m_h.nonZeros(), m_h.outerIndexPtr(), m_h.innerIndexPtr(),
                     c_h.local().data());
 
-            auto& local_buffer_g = buffer_g.local();
-            auto& local_buffer_h = buffer_h.local();
+                auto& local_buffer_g = buffer_g.local();
+                auto& local_buffer_h = buffer_h.local();
 
                 assemble_serial<TOrder>(range.begin(), range.end(),
                     local_buffer_g, local_buffer_h, local_f, local_g, local_h,
@@ -506,7 +506,7 @@ public:     // methods
         }
 
         if (TOrder > 0) {
-        const auto sum_g = c_g.combine(std::plus<Vector>());
+            const auto sum_g = c_g.combine(std::plus<Vector>());
 
             if (init_zero) {
                 g = sum_g;
@@ -516,14 +516,14 @@ public:     // methods
         }
 
         if (TOrder > 1) {
-        const auto sum_h = c_h.combine(std::plus<Vector>());
+            const auto sum_h = c_h.combine(std::plus<Vector>());
 
-        if (init_zero) {
-            Map<Vector>(h.valuePtr(), h.nonZeros()) = sum_h;
-        } else {
-            Map<Vector>(h.valuePtr(), h.nonZeros()) += sum_h;
+            if (init_zero) {
+                Map<Vector>(h.valuePtr(), h.nonZeros()) = sum_h;
+            } else {
+                Map<Vector>(h.valuePtr(), h.nonZeros()) += sum_h;
+            }
         }
-    }
     }
 
     template <int TOrder, typename TIterator>
