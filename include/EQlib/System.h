@@ -310,6 +310,27 @@ public:     // getters and setters
         return m_h;
     }
 
+    Vector h_inv_v(Ref<const Vector> v)
+    {
+        if (nb_dofs() > 0) {
+            m_solver.factorize(m_h);
+
+            if (!m_solver.info() == Eigen::Success) {
+                throw std::runtime_error("Factorization failed");
+            }
+
+            Vector x = m_solver.solve(v);
+
+            if (!m_solver.info() == Eigen::Success) {
+                throw std::runtime_error("Solve failed");
+            }
+
+            return v;
+        } else {
+            return Vector(0);
+        }
+    }
+
     Vector h_v(Ref<const Vector> v) const
     {
         if (TSymmetric) {
@@ -628,27 +649,6 @@ public:     // methods
         }
 
         Log::info(1, "System computed in {:.3f} sec", timer.ellapsed());
-    }
-
-    Vector h_inv_v(Ref<const Vector> v)
-    {
-        if (nb_dofs() > 0) {
-            m_solver.factorize(m_h);
-
-            if (!m_solver.info() == Eigen::Success) {
-                throw std::runtime_error("Factorization failed");
-            }
-
-            Vector x = m_solver.solve(v);
-
-            if (!m_solver.info() == Eigen::Success) {
-                throw std::runtime_error("Solve failed");
-            }
-
-            return v;
-        } else {
-            return Vector(0);
-        }
     }
 
     void solve(const int maxiter, const double rtol, const double xtol,
