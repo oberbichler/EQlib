@@ -539,8 +539,9 @@ public:     // methods
     }
 
     template <int TOrder, typename TIterator>
-    void assemble_serial(TIterator begin, TIterator end,
-        Ref<Vector> buffer_g, Ref<Matrix> buffer_h, double& f, Ref<Vector> g, Ref<Sparse> h, const bool init_zero = true)
+    void assemble_serial(TIterator begin, TIterator end, Ref<Vector> buffer_g,
+        Ref<Matrix> buffer_h, double& f, Ref<Vector> g, Ref<Sparse> h,
+        const bool init_zero = true)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
