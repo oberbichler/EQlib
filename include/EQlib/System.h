@@ -312,7 +312,11 @@ public:     // getters and setters
 
     Vector h_v(Ref<const Vector> v) const
     {
+        if (TSymmetric) {
         return m_h.selfadjointView<Eigen::Upper>() * v;
+        } else {
+            return m_h * v;
+    }
     }
 
     Vector delta() const
