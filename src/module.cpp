@@ -177,6 +177,7 @@ PYBIND11_MODULE(EQlib, m) {
             .def("compute", &Type::compute, "order"_a=2, "parallel"_a=true)
             .def("dof_index", &Type::dof_index)
             .def("element_indices", &Type::element_indices, "index"_a)
+            .def("h_inv_v", &Type::h_inv_v)
             .def("h_v", &Type::h_v)
             .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
                 "xtol"_a = 1e-7, "parallel"_a=true)
