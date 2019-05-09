@@ -39,6 +39,8 @@ private:    // variables
     int m_nb_free_dofs;
     int m_nb_fixed_dofs;
 
+    int m_max_element_size;
+
     std::vector<std::shared_ptr<Element>> m_elements;
     std::vector<std::vector<Index>> m_index_table;
 
@@ -87,10 +89,18 @@ private:    // methods
 
         std::vector<std::vector<Dof>> element_dofs(nb_elements);
 
+        m_max_element_size = 0;
+
         for (size_t i = 0; i < nb_elements; i++) {
             const auto& element = elements[i];
 
             element_dofs[i] = element->dofs();
+
+            const auto element_size = element_dofs[i].size();
+
+            if (element_size > m_max_element_size) {
+                m_max_element_size = element_size;
+            }
         }
 
         // create set of unique dofs
@@ -449,8 +459,8 @@ public:     // methods
         tbb::combinable<Vector> c_g(Vector::Zero(m_g.size()));
         tbb::combinable<Vector> c_h(Vector::Zero(m_h.nonZeros()));
 
-        tbb::combinable<Vector> buffer_g(Vector(64));
-        tbb::combinable<Matrix> buffer_h(Matrix(64, 64));
+        tbb::combinable<Vector> buffer_g([=]() { return Vector(m_max_element_size); });
+        tbb::combinable<Matrix> buffer_h([=]() { return Matrix(m_max_element_size, m_max_element_size); });
 
         Vector dummy_vector = Vector(0);
         Matrix dummy_matrix = Matrix(0, 0);
@@ -532,8 +542,8 @@ public:     // methods
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        Vector buffer_g(64);
-        Matrix buffer_h(64, 64);
+        Vector buffer_g(m_max_element_size);
+        Matrix buffer_h(m_max_element_size, m_max_element_size);
 
         assemble_serial<TOrder>(begin, end, buffer_g, buffer_h, f, g, h,
             init_zero);
