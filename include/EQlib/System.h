@@ -720,7 +720,7 @@ public:     // methods
     }
 
     void solve(const int maxiter, const double rtol, const double xtol,
-        const bool parallel)
+        const double regularization, const bool parallel)
     {
         // setup
 
@@ -774,6 +774,10 @@ public:     // methods
             // solve iteration
 
             Log::info(2, "Solving the linear equation system...");
+
+            if (regularization != 0.0) {
+                add_diagonal(regularization);
+            }
 
             m_x = h_inv_v(m_residual);
 
