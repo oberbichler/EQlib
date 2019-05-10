@@ -19,7 +19,9 @@ auto register_system(Module& m, std::string name)
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    return py::class_<Type>(m, name.c_str())
+    using Holder = std::shared_ptr<Type>;
+
+    return py::class_<Type, Holder>(m, name.c_str())
         // constructors
         .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
             "elements"_a, "linear_solver"_a = py::dict())
