@@ -219,4 +219,15 @@ PYBIND11_MODULE(EQlib, m) {
 
         register_system<Type>(m, "SymmetricSystem");
     }
+
+    // Timer
+    {
+        using Type = EQlib::Timer;
+
+        py::class_<Type>(m, "Timer")
+            .def(py::init<>())
+            .def("start", &Type::start)
+            .def_property_readonly("ellapsed", &Type::ellapsed)
+        ;
+    }
 }
