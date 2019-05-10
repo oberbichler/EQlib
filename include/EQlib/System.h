@@ -758,7 +758,7 @@ public:     // methods
                 break;
             }
 
-            Log::info(2, "Iteration {}", iteration);
+            Log::info(2, "Iteration {}", iteration + 1);
 
             // compute g and h
 
