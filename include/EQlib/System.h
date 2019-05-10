@@ -389,7 +389,7 @@ public:     // getters and setters
                 throw std::runtime_error("Solve failed");
             }
 
-            return v;
+            return x;
         } else {
             return Vector(0);
         }
