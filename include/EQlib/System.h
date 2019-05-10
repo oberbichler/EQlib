@@ -332,6 +332,11 @@ private:    // methods
     }
 
 public:     // getters and setters
+    const Dof& dof(const int index) const
+    {
+        return m_dofs[index];
+    }
+
     const std::vector<Dof>& dofs() const
     {
         return m_dofs;
