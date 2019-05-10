@@ -3,6 +3,10 @@
 #include "Define.h"
 #include "Parameter.h"
 
+#include <memory>
+#include <string>
+#include <unordered_map>
+
 namespace EQlib {
 
 class Node
@@ -11,6 +15,8 @@ private:    // variables
     Parameter m_x;
     Parameter m_y;
     Parameter m_z;
+
+    std::unordered_map<std::string, Parameter> m_parameters;
 
 public:     // constructors
     Node(const double x, const double y, const double z)
@@ -83,6 +89,25 @@ public:     // getters and setters
         m_x.set_target(value(0));
         m_y.set_target(value(1));
         m_z.set_target(value(2));
+    }
+
+public:     // operators
+    Parameter& operator[](const std::string& name)
+    {
+        if (name == "x") {
+            return m_x;
+        } else if (name == "y") {
+            return m_y;
+        } else if (name == "z") {
+            return m_z;
+        }
+
+        return m_parameters[name];
+    }
+
+public:     // methods
+    bool has_parameter(const std::string& name) {
+        return m_parameters.find(name) != m_parameters.end();
     }
 };
 

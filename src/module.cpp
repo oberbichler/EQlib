@@ -153,6 +153,9 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property("displacements", &Type::displacements,
                 &Type::set_displacements)
             .def_property("forces", &Type::forces, &Type::set_forces)
+            .def("__getitem__", &Type::operator[],
+                py::return_value_policy::reference_internal)
+            .def("has_parameter", &Type::has_parameter, "name"_a)
         ;
     }
 
