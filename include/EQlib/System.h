@@ -494,6 +494,14 @@ public:     // methods
     }
 
     template<int TOrder>
+    void assemble(const bool parallel)
+    {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
+        assemble<TOrder>(parallel, m_f, m_g, m_h);
+    }
+
+    template<int TOrder>
     void assemble(const bool parallel, double& f, Ref<Vector> g, Ref<Sparse> h)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
