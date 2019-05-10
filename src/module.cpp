@@ -8,6 +8,7 @@
 
 #include <EQlib/Dof.h>
 #include <EQlib/Log.h>
+#include <EQlib/NewtonDescent.h>
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/PyElement.h>
@@ -230,6 +231,17 @@ PYBIND11_MODULE(EQlib, m) {
             .def(py::init<>())
             .def("start", &Type::start)
             .def_property_readonly("ellapsed", &Type::ellapsed)
+        ;
+    }
+
+    // NewtonDescent
+    {
+        using Type = EQlib::NewtonDescent;
+
+        py::class_<Type>(m, "NewtonDescent")
+            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
+                "xtol"_a=1e-6)
         ;
     }
 }
