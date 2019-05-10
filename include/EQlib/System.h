@@ -478,7 +478,7 @@ public:     // getters and setters
 public:     // methods
     void add_diagonal(const double value)
     {
-        for (int i = 0; i < nb_dofs(); i++) {
+        for (int i = 0; i < m_h.rows(); i++) {
             m_h.coeffRef(i, i) += value;
         }
     }
