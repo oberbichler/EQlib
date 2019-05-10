@@ -12,7 +12,7 @@ private:    // members
     std::shared_ptr<System<true>> m_system;
 
 private:    // methods
-    double linesearch_armij(Ref<const Vector> x, const Ref<Vector> search_dir,
+    double linesearch_armijo(Ref<const Vector> x, const Ref<Vector> search_dir,
         const double alpha_init = 1.0)
     {
         const double c = 0.2;
