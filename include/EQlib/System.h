@@ -374,14 +374,14 @@ public:     // getters and setters
 
     Vector h_inv_v(Ref<const Vector> v)
     {
-        if (nb_dofs() > 0) {
+        if (nb_free_dofs() > 0) {
             m_solver->factorize(m_h);
 
             if (!m_solver->info() == Eigen::Success) {
                 throw std::runtime_error("Factorization failed");
             }
 
-            Vector x(nb_dofs());
+            Vector x(nb_free_dofs());
 
             m_solver->solve(v, x);
 
