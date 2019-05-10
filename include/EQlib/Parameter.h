@@ -9,6 +9,8 @@ class Parameter
 private:    // variables
     double m_ref_value;
     double m_act_value;
+    double m_min_value;
+    double m_max_value;
     double m_target;
     double m_result;
     bool m_isfixed;
@@ -55,6 +57,22 @@ public:     // getters and setters
         m_act_value = value;
     }
 
+    double min_value() const {
+        return m_min_value;
+    }
+
+    void set_min_value(double value) {
+        m_min_value = value;
+    }
+
+    double max_value() const {
+        return m_max_value;
+    }
+
+    void set_max_value(double value) {
+        m_max_value = value;
+    }
+
     double delta() const {
         return m_act_value - m_ref_value;
     }
@@ -97,7 +115,8 @@ public:     // getters and setters
 
 public:     // methods
     Dof dof() {
-        return Dof(&m_ref_value, &m_act_value, &m_target, &m_result, m_isfixed);
+        return Dof(&m_ref_value, &m_act_value, &m_min_value, &m_max_value,
+            &m_target, &m_result, m_isfixed);
     }
 };
 

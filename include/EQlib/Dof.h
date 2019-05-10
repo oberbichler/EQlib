@@ -9,6 +9,8 @@ class Dof
 private:    // variables
     double* m_ref_value;
     double* m_act_value;
+    double* m_min_value;
+    double* m_max_value;
     double* m_target;
     double* m_result;
     bool m_isfixed;
@@ -17,6 +19,8 @@ public:     // constructors
     Dof()
     : m_ref_value(nullptr)
     , m_act_value(nullptr)
+    , m_min_value(nullptr)
+    , m_max_value(nullptr)
     , m_target(nullptr)
     , m_result(nullptr)
     , m_isfixed(false)
@@ -25,17 +29,31 @@ public:     // constructors
     Dof(
         double* const ref_value,
         double* const act_value,
+        double* const min_value,
+        double* const max_value,
         double* const target,
         double* const result,
         const bool isfixed)
     : m_ref_value(ref_value)
     , m_act_value(act_value)
+    , m_min_value(min_value)
+    , m_max_value(max_value)
     , m_target(target)
     , m_result(result)
     , m_isfixed(isfixed)
     { }
 
 public:     // getters and setters
+    double min_value() const
+    {
+        return *m_min_value;
+    }
+
+    double max_value() const
+    {
+        return *m_max_value;
+    }
+
     double delta() const
     {
         return *m_act_value - *m_ref_value;
