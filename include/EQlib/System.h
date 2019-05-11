@@ -766,6 +766,8 @@ public:     // methods
 
             assemble<2>(parallel, m_f, m_g, m_h);
 
+            Log::info(2, "The current value is {}", m_f);
+
             // check residual
 
             Log::info(2, "Computing residual...");
