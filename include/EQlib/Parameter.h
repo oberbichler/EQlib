@@ -135,13 +135,8 @@ public:     // methods
 
     std::string to_string()
     {
-        std::string min = min_value() == std::numeric_limits<double>::min() ?
-            "-inf" : (min_value() == std::numeric_limits<double>::max() ?
-            "inf" : format("{}", min_value()));
-
-        std::string max = max_value() == std::numeric_limits<double>::min() ?
-            "-inf" : (max_value() == std::numeric_limits<double>::max() ?
-            "inf" : format("{}", max_value()));
+        std::string min = format_number(min_value());
+        std::string max = format_number(max_value());
 
         if (m_name.empty()) {
             return format("<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
