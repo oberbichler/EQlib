@@ -207,6 +207,7 @@ PYBIND11_MODULE(EQlib, m) {
                     return Type(ref_value, act_value, target, result, isfixed);
                 }
             ))
+            .def("__float__", [](const Type& self) { return self.act_value(); })
             .def("__copy__", [](const Type& self) { return Type(self); })
             .def("__deepcopy__", [](const Type& self, py::dict& memo) {
                 return Type(self); }, "memodict"_a)
