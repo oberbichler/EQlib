@@ -52,7 +52,7 @@ auto register_system(Module& m, std::string name)
         .def("h_inv_v", &Type::h_inv_v)
         .def("h_v", &Type::h_v)
         .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
-            "xtol"_a = 1e-7, "regularization"_a=0.0, "parallel"_a=true)
+            "xtol"_a = 1e-7, "damping"_a=0.0, "parallel"_a=true)
         .def("solve_linear", &Type::solve_linear, "parallel"_a=true,
             "update_dofs"_a=true)
     ;
@@ -270,7 +270,7 @@ PYBIND11_MODULE(EQlib, m) {
         py::class_<Type>(m, "NewtonDescent")
             .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
-                "xtol"_a=1e-6, "line_search"_a = "none")
+                "xtol"_a=1e-6, "line_search"_a=py::dict())
         ;
     }
 }

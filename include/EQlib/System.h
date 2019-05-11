@@ -733,7 +733,7 @@ public:     // methods
     }
 
     void solve(const int maxiter, const double rtol, const double xtol,
-        const double regularization, const bool parallel)
+        const double damping, const bool parallel)
     {
         // setup
 
@@ -790,8 +790,8 @@ public:     // methods
 
             Log::info(2, "Solving the linear equation system...");
 
-            if (regularization != 0.0) {
-                add_diagonal(regularization);
+            if (damping != 0.0) {
+                add_diagonal(damping);
             }
 
             m_x = h_inv_v(m_residual);
