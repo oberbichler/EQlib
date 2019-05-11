@@ -16,6 +16,8 @@
 #include <EQlib/PyElement.h>
 #include <EQlib/System.h>
 
+#include <fmt/format.h>
+
 template <typename Type, typename Module>
 auto register_system(Module& m, std::string name)
 {
@@ -208,6 +210,10 @@ PYBIND11_MODULE(EQlib, m) {
                 }
             ))
             .def("__float__", [](const Type& self) { return self.act_value(); })
+            .def("__repr__", [](const Type& self) -> std::string {
+                return fmt::format("<Parameter value={} isfixed={} at {:#x}>",
+                    self.act_value(), self.isfixed(), size_t(&self));
+            })
             .def("__copy__", [](const Type& self) { return Type(self); })
             .def("__deepcopy__", [](const Type& self, py::dict& memo) {
                 return Type(self); }, "memodict"_a)
