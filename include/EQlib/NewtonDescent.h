@@ -387,7 +387,7 @@ public:     // method
         Log::info(2, "Using Newton Descent minimizer");
 
         const auto line_search_type =
-            get_or_default<std::string>(line_search, "type", "none");
+            get_or_default<std::string>(line_search, "type", "armijo");
 
         std::function<double (Ref<const Vector>, Ref<const Vector>,
             const double&)> line_search_function;
