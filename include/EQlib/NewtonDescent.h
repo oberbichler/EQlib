@@ -12,8 +12,8 @@ private:    // members
     std::shared_ptr<System<true>> m_system;
 
 private:    // methods
-    double linesearch_armijo(Ref<const Vector> x, const Ref<Vector> search_dir,
-        const double alpha_init = 1.0)
+    double linesearch_armijo(Ref<const Vector> x,
+        Ref<const Vector> search_dir, const double alpha_init = 1.0)
     {
         const double c = 0.2;
         const double rho = 0.9;
@@ -378,12 +378,42 @@ public:     // constructor
     }
 
 public:     // method
-    void minimize(const int maxiter, const double rtol, const double xtol)
+    void minimize(const int maxiter, const double rtol, const double xtol,
+        const py::dict& line_search)
     {
         // setup
 
         Log::info(1, "==> Minimizing nonlinear system...");
         Log::info(2, "Using Newton Descent minimizer");
+
+        const auto line_search_type =
+            get_or_default<std::string>(line_search, "type", "none");
+
+        std::function<double (Ref<const Vector>, Ref<const Vector>,
+            const double&)> line_search_function;
+
+        if (line_search_type == "none") {
+            line_search_function = [&](Ref<const Vector> x,
+                Ref<const Vector> search_dir, const double& alpha_init)
+            {
+                return alpha_init;
+            };
+        } else if (line_search_type == "armijo") {
+            line_search_function = [&](Ref<const Vector> x,
+                Ref<const Vector> search_dir, const double& alpha_init)
+            {
+                return linesearch_armijo(x, search_dir, alpha_init);
+            };
+        } else if (line_search_type == "more_thuente") {
+            line_search_function = [&](Ref<const Vector> x,
+                Ref<const Vector> search_dir, const double& alpha_init)
+            {
+                return linesearch_morethuente(x, search_dir, alpha_init);
+            };
+        }
+
+        Log::info(2, "Using Newton Descent minimizer");
+        Log::info(2, "Line Search: {}", line_search_type);
 
         Timer timer;
 
@@ -441,7 +471,7 @@ public:     // method
 
             // linesearch
 
-            const double rate = linesearch_morethuente(x, delta_x);
+            const double rate = line_search_function(x, delta_x, 1.0);
 
             Log::info(2, "Linesearch rate = {}", rate);
 

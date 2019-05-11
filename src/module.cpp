@@ -255,7 +255,7 @@ PYBIND11_MODULE(EQlib, m) {
         py::class_<Type>(m, "NewtonDescent")
             .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
-                "xtol"_a=1e-6)
+                "xtol"_a=1e-6, "line_search"_a = "none")
         ;
     }
 }
