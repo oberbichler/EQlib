@@ -9,6 +9,7 @@
 #include <EQlib/Dof.h>
 #include <EQlib/LBfgs.h>
 #include <EQlib/Log.h>
+#include <EQlib/LevenbergMarquardt.h>
 #include <EQlib/NewtonDescent.h>
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
@@ -242,6 +243,17 @@ PYBIND11_MODULE(EQlib, m) {
         using Type = EQlib::LBfgs;
 
         py::class_<Type>(m, "LBfgs")
+            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
+                "xtol"_a=1e-6)
+        ;
+    }
+
+    // LevenbergMarquardt
+    {
+        using Type = EQlib::LevenbergMarquardt;
+
+        py::class_<Type>(m, "LevenbergMarquardt")
             .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
                 "xtol"_a=1e-6)
