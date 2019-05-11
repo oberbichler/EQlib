@@ -29,8 +29,8 @@ public:     // constructors
         bool isfixed) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
-    , m_min_value(std::numeric_limits<double>::min())
-    , m_max_value(std::numeric_limits<double>::max())
+    , m_min_value(-std::numeric_limits<double>::infinity())
+    , m_max_value(std::numeric_limits<double>::infinity())
     , m_target(target)
     , m_result(result)
     , m_isfixed(isfixed)
@@ -157,17 +157,16 @@ public:     // methods
 
     std::string to_string() const noexcept
     {
-        std::string min = format_number(min_value());
-        std::string max = format_number(max_value());
-
         if (m_name.empty()) {
             return format(
                 "<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                act_value(), isfixed(), min, max, size_t(&m_act_value));
+                act_value(), isfixed(), min_value(), max_value(),
+                size_t(&m_act_value));
         } else {
             return format(
                 "<Parameter '{}' value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                name(), act_value(), isfixed(), min, max, size_t(&m_act_value));
+                name(), act_value(), isfixed(), min_value(), max_value(),
+                size_t(&m_act_value));
         }
     }
 };

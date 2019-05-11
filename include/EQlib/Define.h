@@ -39,17 +39,4 @@ std::string format(Args&&... args)
     return fmt::format(std::forward<Args>(args)...);
 }
 
-std::string format_number(const double value)
-{
-    if (value == std::numeric_limits<double>::min()) {
-        return "-inf";
-    }
-
-    if (value == std::numeric_limits<double>::max()) {
-        return "inf";
-    }
-
-    return format("{}", value);
-}
-
 } // namespace EQlib
