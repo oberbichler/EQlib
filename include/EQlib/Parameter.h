@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Define.h"
 #include "Dof.h"
 
 #include <limits>
