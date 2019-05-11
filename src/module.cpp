@@ -7,6 +7,7 @@
 #include <pybind11/stl_bind.h>
 
 #include <EQlib/Dof.h>
+#include <EQlib/LBfgs.h>
 #include <EQlib/Log.h>
 #include <EQlib/NewtonDescent.h>
 #include <EQlib/Node.h>
@@ -233,6 +234,17 @@ PYBIND11_MODULE(EQlib, m) {
             .def(py::init<>())
             .def("start", &Type::start)
             .def_property_readonly("ellapsed", &Type::ellapsed)
+        ;
+    }
+
+    // LBfgs
+    {
+        using Type = EQlib::LBfgs;
+
+        py::class_<Type>(m, "LBfgs")
+            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
+                "xtol"_a=1e-6)
         ;
     }
 
