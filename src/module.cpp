@@ -16,8 +16,6 @@
 #include <EQlib/PyElement.h>
 #include <EQlib/System.h>
 
-#include <fmt/format.h>
-
 template <typename Type, typename Module>
 auto register_system(Module& m, std::string name)
 {
@@ -191,6 +189,7 @@ PYBIND11_MODULE(EQlib, m) {
             .def_property("result", &Type::result, &Type::set_result)
             .def_property("residual", &Type::residual, &Type::set_residual)
             .def_property("isfixed", &Type::isfixed, &Type::set_isfixed)
+            .def_property("name", &Type::name, &Type::set_name)
             .def_property_readonly("dof", &Type::dof)
             .def(py::pickle([](const Type& self) {
                     return py::make_tuple(self.ref_value(), self.act_value(),
@@ -210,10 +209,7 @@ PYBIND11_MODULE(EQlib, m) {
                 }
             ))
             .def("__float__", [](const Type& self) { return self.act_value(); })
-            .def("__repr__", [](const Type& self) -> std::string {
-                return fmt::format("<Parameter value={} isfixed={} at {:#x}>",
-                    self.act_value(), self.isfixed(), size_t(&self));
-            })
+            .def("__repr__", &Type::to_string)
             .def("__copy__", [](const Type& self) { return Type(self); })
             .def("__deepcopy__", [](const Type& self, py::dict& memo) {
                 return Type(self); }, "memodict"_a)

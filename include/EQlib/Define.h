@@ -3,7 +3,11 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 
+#include <fmt/format.h>
+
 #include <pybind11/pybind11.h>
+
+#include <string>
 
 namespace EQlib {
 
@@ -27,6 +31,12 @@ T get_or_default(py::dict options, std::string key, T default_value) {
         return default_value;
     }
     return options[key.c_str()].cast<T>();
+}
+
+template <typename... Args>
+std::string format(Args&&... args)
+{
+    return fmt::format(std::forward<Args>(args)...);
 }
 
 } // namespace EQlib

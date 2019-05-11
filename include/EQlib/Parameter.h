@@ -3,6 +3,7 @@
 #include "Dof.h"
 
 #include <limits>
+#include <string>
 
 namespace EQlib {
 
@@ -16,6 +17,7 @@ private:    // variables
     double m_target;
     double m_result;
     bool m_isfixed;
+    std::string m_name;
 
 public:     // constructors
     Parameter(
@@ -117,10 +119,37 @@ public:     // getters and setters
         m_isfixed = value;
     }
 
+    std::string name() const {
+        return m_name;
+    }
+
+    void set_name(const std::string& value) {
+        m_name = value;
+    }
+
 public:     // methods
     Dof dof() {
         return Dof(&m_ref_value, &m_act_value, &m_min_value, &m_max_value,
             &m_target, &m_result, m_isfixed);
+    }
+
+    std::string to_string()
+    {
+        std::string min = min_value() == std::numeric_limits<double>::min() ?
+            "-inf" : (min_value() == std::numeric_limits<double>::max() ?
+            "inf" : format("{}", min_value()));
+
+        std::string max = max_value() == std::numeric_limits<double>::min() ?
+            "-inf" : (max_value() == std::numeric_limits<double>::max() ?
+            "inf" : format("{}", max_value()));
+
+        if (m_name.empty()) {
+            return format("<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
+                act_value(), isfixed(), min, max, size_t(&m_act_value));
+        } else {
+            return format("<Parameter '{}' value={} isfixed={} bounds=({}, {}) at {:#x}>",
+                name(), act_value(), isfixed(), min, max, size_t(&m_act_value));
+        }
     }
 };
 
