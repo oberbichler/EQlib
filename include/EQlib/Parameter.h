@@ -140,10 +140,12 @@ public:     // methods
         std::string max = format_number(max_value());
 
         if (m_name.empty()) {
-            return format("<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
+            return format(
+                "<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
                 act_value(), isfixed(), min, max, size_t(&m_act_value));
         } else {
-            return format("<Parameter '{}' value={} isfixed={} bounds=({}, {}) at {:#x}>",
+            return format(
+                "<Parameter '{}' value={} isfixed={} bounds=({}, {}) at {:#x}>",
                 name(), act_value(), isfixed(), min, max, size_t(&m_act_value));
         }
     }
