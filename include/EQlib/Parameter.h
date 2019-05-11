@@ -2,6 +2,8 @@
 
 #include "Dof.h"
 
+#include <limits>
+
 namespace EQlib {
 
 class Parameter
@@ -24,6 +26,8 @@ public:     // constructors
         bool isfixed)
     : m_ref_value(ref_value)
     , m_act_value(act_value)
+    , m_min_value(std::numeric_limits<double>::min())
+    , m_max_value(std::numeric_limits<double>::max())
     , m_target(target)
     , m_result(result)
     , m_isfixed(isfixed)
