@@ -8,7 +8,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-EQlib_VERSION = '0.19.2'
+EQlib_VERSION = '0.20.0'
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
