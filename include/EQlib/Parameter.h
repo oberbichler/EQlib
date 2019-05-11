@@ -26,7 +26,7 @@ public:     // constructors
         double act_value,
         double target,
         double result,
-        bool isfixed)
+        bool isfixed) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
     , m_min_value(std::numeric_limits<double>::min())
@@ -36,105 +36,126 @@ public:     // constructors
     , m_isfixed(isfixed)
     { }
 
-    Parameter()
+    Parameter() noexcept
     : Parameter(0, 0, 0, 0, false)
     { }
 
     Parameter(
         double value,
         double target=0,
-        bool isfixed=false)
+        bool isfixed=false) noexcept
     : Parameter(value, value, target, 0, isfixed)
     { }
 
 public:     // getters and setters
-    double ref_value() const {
+    double ref_value() const noexcept
+    {
         return m_ref_value;
     }
 
-    void set_ref_value(double value) {
+    void set_ref_value(double value) noexcept
+    {
         m_ref_value = value;
     }
 
-    double act_value() const {
+    double act_value() const noexcept
+    {
         return m_act_value;
     }
 
-    void set_act_value(double value) {
+    void set_act_value(double value) noexcept
+    {
         m_act_value = value;
     }
 
-    double min_value() const {
+    double min_value() const noexcept
+    {
         return m_min_value;
     }
 
-    void set_min_value(double value) {
+    void set_min_value(double value) noexcept
+    {
         m_min_value = value;
     }
 
-    double max_value() const {
+    double max_value() const noexcept
+    {
         return m_max_value;
     }
 
-    void set_max_value(double value) {
+    void set_max_value(double value) noexcept
+    {
         m_max_value = value;
     }
 
-    double delta() const {
+    double delta() const noexcept
+    {
         return m_act_value - m_ref_value;
     }
 
-    void set_delta(double value) {
+    void set_delta(double value) noexcept
+    {
         m_act_value = m_ref_value + value;
     }
 
-    double target() const {
+    double target() const noexcept
+    {
         return m_target;
     }
 
-    void set_target(double value) {
+    void set_target(double value) noexcept
+    {
         m_target = value;
     }
 
-    double result() const {
+    double result() const noexcept
+    {
         return m_result;
     }
 
-    void set_result(double value) {
+    void set_result(double value) noexcept
+    {
         m_result = value;
     }
 
-    double residual() const {
+    double residual() const noexcept
+    {
         return m_target - m_result;
     }
 
-    void set_residual(double value) {
+    void set_residual(double value) noexcept
+    {
         m_result = m_target - value;
     }
 
-    bool isfixed() const {
+    bool isfixed() const noexcept
+    {
         return m_isfixed;
     }
 
-    void set_isfixed(bool value) {
+    void set_isfixed(bool value) noexcept
+    {
         m_isfixed = value;
     }
 
-    std::string name() const {
+    std::string name() const noexcept
+    {
         return m_name;
     }
 
-    void set_name(const std::string& value) {
+    void set_name(const std::string& value) noexcept
+    {
         m_name = value;
     }
 
 public:     // methods
-    Dof dof() {
+    Dof dof() noexcept
+    {
         return Dof(&m_ref_value, &m_act_value, &m_min_value, &m_max_value,
             &m_target, &m_result, m_isfixed);
     }
 
-    std::string to_string()
+    std::string to_string() const noexcept
     {
         std::string min = format_number(min_value());
         std::string max = format_number(max_value());

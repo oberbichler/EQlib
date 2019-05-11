@@ -16,7 +16,7 @@ private:    // variables
     bool m_isfixed;
 
 public:     // constructors
-    Dof()
+    Dof() noexcept
     : m_ref_value(nullptr)
     , m_act_value(nullptr)
     , m_min_value(nullptr)
@@ -33,7 +33,7 @@ public:     // constructors
         double* const max_value,
         double* const target,
         double* const result,
-        const bool isfixed)
+        const bool isfixed) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
     , m_min_value(min_value)
