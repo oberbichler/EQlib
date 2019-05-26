@@ -28,6 +28,9 @@ auto register_system(Module& m, std::string name)
         // constructors
         .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
             "elements"_a, "linear_solver"_a = py::dict())
+        .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
+            std::vector<EQlib::Dof>, py::dict>(), "elements"_a, "dofs"_a,
+            "linear_solver"_a = py::dict())
         // properties
         .def_property("load_factor", &Type::load_factor,
             &Type::set_load_factor)

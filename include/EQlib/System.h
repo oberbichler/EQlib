@@ -105,12 +105,23 @@ public:     // constructors
         py::dict linear_solver)
     : m_load_factor(1)
     {
-        initialize(std::move(elements), linear_solver);
+        const std::vector<Dof> dofs;
+        initialize(std::move(elements), dofs, linear_solver);
+    }
+
+    System(
+        std::vector<std::shared_ptr<Element>> elements,
+        std::vector<Dof> dofs,
+        py::dict linear_solver)
+    : m_load_factor(1)
+    {
+        initialize(std::move(elements), dofs, linear_solver);
     }
 
 private:    // methods
     void initialize(
         std::vector<std::shared_ptr<Element>> elements,
+        std::vector<Dof> dof_list,
         py::dict linear_solver)
     {
         Log::info(1, "==> Initialize system...");
@@ -148,21 +159,33 @@ private:    // methods
         std::vector<Dof> free_dofs;
         std::vector<Dof> fixed_dofs;
 
-        for (size_t i = 0; i < nb_elements; i++) {
-            const auto& element = elements[i];
+        if (dof_list.size() == 0) {
+            for (size_t i = 0; i < nb_elements; i++) {
+                const auto& element = elements[i];
 
-            for (const auto& dof : element_dofs[i]) {
+                for (const auto& dof : element_dofs[i]) {
+                    if (dof_set.find(dof) != dof_set.end()) {
+                        continue;
+                    }
+
+                    dof_set.insert(dof);
+
+                    if (dof.isfixed()) {
+                        fixed_dofs.push_back(dof);
+                    } else {
+                        free_dofs.push_back(dof);
+                    }
+                }
+            }
+        } else {
+            for (const auto& dof : dof_list) {
                 if (dof_set.find(dof) != dof_set.end()) {
                     continue;
                 }
 
                 dof_set.insert(dof);
 
-                if (dof.isfixed()) {
-                    fixed_dofs.push_back(dof);
-                } else {
-                    free_dofs.push_back(dof);
-                }
+                free_dofs.push_back(dof);
             }
         }
 
@@ -202,7 +225,15 @@ private:    // methods
 
             for (int local = 0; local < nb_dofs; local++) {
                 const auto dof = dofs[local];
-                const auto global = m_dof_indices[dof];
+
+                int global = free_dofs.size();
+
+                const auto it = m_dof_indices.find(dof);
+
+                if (it != m_dof_indices.end()) {
+                    global = it->second;
+                }
+
                 dof_indices[local] = {local, global};
             }
 
