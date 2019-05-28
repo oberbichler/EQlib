@@ -697,7 +697,8 @@ public:     // methods
         }
 
         for (auto it = begin; it != end; ++it) {
-            const auto& [element, dof_indices] = *it;
+            const auto& element = std::get<0>(*it);
+            const auto& dof_indices = std::get<1>(*it);
 
             const size_t nb_dofs = dof_indices.size();
 
