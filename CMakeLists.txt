@@ -21,7 +21,7 @@ add_subdirectory(external_libraries/pybind11)
 
 add_definitions(
     -DEIGEN_DEFAULT_TO_ROW_MAJOR
-    -DEQlib_VERSION="${EQlib_VERSION}"
+    -DEQLIB_VERSION="${EQLIB_VERSION}"
     -DFMT_HEADER_ONLY
 )
 
