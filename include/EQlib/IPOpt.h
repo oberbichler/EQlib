@@ -32,21 +32,12 @@ public:     // methods
     bool get_nlp_info(Index& n, Index& m, Index& nnz_jac_g, Index& nnz_h_lag,
         IndexStyleEnum& index_style)
     {
-        // The problem described in IPOptSystem.hpp has n variables, x1, & x2,
         n = m_system->nb_free_dofs();
-
-        // m equality constraint,
         m = 0;
 
-        // 2 nonzeros in the jacobian (one for x1, and one for x2),
         nnz_jac_g = 0;
-
-        // and 2 nonzeros in the hessian of the lagrangian
-        // (one in the hessian of the objective for x2,
-        //  and one in the hessian of the constraints for x1)
         nnz_h_lag = m_system->h().nonZeros();
 
-        // We use the standard fortran index style for row/col entries
         index_style = C_STYLE;
 
         return true;
@@ -55,28 +46,11 @@ public:     // methods
     bool get_bounds_info(Index n, Number* x_l, Number* x_u, Index m,
         Number* g_l, Number* g_u)
     {
-        // here, the n and m we gave IPOPT in get_nlp_info are passed back to us.
-        // If desired, we could assert to make sure they are what we think they are.
-        // assert(n == 2);
-        // assert(m == 1);
-
-        // x1 has a lower bound of -1 and an upper bound of 1
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
             x_l[i] = dof.lower_bound() - dof.ref_value();
             x_u[i] = dof.upper_bound() - dof.ref_value();
         }
-
-        // x2 has no upper or lower bound, so we set them to
-        // a large negative and a large positive number.
-        // The value that is interpretted as -/+infinity can be
-        // set in the options, but it defaults to -/+1e19
-        // x_l[1] = -1.0e19;
-        // x_u[1] = +1.0e19;
-
-        // we have one equality constraint, so we set the bounds on this constraint
-        // to be equal (and zero).
-        // g_l[0] = g_u[0] = 0.0;
 
         return true;
     }
@@ -105,8 +79,6 @@ public:     // methods
         m_system->set_x(Map<const Vector>(x, n));
         m_system->assemble<0>(true);
 
-        // return the value of the objective function
-
         obj_value = m_system->f();
 
         return true;
@@ -117,8 +89,6 @@ public:     // methods
         m_system->set_x(Map<const Vector>(x, n));
         m_system->assemble<1>(true);
 
-        // return the gradient of the objective function grad_{x} f(x)
-
         Map<Vector>(grad_f, n) = m_system->g();
 
         return true;
@@ -126,12 +96,6 @@ public:     // methods
 
     bool eval_g(Index n, const Number* x, bool new_x, Index m, Number* g)
     {
-        // return the value of the constraints: g(x)
-        // Number x1 = x[0];
-        // Number x2 = x[1];
-
-        // g[0] = -(x1 * x1 + x2 - 1.0);
-
         return true;
     }
 
@@ -151,7 +115,7 @@ public:     // methods
 
             int i = 0;
 
-            for (int k = 0; k < h.outerSize(); ++k){
+            for (int k = 0; k < h.outerSize(); ++k) {
                 for (Sparse::InnerIterator it(h, k); it; ++it){
                     iRow[i] = it.col();
                     jCol[i] = it.row();
@@ -182,9 +146,6 @@ public:     // methods
         const Number* lambda, Number obj_value, const Ipopt::IpoptData* ip_data,
         Ipopt::IpoptCalculatedQuantities* ip_cq)
     {
-        // here is where we would store the solution to variables, or write to a file, etc
-        // so we could use the solution. Since the solution is displayed to the console,
-        // we currently do nothing here.
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
             dof.set_delta(x[i]);
