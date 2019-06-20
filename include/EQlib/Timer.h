@@ -31,6 +31,22 @@ public:
         const Duration duration = now - m_start;
         return duration.count();
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = EQlib::Timer;
+
+        py::class_<Type>(m, "Timer")
+            .def(py::init<>())
+            .def("start", &Type::start)
+            .def_property_readonly("ellapsed", &Type::ellapsed)
+        ;
+    }
 };
 
 } // namespace EQlib

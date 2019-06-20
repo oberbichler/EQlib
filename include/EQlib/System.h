@@ -901,6 +901,55 @@ public:     // methods
 
         Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = System<TSymmetric>;
+        using Holder = std::shared_ptr<Type>;
+
+        const std::string name = TSymmetric ? "SymmetricSystem" : "System";
+
+        py::class_<Type, Holder>(m, name.c_str())
+            // constructors
+            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
+                "elements"_a, "linear_solver"_a = py::dict())
+            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
+                std::vector<EQlib::Dof>, py::dict>(), "elements"_a, "dofs"_a,
+                "linear_solver"_a = py::dict())
+            // properties
+            .def_property("load_factor", &Type::load_factor,
+                &Type::set_load_factor)
+            .def_property("x", &Type::x, &Type::set_x)
+            // readonly properties
+            .def_property_readonly("dofs", &Type::dofs)
+            .def_property_readonly("nb_dofs", &Type::nb_dofs)
+            .def_property_readonly("nb_elements", &Type::nb_elements)
+            .def_property_readonly("elements", &Type::elements)
+            .def_property_readonly("f", &Type::f)
+            .def_property_readonly("g", &Type::g)
+            .def_property_readonly("h", &Type::h)
+            .def_property_readonly("message", &Type::message)
+            .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
+            .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
+            .def_property_readonly("residual", &Type::residual)
+            // methods
+            .def("add_diagonal", &Type::add_diagonal, "value"_a)
+            .def("compute", &Type::compute, "order"_a=2, "parallel"_a=true)
+            .def("dof_index", &Type::dof_index)
+            .def("element_indices", &Type::element_indices, "index"_a)
+            .def("h_inv_v", &Type::h_inv_v)
+            .def("h_v", &Type::h_v)
+            .def("solve", &Type::solve, "maxiter"_a = 100, "rtol"_a = 1e-7,
+                "xtol"_a = 1e-7, "damping"_a=0.0, "parallel"_a=true)
+            .def("solve_linear", &Type::solve_linear, "parallel"_a=true,
+                "update_dofs"_a=true)
+        ;
+    }
 };
 
 } // namespace EQlib

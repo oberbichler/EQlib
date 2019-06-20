@@ -169,6 +169,58 @@ public:     // methods
                 size_t(&m_act_value));
         }
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = EQlib::Parameter;
+
+        py::class_<Type>(m, "Parameter")
+            .def(py::init<double, double, double, double, bool>(),
+                "ref_value"_a, "act_value"_a, "target"_a=0, "result"_a=0,
+                "isfixed"_a=false)
+            .def(py::init<double, double, bool>(), "value"_a, "target"_a=0,
+                "isfixed"_a=false)
+            .def(py::init<>())
+            .def_property("ref_value", &Type::ref_value, &Type::set_ref_value)
+            .def_property("act_value", &Type::act_value, &Type::set_act_value)
+            .def_property("min_value", &Type::min_value, &Type::set_min_value)
+            .def_property("max_value", &Type::max_value, &Type::set_max_value)
+            .def_property("delta", &Type::delta, &Type::set_delta)
+            .def_property("target", &Type::target, &Type::set_target)
+            .def_property("result", &Type::result, &Type::set_result)
+            .def_property("residual", &Type::residual, &Type::set_residual)
+            .def_property("isfixed", &Type::isfixed, &Type::set_isfixed)
+            .def_property("name", &Type::name, &Type::set_name)
+            .def_property_readonly("dof", &Type::dof)
+            .def(py::pickle([](const Type& self) {
+                    return py::make_tuple(self.ref_value(), self.act_value(),
+                        self.target(), self.result(), self.isfixed());
+                }, [](py::tuple tuple) {
+                    if (tuple.size() != 5) {
+                        throw std::runtime_error("Invalid state!");
+                    }
+
+                    const auto ref_value = tuple[0].cast<double>();
+                    const auto act_value = tuple[1].cast<double>();
+                    const auto target = tuple[2].cast<double>();
+                    const auto result = tuple[3].cast<double>();
+                    const auto isfixed = tuple[4].cast<bool>();
+
+                    return Type(ref_value, act_value, target, result, isfixed);
+                }
+            ))
+            .def("__float__", [](const Type& self) { return self.act_value(); })
+            .def("__repr__", &Type::to_string)
+            .def("__copy__", [](const Type& self) { return Type(self); })
+            .def("__deepcopy__", [](const Type& self, py::dict& memo) {
+                return Type(self); }, "memodict"_a)
+        ;
+    }
 };
 
 } // namespace EQlib

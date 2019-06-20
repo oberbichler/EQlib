@@ -109,6 +109,43 @@ public:     // methods
 
         s_console->critical(std::forward<TArgs>(args)...);
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = EQlib::Log;
+
+        py::class_<Type>(m, "Log")
+            .def_property_static("info_level", [](py::object) { return
+                Type::info_level(); }, [](py::object, const int value) {
+                Type::set_info_level(value); })
+            .def_static("debug", &Type::debug<const std::string&>, "message"_a)
+            .def_static("info", py::overload_cast<const std::string&>(
+                &Type::info<const std::string&>), "message"_a)
+            .def_static("info", py::overload_cast<const int,
+                const std::string&>(&Type::info<const std::string&>),
+                "level"_a, "message"_a)
+            .def_static("error", py::overload_cast<const std::string&>(
+                &Type::error<const std::string&>), "message"_a)
+            .def_static("error", py::overload_cast<const int,
+                const std::string&>(&Type::error<const std::string&>),
+                "level"_a, "message"_a)
+            .def_static("warn", py::overload_cast<const std::string&>(
+                &Type::warn<const std::string&>), "message"_a)
+            .def_static("warn", py::overload_cast<const int,
+                const std::string&>(&Type::warn<const std::string&>),
+                "level"_a, "message"_a)
+            .def_static("critical", py::overload_cast<const std::string&>(
+                &Type::critical<const std::string&>), "message"_a)
+            .def_static("critical", py::overload_cast<const int,
+                const std::string&>(&Type::critical<const std::string&>),
+                "level"_a, "message"_a)
+        ;
+    }
 };
 
 } // namespace EQlib

@@ -438,6 +438,22 @@ public:     // method
 
         Log::info(1, "System minimized in {:.3f} sec", timer.ellapsed());
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = EQlib::LevenbergMarquardt;
+
+        py::class_<Type>(m, "LevenbergMarquardt")
+            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
+                "xtol"_a=1e-6)
+        ;
+    }
 };
 
 } // namespace EQlib

@@ -109,6 +109,30 @@ public:     // comparison
     {
         return (size_t)m_act_value;
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = EQlib::Dof;
+
+        py::class_<Type>(m, "Dof")
+            // methods
+            .def("__eq__", &Type::operator==)
+            .def("__hash__", &Type::hash)
+            // properties
+            .def_property("delta", &Type::delta, &Type::set_delta)
+            .def_property("residual", &Type::residual, &Type::set_residual)
+            // read-only properties
+            .def_property_readonly("isfixed", &Type::isfixed)
+            .def_property_readonly("max_value", &Type::max_value)
+            .def_property_readonly("min_value", &Type::min_value)
+            .def_property_readonly("target", &Type::target)
+        ;
+    }
 };
 
 } // namespace EQlib

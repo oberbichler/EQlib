@@ -23,6 +23,24 @@ public:     // methods
         pybind11::gil_scoped_acquire acquire;
         PYBIND11_OVERLOAD_PURE(double, Element, compute, g, h);
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = Element;
+        using Trampoline = PyElement;
+        using Holder = std::shared_ptr<Type>;
+
+        py::class_<Type, Trampoline, Holder>(m, "Element", py::dynamic_attr())
+            .def(py::init<>())
+            .def("dofs", &Type::dofs)
+            .def("compute", &Type::compute, "g"_a, "h"_a)
+        ;
+    }
 };
 
 } // namespace EQlib

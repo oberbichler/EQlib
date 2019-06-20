@@ -111,6 +111,40 @@ public:     // methods
     {
         return m_parameters.find(name) != m_parameters.end();
     }
+
+public:     // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Type = EQlib::Node;
+        using Holder = std::shared_ptr<Type>;
+
+        py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
+            // constructors
+            .def(py::init<>())
+            .def(py::init<double, double, double>(), "x"_a=0, "y"_a=0, "z"_a=0)
+            // readonly properties
+            .def_property_readonly("x", &Type::x)
+            .def_property_readonly("y", &Type::y)
+            .def_property_readonly("z", &Type::z)
+            // properties
+            .def_property("ref_location", &Type::ref_location,
+                &Type::set_ref_location)
+            .def_property("act_location", &Type::act_location,
+                &Type::set_act_location)
+            .def_property("displacements", &Type::displacements,
+                &Type::set_displacements)
+            .def_property("forces", &Type::forces, &Type::set_forces)
+            // methods
+            .def("has_parameter", &Type::has_parameter, "name"_a)
+            // operators
+            .def("__getitem__", &Type::operator[],
+                py::return_value_policy::reference_internal)
+        ;
+    }
 };
 
 } // namespace EQlib
