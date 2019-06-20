@@ -44,6 +44,16 @@ public:     // constructors
     { }
 
 public:     // getters and setters
+    double ref_value() const
+    {
+        return *m_ref_value;
+    }
+
+    double act_value() const
+    {
+        return *m_act_value;
+    }
+
     double min_value() const
     {
         return *m_min_value;
