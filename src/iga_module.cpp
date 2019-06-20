@@ -7,10 +7,10 @@
 #include <pybind11/stl_bind.h>
 
 #include <EQlib/Dof.h>
+#include <EQlib/Element.h>
 #include <EQlib/Log.h>
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
-#include <EQlib/PyElement.h>
 #include <EQlib/System.h>
 
 #include <IGAlib/LocationConstraint.h>

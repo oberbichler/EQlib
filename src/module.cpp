@@ -7,14 +7,14 @@
 #include <pybind11/stl_bind.h>
 
 #include <EQlib/Dof.h>
+#include <EQlib/Element.h>
 #include <EQlib/IPOpt.h>
 #include <EQlib/LBfgs.h>
-#include <EQlib/Log.h>
 #include <EQlib/LevenbergMarquardt.h>
+#include <EQlib/Log.h>
 #include <EQlib/NewtonDescent.h>
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
-#include <EQlib/PyElement.h>
 #include <EQlib/System.h>
 
 PYBIND11_MODULE(EQlib, m) {
@@ -44,7 +44,7 @@ PYBIND11_MODULE(EQlib, m) {
     EQlib::Dof::register_python(m);
 
     // Element
-    EQlib::PyElement::register_python(m);
+    EQlib::Element::register_python(m);
 
     // Log
     EQlib::Log::register_python(m);
