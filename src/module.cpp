@@ -7,6 +7,7 @@
 #include <pybind11/stl_bind.h>
 
 #include <EQlib/Dof.h>
+#include <EQlib/IPOpt.h>
 #include <EQlib/LBfgs.h>
 #include <EQlib/Log.h>
 #include <EQlib/LevenbergMarquardt.h>
@@ -247,6 +248,10 @@ PYBIND11_MODULE(EQlib, m) {
             .def("start", &Type::start)
             .def_property_readonly("ellapsed", &Type::ellapsed)
         ;
+    }
+
+    {   // IPOpt
+        EQlib::IPOpt::register_python(m);
     }
 
     // LBfgs

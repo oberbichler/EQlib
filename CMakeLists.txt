@@ -36,11 +36,13 @@ if (DEFINED ENV{CONDA_PREFIX})
 
     add_definitions(-DEIGEN_USE_MKL_ALL)
 
+    find_library(IPOPT_LIBRARY ipopt HINTS $ENV{CONDA_PREFIX}/Library/lib $ENV{CONDA_PREFIX}/lib)
     find_library(MKL_LIBRARY mkl_rt HINTS $ENV{CONDA_PREFIX}/Library/lib $ENV{CONDA_PREFIX}/lib)
     find_library(TBB_LIBRARY tbb HINTS $ENV{CONDA_PREFIX}/Library/lib $ENV{CONDA_PREFIX}/lib)
     find_library(TBB_DBG_LIBRARY tbb_debug HINTS $ENV{CONDA_PREFIX}/Library/lib $ENV{CONDA_PREFIX}/lib)
 
     target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
+    target_link_libraries(EQlib PRIVATE ${IPOPT_LIBRARY})
     target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
 
     target_link_libraries(IGAlib PRIVATE ${MKL_LIBRARY})
