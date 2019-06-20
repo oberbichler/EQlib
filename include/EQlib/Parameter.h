@@ -13,8 +13,8 @@ class Parameter
 private:    // variables
     double m_ref_value;
     double m_act_value;
-    double m_min_value;
-    double m_max_value;
+    double m_lower_bound;
+    double m_upper_bound;
     double m_target;
     double m_result;
     bool m_isfixed;
@@ -29,8 +29,8 @@ public:     // constructors
         bool isfixed) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
-    , m_min_value(-std::numeric_limits<double>::infinity())
-    , m_max_value(std::numeric_limits<double>::infinity())
+    , m_lower_bound(-std::numeric_limits<double>::infinity())
+    , m_upper_bound(std::numeric_limits<double>::infinity())
     , m_target(target)
     , m_result(result)
     , m_isfixed(isfixed)
@@ -68,24 +68,24 @@ public:     // getters and setters
         m_act_value = value;
     }
 
-    double min_value() const noexcept
+    double lower_bound() const noexcept
     {
-        return m_min_value;
+        return m_lower_bound;
     }
 
-    void set_min_value(double value) noexcept
+    void set_lower_bound(double value) noexcept
     {
-        m_min_value = value;
+        m_lower_bound = value;
     }
 
-    double max_value() const noexcept
+    double upper_bound() const noexcept
     {
-        return m_max_value;
+        return m_upper_bound;
     }
 
-    void set_max_value(double value) noexcept
+    void set_upper_bound(double value) noexcept
     {
-        m_max_value = value;
+        m_upper_bound = value;
     }
 
     double delta() const noexcept
@@ -151,7 +151,7 @@ public:     // getters and setters
 public:     // methods
     Dof dof() noexcept
     {
-        return Dof(&m_ref_value, &m_act_value, &m_min_value, &m_max_value,
+        return Dof(&m_ref_value, &m_act_value, &m_lower_bound, &m_upper_bound,
             &m_target, &m_result, m_isfixed);
     }
 
@@ -160,12 +160,12 @@ public:     // methods
         if (m_name.empty()) {
             return format(
                 "<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                act_value(), isfixed(), min_value(), max_value(),
+                act_value(), isfixed(), lower_bound(), upper_bound(),
                 size_t(&m_act_value));
         } else {
             return format(
                 "<Parameter '{}' value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                name(), act_value(), isfixed(), min_value(), max_value(),
+                name(), act_value(), isfixed(), lower_bound(), upper_bound(),
                 size_t(&m_act_value));
         }
     }
@@ -188,8 +188,10 @@ public:     // python
             .def(py::init<>())
             .def_property("ref_value", &Type::ref_value, &Type::set_ref_value)
             .def_property("act_value", &Type::act_value, &Type::set_act_value)
-            .def_property("min_value", &Type::min_value, &Type::set_min_value)
-            .def_property("max_value", &Type::max_value, &Type::set_max_value)
+            .def_property("lower_bound", &Type::lower_bound,
+                &Type::set_lower_bound)
+            .def_property("upper_bound", &Type::upper_bound,
+                &Type::set_upper_bound)
             .def_property("delta", &Type::delta, &Type::set_delta)
             .def_property("target", &Type::target, &Type::set_target)
             .def_property("result", &Type::result, &Type::set_result)

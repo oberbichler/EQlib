@@ -63,8 +63,8 @@ public:     // methods
         // x1 has a lower bound of -1 and an upper bound of 1
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
-            x_l[i] = dof.min_value() - dof.ref_value();
-            x_u[i] = dof.max_value() - dof.ref_value();
+            x_l[i] = dof.lower_bound() - dof.ref_value();
+            x_u[i] = dof.upper_bound() - dof.ref_value();
         }
 
         // x2 has no upper or lower bound, so we set them to

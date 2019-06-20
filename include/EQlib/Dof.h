@@ -9,8 +9,8 @@ class Dof
 private:    // variables
     double* m_ref_value;
     double* m_act_value;
-    double* m_min_value;
-    double* m_max_value;
+    double* m_lower_bound;
+    double* m_upper_bound;
     double* m_target;
     double* m_result;
     bool m_isfixed;
@@ -19,8 +19,8 @@ public:     // constructors
     Dof() noexcept
     : m_ref_value(nullptr)
     , m_act_value(nullptr)
-    , m_min_value(nullptr)
-    , m_max_value(nullptr)
+    , m_lower_bound(nullptr)
+    , m_upper_bound(nullptr)
     , m_target(nullptr)
     , m_result(nullptr)
     , m_isfixed(false)
@@ -29,15 +29,15 @@ public:     // constructors
     Dof(
         double* const ref_value,
         double* const act_value,
-        double* const min_value,
-        double* const max_value,
+        double* const lower_bound,
+        double* const upper_bound,
         double* const target,
         double* const result,
         const bool isfixed) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
-    , m_min_value(min_value)
-    , m_max_value(max_value)
+    , m_lower_bound(lower_bound)
+    , m_upper_bound(upper_bound)
     , m_target(target)
     , m_result(result)
     , m_isfixed(isfixed)
@@ -54,14 +54,14 @@ public:     // getters and setters
         return *m_act_value;
     }
 
-    double min_value() const
+    double lower_bound() const
     {
-        return *m_min_value;
+        return *m_lower_bound;
     }
 
-    double max_value() const
+    double upper_bound() const
     {
-        return *m_max_value;
+        return *m_upper_bound;
     }
 
     double delta() const
@@ -128,8 +128,8 @@ public:     // python
             .def_property("residual", &Type::residual, &Type::set_residual)
             // read-only properties
             .def_property_readonly("isfixed", &Type::isfixed)
-            .def_property_readonly("max_value", &Type::max_value)
-            .def_property_readonly("min_value", &Type::min_value)
+            .def_property_readonly("upper_bound", &Type::upper_bound)
+            .def_property_readonly("lower_bound", &Type::lower_bound)
             .def_property_readonly("target", &Type::target)
         ;
     }
