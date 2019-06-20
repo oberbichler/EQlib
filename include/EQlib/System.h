@@ -413,7 +413,7 @@ public:     // getters and setters
         if (nb_free_dofs() > 0) {
             m_solver->factorize(m_h);
 
-            if (!m_solver->info() == Eigen::Success) {
+            if (m_solver->info() != Eigen::Success) {
                 throw std::runtime_error("Factorization failed");
             }
 
@@ -421,7 +421,7 @@ public:     // getters and setters
 
             m_solver->solve(v, x);
 
-            if (!m_solver->info() == Eigen::Success) {
+            if (m_solver->info() != Eigen::Success) {
                 throw std::runtime_error("Solve failed");
             }
 
