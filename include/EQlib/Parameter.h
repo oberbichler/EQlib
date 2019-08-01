@@ -170,6 +170,17 @@ public:     // methods
         }
     }
 
+public:     // operators
+    operator double()
+    {
+        return act_value();
+    }
+
+    operator Dof()
+    {
+        return dof();
+    }
+
 public:     // python
     template <typename TModule>
     static void register_python(TModule& m)
