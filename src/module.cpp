@@ -89,6 +89,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // --- Elements
 
+    // BoundaryConstraint
+    EQlib::BoundaryConstraint::register_python(m);
+
     // NodalEquilibrium
     EQlib::NodalEquilibrium::register_python(m);
 }
