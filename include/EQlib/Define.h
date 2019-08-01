@@ -23,6 +23,9 @@ using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
 using Vector = Eigen::Matrix<double, Eigen::Dynamic, 1>;
 using Sparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
+template <int N>
+using VectorN = Eigen::Matrix<double, N, 1>;
+
 template <typename T>
 using Ref = Eigen::Ref<T>;
 
