@@ -8,7 +8,6 @@
 
 #include <EQlib/Dof.h>
 #include <EQlib/Element.h>
-#include <EQlib/IPOpt.h>
 #include <EQlib/LBfgs.h>
 #include <EQlib/LevenbergMarquardt.h>
 #include <EQlib/Log.h>
@@ -16,6 +15,14 @@
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/System.h>
+
+#include <EQlib/Elements/BoundaryConstraint.h>
+#include <EQlib/Elements/LengthConstraint.h>
+#include <EQlib/Elements/NodalEquilibrium.h>
+
+#ifdef IPOPT
+#include <EQlib/IPOpt.h>
+#endif
 
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
@@ -66,8 +73,10 @@ PYBIND11_MODULE(EQlib, m) {
 
     // --- Solver
 
+#ifdef IPOPT
     // IPOpt
     EQlib::IPOpt::register_python(m);
+#endif
 
     // LBfgs
     EQlib::LBfgs::register_python(m);
