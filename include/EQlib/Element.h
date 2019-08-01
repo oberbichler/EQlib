@@ -53,6 +53,11 @@ public:     // python
             .def(py::init<>())
             .def("dofs", &Type::dofs)
             .def("compute", &Type::compute, "g"_a, "h"_a)
+            .def("compute", [](const Type& self) {
+                Vector g(0);
+                Matrix h(0, 0);
+                return self.compute(g, h);
+            })
         ;
     }
 };
