@@ -71,6 +71,18 @@ public:     // Methods
         return m_g;
     }
 
+    T&
+    g(int index)
+    {
+        return m_g(index);
+    }
+
+    T
+    g(const int index) const
+    {
+        return m_g(index);
+    }
+
     inline size_t
     size() const
     {
@@ -480,7 +492,7 @@ public:     // Methods
     }
 
     std::string
-    toString() const
+    to_string() const
     {
         return "Jet<" + std::to_string(m_f) + ">";
     }
