@@ -42,8 +42,12 @@ if (DEFINED ENV{CONDA_PREFIX})
     find_library(TBB_DBG_LIBRARY tbb_debug HINTS $ENV{CONDA_PREFIX}/Library/lib $ENV{CONDA_PREFIX}/lib)
 
     target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
-    target_link_libraries(EQlib PRIVATE ${IPOPT_LIBRARY})
     target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
+    
+    if (DEFINED IPOPT)
+        target_link_libraries(EQlib PRIVATE ${IPOPT_LIBRARY})
+        add_definitions(-DIPOPT)
+    endif()
 
     target_link_libraries(IGAlib PRIVATE ${MKL_LIBRARY})
     target_link_libraries(IGAlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
