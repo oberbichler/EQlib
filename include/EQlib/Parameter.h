@@ -22,11 +22,11 @@ private:    // variables
 
 public:     // constructors
     Parameter(
-        double ref_value,
-        double act_value,
-        double target,
-        double result,
-        bool isfixed) noexcept
+        const double ref_value,
+        const double act_value,
+        const double target,
+        const double result,
+        const bool isfixed) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
     , m_lower_bound(-std::numeric_limits<double>::infinity())
@@ -41,9 +41,9 @@ public:     // constructors
     { }
 
     Parameter(
-        double value,
-        double target=0,
-        bool isfixed=false) noexcept
+        const double value,
+        const double target=0,
+        const bool isfixed=false) noexcept
     : Parameter(value, value, target, 0, isfixed)
     { }
 
@@ -53,7 +53,7 @@ public:     // getters and setters
         return m_ref_value;
     }
 
-    void set_ref_value(double value) noexcept
+    void set_ref_value(const double value) noexcept
     {
         m_ref_value = value;
     }
@@ -63,7 +63,7 @@ public:     // getters and setters
         return m_act_value;
     }
 
-    void set_act_value(double value) noexcept
+    void set_act_value(const double value) noexcept
     {
         m_act_value = value;
     }
@@ -73,7 +73,7 @@ public:     // getters and setters
         return m_lower_bound;
     }
 
-    void set_lower_bound(double value) noexcept
+    void set_lower_bound(const double value) noexcept
     {
         m_lower_bound = value;
     }
@@ -83,7 +83,7 @@ public:     // getters and setters
         return m_upper_bound;
     }
 
-    void set_upper_bound(double value) noexcept
+    void set_upper_bound(const double value) noexcept
     {
         m_upper_bound = value;
     }
@@ -93,7 +93,7 @@ public:     // getters and setters
         return m_act_value - m_ref_value;
     }
 
-    void set_delta(double value) noexcept
+    void set_delta(const double value) noexcept
     {
         m_act_value = m_ref_value + value;
     }
@@ -103,7 +103,7 @@ public:     // getters and setters
         return m_target;
     }
 
-    void set_target(double value) noexcept
+    void set_target(const double value) noexcept
     {
         m_target = value;
     }
@@ -113,7 +113,7 @@ public:     // getters and setters
         return m_result;
     }
 
-    void set_result(double value) noexcept
+    void set_result(const double value) noexcept
     {
         m_result = value;
     }
@@ -123,7 +123,7 @@ public:     // getters and setters
         return m_target - m_result;
     }
 
-    void set_residual(double value) noexcept
+    void set_residual(const double value) noexcept
     {
         m_result = m_target - value;
     }
@@ -133,7 +133,7 @@ public:     // getters and setters
         return m_isfixed;
     }
 
-    void set_isfixed(bool value) noexcept
+    void set_isfixed(const bool value) noexcept
     {
         m_isfixed = value;
     }
