@@ -170,6 +170,17 @@ public:     // methods
         }
     }
 
+public:     // comparison
+    bool operator==(const Parameter& other) const noexcept
+    {
+        return &m_act_value == &(other.m_act_value);
+    }
+
+    size_t hash() const noexcept
+    {
+        return (size_t)&m_act_value;
+    }
+
 public:     // operators
     operator double()
     {
