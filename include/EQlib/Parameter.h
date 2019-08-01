@@ -177,9 +177,10 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::Parameter;
+        using Type = Parameter;
+        using Holder = Pointer<Type>;
 
-        py::class_<Type>(m, "Parameter")
+        py::class_<Type, Holder>(m, "Parameter")
             .def(py::init<double, double, double, double, bool>(),
                 "ref_value"_a, "act_value"_a, "target"_a=0, "result"_a=0,
                 "isfixed"_a=false)
