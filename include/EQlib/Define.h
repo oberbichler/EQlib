@@ -11,6 +11,12 @@
 
 namespace EQlib {
 
+template <typename T>
+using Pointer = std::shared_ptr<T>;
+
+template <typename T>
+using Unique = std::unique_ptr<T>;
+
 using Vector3D = Eigen::Vector3d;
 
 using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
