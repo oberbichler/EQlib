@@ -86,4 +86,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // NewtonDescent
     EQlib::NewtonDescent::register_python(m);
+
+    // --- Elements
+
+    // NodalEquilibrium
+    EQlib::NodalEquilibrium::register_python(m);
 }
