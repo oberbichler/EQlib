@@ -6,7 +6,7 @@
 
 namespace hyperjet {
 
-template <typename T>
+template <typename T = double>
 class HyperJet {
 public:     // Types
     using Scalar = T;
@@ -72,6 +72,14 @@ public:     // Methods
             throw new std::runtime_error("Dimensions do not match");
         }
 #endif
+    }
+
+    static HyperJet<T>
+    variable(const double value, const int size, const int index)
+    {
+        HyperJet<T> result(value, size);
+        result.g(index) = 1;
+        return result;
     }
 
     T&
