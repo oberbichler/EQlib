@@ -218,6 +218,8 @@ private:    // methods
 
         // create index table
 
+        Log::info(3, "Creating index table for elements...");
+
         for (size_t i = 0; i < nb_elements; i++) {
             const auto& element = elements[i];
 
