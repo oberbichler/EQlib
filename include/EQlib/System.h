@@ -8,6 +8,7 @@
 
 #include <Eigen/PardisoSupport>
 
+#include <sparsehash/dense_hash_set>
 #include <tbb/tbb.h>
 
 #include <set>
@@ -72,7 +73,7 @@ private:    // types
 private:    // variables
     std::vector<Dof> m_dofs;
 
-    std::unordered_map<Dof, int> m_dof_indices;
+    google::dense_hash_map<Dof, int> m_dof_indices;
 
     int m_nb_free_dofs;
     int m_nb_fixed_dofs;
@@ -207,6 +208,9 @@ private:    // methods
         // create a {dof -> index} map
 
         Log::info(3, "Creating dof indices...");
+
+        m_dof_indices.resize(m_dofs.size());
+        m_dof_indices.set_empty_key(Dof());
 
         for (int i = 0; i < m_dofs.size(); i++) {
             m_dof_indices[m_dofs[i]] = i;
@@ -521,7 +525,13 @@ public:     // methods
 
     int dof_index(const Dof& dof) const
     {
-        return m_dof_indices.at(dof);
+        const auto it = m_dof_indices.find(dof);
+
+        if (it == m_dof_indices.end()) {
+            return -1;
+        }
+
+        return it->second;
     }
 
     template<int TOrder>
