@@ -12,6 +12,8 @@
 
 #include <tbb/tbb.h>
 
+#include <tsl/robin_set.h>
+
 #include <set>
 #include <stdexcept>
 #include <unordered_map>
@@ -157,7 +159,7 @@ private:    // methods
 
         Log::info(3, "Creating set of unique dofs...");
 
-        std::unordered_set<Dof> dof_set;
+        tsl::robin_set<Dof> dof_set;
         std::vector<Dof> free_dofs;
         std::vector<Dof> fixed_dofs;
 
@@ -253,7 +255,7 @@ private:    // methods
 
         Log::info(3, "Analyzing pattern...");
 
-        std::vector<std::unordered_set<int>> pattern(m_nb_free_dofs);
+        std::vector<tsl::robin_set<int>> pattern(m_nb_free_dofs);
 
         for (const auto& dof_indices : m_index_table) {
             const size_t nb_dofs = dof_indices.size();
