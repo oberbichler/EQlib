@@ -8,9 +8,12 @@
 
 #include <Eigen/PardisoSupport>
 
+#include <sparsehash/dense_hash_map>
 #include <sparsehash/dense_hash_set>
+
 #include <tbb/tbb.h>
 
+#include <tsl/hopscotch_set.h>
 #include <tsl/robin_set.h>
 
 #include <set>
@@ -32,9 +35,31 @@ struct LinearSolverBase
 };
 
 template <typename TSolver>
+struct LinearSolverSetup
+{
+    static void apply(TSolver& solver)
+    {
+    }
+};
+
+template <>
+struct LinearSolverSetup<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>
+{
+    static void apply(Eigen::PardisoLDLT<Sparse, Eigen::Upper>& solver)
+    {
+        solver.pardisoParameterArray()[1] = 3;
+    }
+};
+
+template <typename TSolver>
 struct LinearSolver : LinearSolverBase
 {
     TSolver m_solver;
+
+    LinearSolver()
+    {
+        LinearSolverSetup<TSolver>::apply(m_solver);
+    }
 
     void analyze(Ref<const Sparse> a)
     {
