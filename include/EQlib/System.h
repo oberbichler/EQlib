@@ -8,7 +8,8 @@
 
 #include <Eigen/PardisoSupport>
 
-#include <sparsehash/dense_hash_set>
+#include <sparsehash/dense_hash_map>
+
 #include <tbb/tbb.h>
 
 #include <set>
