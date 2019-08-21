@@ -7,8 +7,8 @@
 
 #include <pybind11/pybind11.h>
 
-#include <any>
 #include <string>
+#include <variant>
 
 namespace EQlib {
 
@@ -39,17 +39,19 @@ using Ref = Eigen::Ref<T>;
 template <typename T>
 using Map = Eigen::Map<T>;
 
-using Settings = std::unordered_map<std::string, std::any>;
+using Settings = std::unordered_map<std::string, std::variant<int, double,
+    std::string>>;
 
-std::string get_or_default(Settings options,
-    std::string key, std::string default_value) {
-    if (!options.contains(key.c_str())) {
+std::string get_or_default(Settings options, std::string key,
+    std::string default_value)
+{
+    const auto& it = options.find(key);
+
+    if (it == options.end()) {
         return default_value;
     }
 
-    const auto& entry = options[key.c_str()];
-
-    return std::any_cast<std::string>(entry);
+    return std::get<std::string>(it->second);
 }
 
 template <typename... Args>
