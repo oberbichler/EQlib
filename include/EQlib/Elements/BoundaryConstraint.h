@@ -73,11 +73,12 @@ public:     // methods
             f = 0.5 * (value - m_upper_bound).pow(2) * m_weight;
         }
 
+        if (g.size() > 0) {
+            g = f.g();
+        }
+
         if (h.size() > 0) {
-            g = f.g();
             h = f.h();
-        } else if (g.size() > 0) {
-            g = f.g();
         }
 
         assert(offset == m_nb_dofs);

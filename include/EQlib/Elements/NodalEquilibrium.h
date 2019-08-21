@@ -140,11 +140,12 @@ public:     // methods
 
         const auto f = 0.5 * residual.dot(residual);
 
+        if (g.size() > 0) {
+            g = f.g();
+        }
+
         if (h.size() > 0) {
-            g = f.g();
             h = f.h();
-        } else if (g.size() > 0) {
-            g = f.g();
         }
 
         assert(offset == m_nb_dofs);

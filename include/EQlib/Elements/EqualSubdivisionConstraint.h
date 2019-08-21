@@ -103,11 +103,12 @@ public:     // methods
 
         f = 0.5 * f * m_weight;
 
+        if (g.size() > 0) {
+            g = f.g();
+        }
+
         if (h.size() > 0) {
-            g = f.g();
             h = f.h();
-        } else if (g.size() > 0) {
-            g = f.g();
         }
 
         assert(offset == m_nb_dofs);
