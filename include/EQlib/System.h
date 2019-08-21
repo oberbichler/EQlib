@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Define.h"
-#include "Dof.h"
+#include "Parameter.h"
 #include "Element.h"
 #include "Log.h"
 #include "Timer.h"
@@ -97,9 +97,9 @@ private:    // types
     };
 
 private:    // variables
-    std::vector<Dof> m_dofs;
+    std::vector<Pointer<Parameter>> m_dofs;
 
-    google::dense_hash_map<Dof, int> m_dof_indices;
+    google::dense_hash_map<Pointer<Parameter>, int> m_dof_indices;
 
     int m_nb_free_dofs;
     int m_nb_fixed_dofs;
@@ -132,13 +132,13 @@ public:     // constructors
         py::dict linear_solver)
     : m_load_factor(1)
     {
-        const std::vector<Dof> dofs;
+        const std::vector<Pointer<Parameter>> dofs;
         initialize(std::move(elements), dofs, linear_solver);
     }
 
     System(
         std::vector<std::shared_ptr<Element>> elements,
-        std::vector<Dof> dofs,
+        std::vector<Pointer<Parameter>> dofs,
         py::dict linear_solver)
     : m_load_factor(1)
     {
@@ -148,7 +148,7 @@ public:     // constructors
 private:    // methods
     void initialize(
         std::vector<std::shared_ptr<Element>> elements,
-        std::vector<Dof> dof_list,
+        std::vector<Pointer<Parameter>> dof_list,
         py::dict linear_solver)
     {
         Log::info(1, "==> Initialize system...");
@@ -162,7 +162,7 @@ private:    // methods
 
         const auto nb_elements = elements.size();
 
-        std::vector<std::vector<Dof>> element_dofs(nb_elements);
+        std::vector<std::vector<Pointer<Parameter>>> element_dofs(nb_elements);
 
         m_max_element_size = 0;
 
@@ -182,9 +182,9 @@ private:    // methods
 
         Log::info(3, "Creating set of unique dofs...");
 
-        tsl::robin_set<Dof> dof_set;
-        std::vector<Dof> free_dofs;
-        std::vector<Dof> fixed_dofs;
+        tsl::robin_set<Pointer<Parameter>> dof_set;
+        std::vector<Pointer<Parameter>> free_dofs;
+        std::vector<Pointer<Parameter>> fixed_dofs;
 
         if (dof_list.size() == 0) {
             for (size_t i = 0; i < nb_elements; i++) {
@@ -197,7 +197,7 @@ private:    // methods
 
                     dof_set.insert(dof);
 
-                    if (dof.isfixed()) {
+                    if (dof->isfixed()) {
                         fixed_dofs.push_back(dof);
                     } else {
                         free_dofs.push_back(dof);
@@ -236,7 +236,7 @@ private:    // methods
         Log::info(3, "Creating dof indices...");
 
         m_dof_indices.resize(m_dofs.size());
-        m_dof_indices.set_empty_key(Dof());
+        m_dof_indices.set_empty_key(Pointer<Parameter>());
 
         for (int i = 0; i < m_dofs.size(); i++) {
             m_dof_indices[m_dofs[i]] = i;
@@ -395,12 +395,12 @@ private:    // methods
     }
 
 public:     // getters and setters
-    const Dof& dof(const int index) const
+    const Pointer<Parameter>& dof(const int index) const
     {
         return m_dofs[index];
     }
 
-    const std::vector<Dof>& dofs() const
+    const std::vector<Pointer<Parameter>>& dofs() const
     {
         return m_dofs;
     }
@@ -477,7 +477,7 @@ public:     // getters and setters
         Vector result(nb_free_dofs());
 
         for (int i = 0; i < result.size(); i++) {
-            result[i] = m_dofs[i].delta();
+            result[i] = m_dofs[i]->delta();
         }
 
         return result;
@@ -490,7 +490,7 @@ public:     // getters and setters
         }
 
         for (int i = 0; i < value.size(); i++) {
-            m_dofs[i].set_delta(value[i]);
+            m_dofs[i]->set_delta(value[i]);
         }
     }
 
@@ -551,7 +551,7 @@ public:     // methods
         }
     }
 
-    int dof_index(const Dof& dof) const
+    int dof_index(const Pointer<Parameter>& dof) const
     {
         const auto it = m_dof_indices.find(dof);
 
@@ -812,7 +812,7 @@ public:     // methods
         Timer timer;
 
         for (int i = 0; i < nb_free_dofs(); i++) {
-            m_target[i] = m_dofs[i].target();
+            m_target[i] = m_dofs[i]->target();
         }
 
         if (m_load_factor != 1.0) {
@@ -871,7 +871,7 @@ public:     // methods
             Log::info(2, "Updating system...");
 
             for (int i = 0; i < nb_free_dofs(); i++) {
-                m_dofs[i].set_delta(m_dofs[i].delta() + m_x(i));
+                m_dofs[i]->set_delta(m_dofs[i]->delta() + m_x(i));
             }
 
             // check x norm
@@ -888,7 +888,7 @@ public:     // methods
         }
 
         for (int i = 0; i < nb_free_dofs(); i++) {
-            m_dofs[i].set_residual(m_residual(i));
+            m_dofs[i]->set_residual(m_residual(i));
         }
 
         switch (m_stopping_reason) {
@@ -912,7 +912,7 @@ public:     // methods
         Timer timer;
 
         for (int i = 0; i < nb_dofs(); i++) {
-            m_target[i] = m_dofs[i].target();
+            m_target[i] = m_dofs[i]->target();
         }
 
         if (m_load_factor != 1.0) {
@@ -933,7 +933,7 @@ public:     // methods
 
         if (update_dofs) {
             for (int i = 0; i < nb_free_dofs(); i++) {
-                m_dofs[i].set_delta(m_x(i));
+                m_dofs[i]->set_delta(m_x(i));
             }
         }
 
@@ -957,7 +957,7 @@ public:     // python
             .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
                 "elements"_a, "linear_solver"_a = py::dict())
             .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
-                std::vector<EQlib::Dof>, py::dict>(), "elements"_a, "dofs"_a,
+                std::vector<EQlib::Pointer<Parameter>>, py::dict>(), "elements"_a, "dofs"_a,
                 "linear_solver"_a = py::dict())
             // properties
             .def_property("load_factor", &Type::load_factor,

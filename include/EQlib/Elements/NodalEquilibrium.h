@@ -48,9 +48,9 @@ public:     // constructors
     }
 
 public:     // methods
-    std::vector<Dof> dofs() const override
+    std::vector<Pointer<Parameter>> dofs() const override
     {
-        std::vector<Dof> dof_list(m_nb_dofs);
+        std::vector<Pointer<Parameter>> dof_list(m_nb_dofs);
 
         size_t offset = 0;
 
@@ -62,12 +62,12 @@ public:     // methods
             dof_list[offset++] = node->x();
             dof_list[offset++] = node->y();
             dof_list[offset++] = node->z();
-            dof_list[offset++] = *force;
+            dof_list[offset++] = force;
         }
 
         for (const auto& [force, direction] : m_loads) {
             if (std::holds_alternative<Pointer<Parameter>>(force)) {
-                dof_list[offset++] = *std::get<Pointer<Parameter>>(force);
+                dof_list[offset++] = std::get<Pointer<Parameter>>(force);
             }
         }
 
@@ -79,10 +79,10 @@ public:     // methods
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
         using namespace hyperjet;
-        
-        HyperJet x(m_node->x(), m_nb_dofs);
-        HyperJet y(m_node->y(), m_nb_dofs);
-        HyperJet z(m_node->z(), m_nb_dofs);
+
+        HyperJet x(m_node->x()->act_value(), m_nb_dofs);
+        HyperJet y(m_node->y()->act_value(), m_nb_dofs);
+        HyperJet z(m_node->z()->act_value(), m_nb_dofs);
 
         size_t offset = 0;
 
@@ -99,9 +99,9 @@ public:     // methods
         for (const auto& [force, node] : m_connections) {
             Eigen::Matrix<HyperJet, 3, 1> f_i;
 
-            f_i[0] = HyperJet(node->x(), m_nb_dofs);
-            f_i[1] = HyperJet(node->y(), m_nb_dofs);
-            f_i[2] = HyperJet(node->z(), m_nb_dofs);
+            f_i[0] = HyperJet(node->x()->act_value(), m_nb_dofs);
+            f_i[1] = HyperJet(node->y()->act_value(), m_nb_dofs);
+            f_i[2] = HyperJet(node->z()->act_value(), m_nb_dofs);
 
             HyperJet s_i(*force, m_nb_dofs);
 

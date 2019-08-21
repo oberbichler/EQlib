@@ -422,7 +422,7 @@ public:     // method
         Vector target(nb_dofs);
 
         for (int i = 0; i < nb_dofs; i++) {
-            target[i] = m_system->dof(i).target();
+            target[i] = m_system->dof(i)->target();
         }
 
         if (m_system->load_factor() != 1.0) {

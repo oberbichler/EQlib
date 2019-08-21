@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Define.h"
-#include "Dof.h"
+#include "Parameter.h"
 
 #include <limits>
 #include <string>
@@ -149,12 +149,6 @@ public:     // getters and setters
     }
 
 public:     // methods
-    Dof dof() noexcept
-    {
-        return Dof(&m_ref_value, &m_act_value, &m_lower_bound, &m_upper_bound,
-            &m_target, &m_result, m_isfixed);
-    }
-
     std::string to_string() const noexcept
     {
         if (m_name.empty()) {
@@ -187,11 +181,6 @@ public:     // operators
         return act_value();
     }
 
-    operator Dof()
-    {
-        return dof();
-    }
-
 public:     // python
     template <typename TModule>
     static void register_python(TModule& m)
@@ -221,7 +210,6 @@ public:     // python
             .def_property("residual", &Type::residual, &Type::set_residual)
             .def_property("isfixed", &Type::isfixed, &Type::set_isfixed)
             .def_property("name", &Type::name, &Type::set_name)
-            .def_property_readonly("dof", &Type::dof)
             .def(py::pickle([](const Type& self) {
                     return py::make_tuple(self.ref_value(), self.act_value(),
                         self.target(), self.result(), self.isfixed());

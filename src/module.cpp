@@ -6,7 +6,6 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include <EQlib/Dof.h>
 #include <EQlib/Element.h>
 #include <EQlib/LBfgs.h>
 #include <EQlib/LevenbergMarquardt.h>
@@ -47,9 +46,6 @@ PYBIND11_MODULE(EQlib, m) {
 #else
     m.attr("USE_MKL") = false;
 #endif // EIGEN_USE_MKL_ALL
-
-    // Dof
-    EQlib::Dof::register_python(m);
 
     // Element
     EQlib::Element::register_python(m);

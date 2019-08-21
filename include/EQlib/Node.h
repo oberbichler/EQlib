@@ -29,19 +29,19 @@ public:     // constructors
     { }
 
 public:     // getters and setters
-    Parameter& x() noexcept
+    Pointer<Parameter> x() noexcept
     {
-        return *m_x;
+        return m_x;
     }
 
-    Parameter& y() noexcept
+    Pointer<Parameter> y() noexcept
     {
-        return *m_y;
+        return m_y;
     }
 
-    Parameter& z() noexcept
+    Pointer<Parameter> z() noexcept
     {
-        return *m_z;
+        return m_z;
     }
 
     Vector3D ref_location() const noexcept

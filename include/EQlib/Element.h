@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Define.h"
-#include "Dof.h"
+#include "Parameter.h"
 
 #include <vector>
 
@@ -12,7 +12,7 @@ class Element
 public:     // methods
     Element() { }
 
-    virtual std::vector<Dof> dofs() const = 0;
+    virtual std::vector<Pointer<Parameter>> dofs() const = 0;
 
     virtual double compute(Ref<Vector> g, Ref<Matrix> h) const = 0;
 
@@ -24,9 +24,9 @@ public:     // python
         using T::T;
 
     public:     // getters and setters
-        std::vector<Dof> dofs() const override
+        std::vector<Pointer<Parameter>> dofs() const override
         {
-            using ReturnType = std::vector<Dof>;
+            using ReturnType = std::vector<Pointer<Parameter>>;
             pybind11::gil_scoped_acquire acquire;
             PYBIND11_OVERLOAD_PURE(ReturnType, T, dofs);
         }
