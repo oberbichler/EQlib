@@ -120,7 +120,7 @@ public:     // python
         using namespace pybind11::literals;
 
         using Type = EQlib::Node;
-        using Holder = std::shared_ptr<Type>;
+        using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
             // constructors

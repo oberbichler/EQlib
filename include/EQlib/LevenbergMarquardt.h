@@ -11,7 +11,7 @@ namespace EQlib {
 class LevenbergMarquardt
 {
 private:    // members
-    std::shared_ptr<System<true>> m_system;
+    Pointer<System<true>> m_system;
 
     struct Functor
     {
@@ -27,9 +27,9 @@ private:    // members
             ValuesAtCompileTime = Eigen::Dynamic
         };
 
-        std::shared_ptr<System<true>> m_system;
+        Pointer<System<true>> m_system;
 
-        Functor(std::shared_ptr<System<true>> system)
+        Functor(Pointer<System<true>> system)
         : m_system(std::move(system))
         { }
 
@@ -416,7 +416,7 @@ private:    // methods
     }
 
 public:     // constructor
-    LevenbergMarquardt(std::shared_ptr<System<true>> system)
+    LevenbergMarquardt(Pointer<System<true>> system)
     : m_system(std::move(system))
     { }
 
@@ -449,7 +449,7 @@ public:     // python
         using Type = EQlib::LevenbergMarquardt;
 
         py::class_<Type>(m, "LevenbergMarquardt")
-            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
                 "xtol"_a=1e-6)
         ;

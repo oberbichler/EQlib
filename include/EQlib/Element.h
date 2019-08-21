@@ -47,7 +47,7 @@ public:     // python
 
         using Type = Element;
         using Trampoline = PyElement<Type>;
-        using Holder = std::shared_ptr<Type>;
+        using Holder = Pointer<Type>;
 
         py::class_<Type, Trampoline, Holder>(m, "Element", py::dynamic_attr())
             .def(py::init<>())

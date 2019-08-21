@@ -1,16 +1,15 @@
 #pragma once
 
+#include "Define.h"
 #include "Settings.h"
 #include "System.h"
-
-#include <memory>
 
 namespace EQlib {
 
 class NewtonDescent
 {
 private:    // members
-    std::shared_ptr<System<true>> m_system;
+    Pointer<System<true>> m_system;
 
 private:    // methods
     double linesearch_armijo(Ref<const Vector> x,
@@ -373,7 +372,7 @@ private:    // methods
     }
 
 public:     // constructor
-    NewtonDescent(std::shared_ptr<System<true>> system)
+    NewtonDescent(Pointer<System<true>> system)
     : m_system(std::move(system))
     {
     }
@@ -511,7 +510,7 @@ public:     // python
         using Type = EQlib::NewtonDescent;
 
         py::class_<Type>(m, "NewtonDescent")
-            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
                 "xtol"_a=1e-6, "line_search"_a=Settings())
         ;

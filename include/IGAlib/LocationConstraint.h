@@ -13,14 +13,14 @@ namespace EQlib {
 class LocationConstraint : public Element
 {
 private:    // variables
-    std::vector<std::shared_ptr<Node>> m_nodes;
+    std::vector<Pointer<Node>> m_nodes;
     Matrix m_shape_functions;
     Vector3D m_target;
     double m_penalty;
 
 public:     // constructor
     LocationConstraint(
-        std::vector<std::shared_ptr<Node>> nodes,
+        std::vector<Pointer<Node>> nodes,
         Matrix shape_functions,
         Vector3D target,
         double penalty)

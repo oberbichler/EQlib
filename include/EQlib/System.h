@@ -115,7 +115,7 @@ private:    // variables
 
     int m_max_element_size;
 
-    std::vector<std::shared_ptr<Element>> m_elements;
+    std::vector<Pointer<Element>> m_elements;
     std::vector<std::vector<Index>> m_index_table;
 
     std::vector<std::vector<int>> m_pattern;
@@ -137,7 +137,7 @@ private:    // variables
 
 public:     // constructors
     System(
-        std::vector<std::shared_ptr<Element>> elements,
+        std::vector<Pointer<Element>> elements,
         Settings linear_solver)
     : m_load_factor(1)
     {
@@ -146,7 +146,7 @@ public:     // constructors
     }
 
     System(
-        std::vector<std::shared_ptr<Element>> elements,
+        std::vector<Pointer<Element>> elements,
         std::vector<Pointer<Parameter>> dofs,
         Settings linear_solver)
     : m_load_factor(1)
@@ -156,7 +156,7 @@ public:     // constructors
 
 private:    // methods
     void initialize(
-        std::vector<std::shared_ptr<Element>> elements,
+        std::vector<Pointer<Element>> elements,
         std::vector<Pointer<Parameter>> dof_list,
         Settings linear_solver)
     {
@@ -513,7 +513,7 @@ public:     // getters and setters
         m_load_factor = value;
     }
 
-    std::vector<std::shared_ptr<Element>> elements() const
+    std::vector<Pointer<Element>> elements() const
     {
         return m_elements;
     }
@@ -952,15 +952,15 @@ public:     // python
         using namespace pybind11::literals;
 
         using Type = System<TSymmetric>;
-        using Holder = std::shared_ptr<Type>;
+        using Holder = Pointer<Type>;
 
         const std::string name = TSymmetric ? "SymmetricSystem" : "System";
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
+            .def(py::init<std::vector<Pointer<EQlib::Element>>,
                 Settings>(), "elements"_a, "linear_solver"_a = Settings())
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
+            .def(py::init<std::vector<Pointer<EQlib::Element>>,
                 std::vector<EQlib::Pointer<Parameter>>, Settings>(),
                 "elements"_a, "dofs"_a, "linear_solver"_a = Settings())
             // properties
