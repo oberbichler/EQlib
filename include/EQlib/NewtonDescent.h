@@ -379,7 +379,7 @@ public:     // constructor
 
 public:     // method
     void minimize(const int maxiter, const double rtol, const double xtol,
-        const py::dict& line_search)
+        const Settings& line_search)
     {
         // setup
 
@@ -387,7 +387,7 @@ public:     // method
         Log::info(2, "Using Newton Descent minimizer");
 
         const auto line_search_type =
-            get_or_default<std::string>(line_search, "type", "armijo");
+            get_or_default(line_search, "type", "armijo");
 
         std::function<double (Ref<const Vector>, Ref<const Vector>,
             const double&)> line_search_function;
@@ -512,7 +512,7 @@ public:     // python
         py::class_<Type>(m, "NewtonDescent")
             .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
-                "xtol"_a=1e-6, "line_search"_a=py::dict())
+                "xtol"_a=1e-6, "line_search"_a=Settings())
         ;
     }
 };

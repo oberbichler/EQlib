@@ -39,8 +39,6 @@ using Ref = Eigen::Ref<T>;
 template <typename T>
 using Map = Eigen::Map<T>;
 
-namespace py = pybind11;
-
 using Settings = std::unordered_map<std::string, std::any>;
 
 std::string get_or_default(Settings options,

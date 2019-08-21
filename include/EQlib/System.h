@@ -616,7 +616,7 @@ public:     // methods
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        py::gil_scoped_release release;
+        pybind11::gil_scoped_release release;
 
         // compute g and h
 
