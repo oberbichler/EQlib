@@ -213,6 +213,7 @@ public:     // python
             .def(py::pickle([](const Type& self) {
                     return py::make_tuple(self.ref_value(), self.act_value(),
                         self.target(), self.result(), self.isfixed());
+                        // FIXME: add missing properties
                 }, [](py::tuple tuple) {
                     if (tuple.size() != 5) {
                         throw std::runtime_error("Invalid state!");
@@ -223,6 +224,7 @@ public:     // python
                     const auto target = tuple[2].cast<double>();
                     const auto result = tuple[3].cast<double>();
                     const auto isfixed = tuple[4].cast<bool>();
+                    // FIXME: add missing properties
 
                     return Type(ref_value, act_value, target, result, isfixed);
                 }
