@@ -915,7 +915,7 @@ public:     // methods
 
         Timer timer;
 
-        for (int i = 0; i < nb_dofs(); i++) {
+        for (int i = 0; i < nb_free_dofs(); i++) {
             m_target[i] = m_dofs[i]->target();
         }
 

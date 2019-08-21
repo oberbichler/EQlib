@@ -50,9 +50,9 @@ private:    // members
             return 0;
         }
 
-        int values() const { return m_system->nb_dofs(); }
+        int values() const { return m_system->nb_free_dofs(); }
 
-        int inputs() const { return m_system->nb_dofs(); }
+        int inputs() const { return m_system->nb_free_dofs(); }
     };
 
 private:    // methods
