@@ -20,9 +20,9 @@ private:    // variables
 
 public:     // constructors
     Node(const double x, const double y, const double z) noexcept
-    : m_x(std::make_shared<Parameter>(x))
-    , m_y(std::make_shared<Parameter>(y))
-    , m_z(std::make_shared<Parameter>(z))
+    : m_x(std::make_unique<Parameter>(x))
+    , m_y(std::make_unique<Parameter>(y))
+    , m_z(std::make_unique<Parameter>(z))
     { }
 
     Node() noexcept : Node(0, 0, 0)
