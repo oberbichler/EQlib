@@ -5,7 +5,7 @@ from numpy.testing import assert_almost_equal
 
 class TestElement(unittest.TestCase):
 
-    def test_element_dynamic_attributes(self):
+    def test_dynamic_attributes(self):
         element = eq.Element()
 
         element.test_attribute = 'test value'
@@ -13,7 +13,7 @@ class TestElement(unittest.TestCase):
         assert(hasattr(element, 'test_attribute'))
         self.assertEqual(element.test_attribute, 'test value')
 
-    def test_element_override(self):
+    def test_override(self):
         class Element(eq.Element):
             def __init__(self, a, b):
                 eq.Element.__init__(self)
@@ -44,7 +44,7 @@ class TestElement(unittest.TestCase):
         assert_almost_equal(g, [5, 6])
         assert_almost_equal(h, [[1, 2], [3, 4]])
 
-    def test_element_pass_options(self):
+    def test_pass_options(self):
         class Element(eq.Element):
             def compute(self, options):
                 return options['lhs'], options['rhs']

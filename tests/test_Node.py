@@ -4,7 +4,7 @@ from numpy.testing import assert_almost_equal, assert_equal
 
 class TestNode(unittest.TestCase):
 
-    def test_node_dynamic_attributes(self):
+    def test_dynamic_attributes(self):
         node = eq.Node()
 
         node.test_attribute = 'test value'
@@ -12,7 +12,7 @@ class TestNode(unittest.TestCase):
         assert(hasattr(node, 'test_attribute'))
         self.assertEqual(node.test_attribute, 'test value')
 
-    def test_node_constructor(self):
+    def test_constructor(self):
         node = eq.Node(1, 2, 3)
 
         self.assertEqual(node.x.ref_value, 1)
@@ -39,7 +39,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual(node.y.residual, 0)
         self.assertEqual(node.z.residual, 0)
 
-    def test_node_getters_and_setters(self):
+    def test_getters_and_setters(self):
         node = eq.Node(1, 2, 3)
 
         node.displacements = [2, 3, 4]

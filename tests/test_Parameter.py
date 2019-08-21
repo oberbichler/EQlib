@@ -3,7 +3,7 @@ import EQlib as eq
 
 class TestParameter(unittest.TestCase):
 
-    def test_parameter_constructor(self):
+    def test_constructor(self):
         parameter = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
 
         self.assertEqual(parameter.ref_value, 1.0)
@@ -15,7 +15,7 @@ class TestParameter(unittest.TestCase):
         self.assertEqual(parameter.isfixed, False)
         self.assertEqual(parameter.name, '')
 
-    def test_parameter_getters_and_setters(self):
+    def test_getters_and_setters(self):
         parameter = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
 
         parameter.ref_value = 5.1
@@ -42,7 +42,7 @@ class TestParameter(unittest.TestCase):
         parameter.name = 'Example'
         self.assertEqual(parameter.name, 'Example')
 
-    def test_parameter_delta(self):
+    def test_delta(self):
         parameter = eq.Parameter(ref_value=1, act_value=3, target=4, result=7)
 
         self.assertEqual(parameter.delta, 2.0)
@@ -56,7 +56,7 @@ class TestParameter(unittest.TestCase):
         self.assertEqual(parameter.target, 4.0)
         self.assertEqual(parameter.result, 7.0)
 
-    def test_parameter_residual(self):
+    def test_residual(self):
         parameter = eq.Parameter(ref_value=1, act_value=3, target=4, result=7)
 
         self.assertEqual(parameter.residual, -3.0)
@@ -70,7 +70,7 @@ class TestParameter(unittest.TestCase):
         self.assertEqual(parameter.target, 4.0)
         self.assertEqual(parameter.result, 9.0)
 
-    def test_parameter_pickle_and_copy(self):
+    def test_pickle_and_copy(self):
         import pickle
         from copy import copy, deepcopy
 
@@ -100,7 +100,7 @@ class TestParameter(unittest.TestCase):
             self.assertEqual(parameter_b.target, 3.0)
             self.assertEqual(parameter_b.result, 4.0)
 
-    def test_parameter_equality(self):
+    def test_equality(self):
         parameter_a = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
         parameter_b = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
 

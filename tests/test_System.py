@@ -4,7 +4,7 @@ from numpy.testing import assert_almost_equal, assert_equal
 
 class TestSystem(unittest.TestCase):
 
-    def test_system_dofs(self):
+    def test_dofs(self):
         class Element(eq.Element):
             def __init__(self, a, b):
                 eq.Element.__init__(self)
