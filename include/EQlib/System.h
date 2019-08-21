@@ -206,7 +206,7 @@ private:    // methods
 
                     dof_set.insert(dof);
 
-                    if (dof->isfixed()) {
+                    if (dof->is_fixed()) {
                         fixed_dofs.push_back(dof);
                     } else {
                         free_dofs.push_back(dof);

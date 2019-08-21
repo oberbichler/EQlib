@@ -17,7 +17,7 @@ private:    // variables
     double m_upper_bound;
     double m_target;
     double m_result;
-    bool m_isfixed;
+    bool m_is_fixed;
     std::string m_name;
 
 public:     // constructors
@@ -26,14 +26,14 @@ public:     // constructors
         const double act_value,
         const double target,
         const double result,
-        const bool isfixed) noexcept
+        const bool is_fixed) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
     , m_lower_bound(-std::numeric_limits<double>::infinity())
     , m_upper_bound(std::numeric_limits<double>::infinity())
     , m_target(target)
     , m_result(result)
-    , m_isfixed(isfixed)
+    , m_is_fixed(is_fixed)
     { }
 
     Parameter() noexcept
@@ -43,8 +43,8 @@ public:     // constructors
     Parameter(
         const double value,
         const double target=0,
-        const bool isfixed=false) noexcept
-    : Parameter(value, value, target, 0, isfixed)
+        const bool is_fixed=false) noexcept
+    : Parameter(value, value, target, 0, is_fixed)
     { }
 
 public:     // getters and setters
@@ -128,14 +128,14 @@ public:     // getters and setters
         m_result = m_target - value;
     }
 
-    bool isfixed() const noexcept
+    bool is_fixed() const noexcept
     {
-        return m_isfixed;
+        return m_is_fixed;
     }
 
-    void set_isfixed(const bool value) noexcept
+    void set_is_fixed(const bool value) noexcept
     {
-        m_isfixed = value;
+        m_is_fixed = value;
     }
 
     std::string name() const noexcept
@@ -153,13 +153,13 @@ public:     // methods
     {
         if (m_name.empty()) {
             return format(
-                "<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                act_value(), isfixed(), lower_bound(), upper_bound(),
+                "<Parameter value={} is_fixed={} bounds=({}, {}) at {:#x}>",
+                act_value(), is_fixed(), lower_bound(), upper_bound(),
                 size_t(&m_act_value));
         } else {
             return format(
-                "<Parameter '{}' value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                name(), act_value(), isfixed(), lower_bound(), upper_bound(),
+                "<Parameter '{}' value={} is_fixed={} bounds=({}, {}) at {:#x}>",
+                name(), act_value(), is_fixed(), lower_bound(), upper_bound(),
                 size_t(&m_act_value));
         }
     }
@@ -194,9 +194,9 @@ public:     // python
         py::class_<Type, Holder>(m, "Parameter")
             .def(py::init<double, double, double, double, bool>(),
                 "ref_value"_a, "act_value"_a, "target"_a=0, "result"_a=0,
-                "isfixed"_a=false)
+                "is_fixed"_a=false)
             .def(py::init<double, double, bool>(), "value"_a, "target"_a=0,
-                "isfixed"_a=false)
+                "is_fixed"_a=false)
             .def(py::init<>())
             .def_property("ref_value", &Type::ref_value, &Type::set_ref_value)
             .def_property("act_value", &Type::act_value, &Type::set_act_value)
@@ -208,11 +208,11 @@ public:     // python
             .def_property("target", &Type::target, &Type::set_target)
             .def_property("result", &Type::result, &Type::set_result)
             .def_property("residual", &Type::residual, &Type::set_residual)
-            .def_property("isfixed", &Type::isfixed, &Type::set_isfixed)
+            .def_property("is_fixed", &Type::is_fixed, &Type::set_is_fixed)
             .def_property("name", &Type::name, &Type::set_name)
             .def(py::pickle([](const Type& self) {
                     return py::make_tuple(self.ref_value(), self.act_value(),
-                        self.target(), self.result(), self.isfixed());
+                        self.target(), self.result(), self.is_fixed());
                         // FIXME: add missing properties
                 }, [](py::tuple tuple) {
                     if (tuple.size() != 5) {
@@ -223,10 +223,10 @@ public:     // python
                     const auto act_value = tuple[1].cast<double>();
                     const auto target = tuple[2].cast<double>();
                     const auto result = tuple[3].cast<double>();
-                    const auto isfixed = tuple[4].cast<bool>();
+                    const auto is_fixed = tuple[4].cast<bool>();
                     // FIXME: add missing properties
 
-                    return Type(ref_value, act_value, target, result, isfixed);
+                    return Type(ref_value, act_value, target, result, is_fixed);
                 }
             ))
             .def("__float__", [](const Type& self) { return self.act_value(); })
