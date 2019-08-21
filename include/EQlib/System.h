@@ -54,19 +54,27 @@ template <typename TSolver>
 struct LinearSolver : LinearSolverBase
 {
     TSolver m_solver;
+    bool is_analyzed;
 
-    LinearSolver()
+    LinearSolver() : is_analyzed(false)
     {
         LinearSolverSetup<TSolver>::apply(m_solver);
     }
 
     void analyze(Ref<const Sparse> a)
     {
+        if (is_analyzed) {
+            return;
+        }
+
         m_solver.analyzePattern(a);
+
+        is_analyzed = true;
     }
 
     void factorize(Ref<const Sparse> a)
     {
+        analyze(a);
         m_solver.factorize(a);
     }
 
@@ -388,8 +396,6 @@ private:    // methods
         } else {
             throw std::runtime_error("Unknown linear solver");
         }
-
-        m_solver->analyze(m_h);
 
         Log::info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
