@@ -16,7 +16,7 @@ private:    // variables
     Pointer<Parameter> m_y;
     Pointer<Parameter> m_z;
 
-    std::unordered_map<std::string, Parameter> m_parameters;
+    std::unordered_map<std::string, Pointer<Parameter>> m_parameters;
 
 public:     // constructors
     Node(const double x, const double y, const double z) noexcept
@@ -93,14 +93,14 @@ public:     // getters and setters
     }
 
 public:     // operators
-    Parameter& operator[](const std::string& name) noexcept
+    Pointer<Parameter> operator[](const std::string& name) noexcept
     {
         if (name == "x") {
-            return *m_x;
+            return m_x;
         } else if (name == "y") {
-            return *m_y;
+            return m_y;
         } else if (name == "z") {
-            return *m_z;
+            return m_z;
         }
 
         return m_parameters[name];
