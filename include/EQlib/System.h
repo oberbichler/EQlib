@@ -137,7 +137,7 @@ private:    // variables
 public:     // constructors
     System(
         std::vector<std::shared_ptr<Element>> elements,
-        py::dict linear_solver)
+        Settings linear_solver)
     : m_load_factor(1)
     {
         const std::vector<Pointer<Parameter>> dofs;
@@ -147,7 +147,7 @@ public:     // constructors
     System(
         std::vector<std::shared_ptr<Element>> elements,
         std::vector<Pointer<Parameter>> dofs,
-        py::dict linear_solver)
+        Settings linear_solver)
     : m_load_factor(1)
     {
         initialize(std::move(elements), dofs, linear_solver);
@@ -157,7 +157,7 @@ private:    // methods
     void initialize(
         std::vector<std::shared_ptr<Element>> elements,
         std::vector<Pointer<Parameter>> dof_list,
-        py::dict linear_solver)
+        Settings linear_solver)
     {
         Log::info(1, "==> Initialize system...");
         Log::info(2, "The system consists of {} elements", elements.size());
@@ -360,7 +360,7 @@ private:    // methods
         Log::info(3, "Initializing solver...");
 
         const auto linear_solver_type =
-            get_or_default<std::string>(linear_solver, "type", "pardiso_ldlt");
+            get_or_default(linear_solver, "type", "pardiso_ldlt");
 
         if (linear_solver_type == "pardiso_ldlt") {
             Log::info(2, "Using Pardiso LDL^T solver");
@@ -957,11 +957,11 @@ public:     // python
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
-                "elements"_a, "linear_solver"_a = py::dict())
             .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
-                std::vector<EQlib::Pointer<Parameter>>, py::dict>(), "elements"_a, "dofs"_a,
-                "linear_solver"_a = py::dict())
+                Settings>(), "elements"_a, "linear_solver"_a = Settings())
+            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
+                std::vector<EQlib::Pointer<Parameter>>, Settings>(),
+                "elements"_a, "dofs"_a, "linear_solver"_a = Settings())
             // properties
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
