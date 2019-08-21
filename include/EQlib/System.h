@@ -8,7 +8,12 @@
 
 #include <Eigen/PardisoSupport>
 
+#include <sparsehash/dense_hash_map>
+
 #include <tbb/tbb.h>
+
+#include <tsl/hopscotch_set.h>
+#include <tsl/robin_set.h>
 
 #include <set>
 #include <stdexcept>
@@ -29,9 +34,31 @@ struct LinearSolverBase
 };
 
 template <typename TSolver>
+struct LinearSolverSetup
+{
+    static void apply(TSolver& solver)
+    {
+    }
+};
+
+template <>
+struct LinearSolverSetup<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>
+{
+    static void apply(Eigen::PardisoLDLT<Sparse, Eigen::Upper>& solver)
+    {
+        solver.pardisoParameterArray()[1] = 3;
+    }
+};
+
+template <typename TSolver>
 struct LinearSolver : LinearSolverBase
 {
     TSolver m_solver;
+
+    LinearSolver()
+    {
+        LinearSolverSetup<TSolver>::apply(m_solver);
+    }
 
     void analyze(Ref<const Sparse> a)
     {
@@ -72,7 +99,7 @@ private:    // types
 private:    // variables
     std::vector<Dof> m_dofs;
 
-    std::unordered_map<Dof, int> m_dof_indices;
+    google::dense_hash_map<Dof, int> m_dof_indices;
 
     int m_nb_free_dofs;
     int m_nb_fixed_dofs;
@@ -155,7 +182,7 @@ private:    // methods
 
         Log::info(3, "Creating set of unique dofs...");
 
-        std::unordered_set<Dof> dof_set;
+        tsl::robin_set<Dof> dof_set;
         std::vector<Dof> free_dofs;
         std::vector<Dof> fixed_dofs;
 
@@ -208,11 +235,16 @@ private:    // methods
 
         Log::info(3, "Creating dof indices...");
 
+        m_dof_indices.resize(m_dofs.size());
+        m_dof_indices.set_empty_key(Dof());
+
         for (int i = 0; i < m_dofs.size(); i++) {
             m_dof_indices[m_dofs[i]] = i;
         }
 
         // create index table
+
+        Log::info(3, "Creating index table for elements...");
 
         for (size_t i = 0; i < nb_elements; i++) {
             const auto& element = elements[i];
@@ -246,7 +278,7 @@ private:    // methods
 
         Log::info(3, "Analyzing pattern...");
 
-        std::vector<std::unordered_set<int>> pattern(m_nb_free_dofs);
+        std::vector<tsl::robin_set<int>> pattern(m_nb_free_dofs);
 
         for (const auto& dof_indices : m_index_table) {
             const size_t nb_dofs = dof_indices.size();
@@ -521,7 +553,13 @@ public:     // methods
 
     int dof_index(const Dof& dof) const
     {
-        return m_dof_indices.at(dof);
+        const auto it = m_dof_indices.find(dof);
+
+        if (it == m_dof_indices.end()) {
+            return -1;
+        }
+
+        return it->second;
     }
 
     template<int TOrder>
