@@ -39,25 +39,10 @@ using Ref = Eigen::Ref<T>;
 template <typename T>
 using Map = Eigen::Map<T>;
 
-using Settings = std::unordered_map<std::string, std::variant<int, double,
-    std::string>>;
-
-std::string get_or_default(Settings options, std::string key,
-    std::string default_value)
-{
-    const auto& it = options.find(key);
-
-    if (it == options.end()) {
-        return default_value;
-    }
-
-    return std::get<std::string>(it->second);
-}
-
 template <typename... Args>
 std::string format(Args&&... args)
 {
     return fmt::format(std::forward<Args>(args)...);
 }
 
-} // namespace EQlib
+} // namespace

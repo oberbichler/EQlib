@@ -4,6 +4,7 @@
 #include "Parameter.h"
 #include "Element.h"
 #include "Log.h"
+#include "Settings.h"
 #include "Timer.h"
 
 #include <Eigen/PardisoSupport>
