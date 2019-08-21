@@ -12,6 +12,8 @@
 
 namespace EQlib {
 
+// --- memory
+
 template <typename T>
 using Pointer = std::shared_ptr<T>;
 
@@ -23,6 +25,8 @@ Unique<T> new_(TArgs&&... args)
 {
     return Unique<T>(new T(std::forward<TArgs>(args)...));
 }
+
+// --- linear algebra
 
 using Vector3D = Eigen::Vector3d;
 
@@ -38,6 +42,8 @@ using Ref = Eigen::Ref<T>;
 
 template <typename T>
 using Map = Eigen::Map<T>;
+
+// --- format
 
 template <typename... Args>
 std::string format(Args&&... args)
