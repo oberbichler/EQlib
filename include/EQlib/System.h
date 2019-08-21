@@ -365,34 +365,31 @@ private:    // methods
         if (linear_solver_type == "pardiso_ldlt") {
             Log::info(2, "Using Pardiso LDL^T solver");
 
-            m_solver = std::make_unique<
+            m_solver = new_<
                 LinearSolver<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>>();
         } else if (linear_solver_type == "pardiso_llt") {
             Log::info(2, "Using Pardiso LL^T solver");
 
-            m_solver = std::make_unique<
-                LinearSolver<Eigen::PardisoLLT<Sparse, Eigen::Upper>>>();
+            m_solver = new_<LinearSolver<Eigen::PardisoLLT<Sparse,
+                Eigen::Upper>>>();
         } else if (linear_solver_type == "pardiso_lu") {
             Log::info(2, "Using Pardiso LU solver");
 
-            m_solver = std::make_unique<
-                LinearSolver<Eigen::PardisoLU<Sparse>>>();
+            m_solver = new_<LinearSolver<Eigen::PardisoLU<Sparse>>>();
         } else if (linear_solver_type == "conjugate_gradient") {
             Log::info(2, "Using Eigen Conjugate Gradient solver");
 
             if (TSymmetric) {
-                m_solver = std::make_unique<LinearSolver<
-                    Eigen::ConjugateGradient<Sparse, Eigen::Upper>>>();
+                m_solver = new_<LinearSolver<Eigen::ConjugateGradient<Sparse,
+                    Eigen::Upper>>>();
             } else {
-                m_solver = std::make_unique<
-                    LinearSolver<Eigen::ConjugateGradient<Sparse,
+                m_solver = new_<LinearSolver<Eigen::ConjugateGradient<Sparse,
                     Eigen::Lower | Eigen::Upper>>>();
             }
         } else if (linear_solver_type == "sparse_lu") {
             Log::info(2, "Using Eigen Sparse LU solver");
 
-            m_solver = std::make_unique<
-                LinearSolver<Eigen::SparseLU<Sparse>>>();
+            m_solver = new_<LinearSolver<Eigen::SparseLU<Sparse>>>();
         } else {
             throw std::runtime_error("Unknown linear solver");
         }

@@ -20,9 +20,9 @@ private:    // variables
 
 public:     // constructors
     Node(const double x, const double y, const double z) noexcept
-    : m_x(std::make_unique<Parameter>(x))
-    , m_y(std::make_unique<Parameter>(y))
-    , m_z(std::make_unique<Parameter>(z))
+    : m_x(new_<Parameter>(x))
+    , m_y(new_<Parameter>(y))
+    , m_z(new_<Parameter>(z))
     { }
 
     Node() noexcept : Node(0, 0, 0)
