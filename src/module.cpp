@@ -20,6 +20,8 @@
 #include <EQlib/Elements/LengthConstraint.h>
 #include <EQlib/Elements/NodalEquilibrium.h>
 
+#include <EQlib/Version.h>
+
 #ifdef IPOPT
 #include <EQlib/IPOpt.h>
 #endif
@@ -28,12 +30,16 @@ PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
     m.attr("__copyright__") = "Copyright (c) 2018-2019, Thomas Oberbichler";
-    m.attr("__version__") = EQLIB_VERSION;
+    m.attr("__version__") = EQlib::version();
     m.attr("__email__") = "thomas.oberbichler@gmail.com";
     m.attr("__status__") = "Development";
 
     namespace py = pybind11;
     using namespace pybind11::literals;
+
+#if defined(GIT_COMMIT_HASH)
+    m.attr("GIT_COMMIT_HASH") = GIT_COMMIT_HASH;
+#endif // GIT_COMMIT_HASH
 
 #if defined(EIGEN_USE_BLAS)
     m.attr("USE_BLAS") = true;

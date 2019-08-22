@@ -15,11 +15,13 @@
 #include <IGAlib/LocationConstraint.h>
 #include <IGAlib/Shell3D3P.h>
 
+#include <EQlib/Version.h>
+
 PYBIND11_MODULE(IGAlib, m) {
     m.doc() = "IGAlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
     m.attr("__copyright__") = "Copyright (c) 2019, Thomas Oberbichler";
-    m.attr("__version__") = EQLIB_VERSION;
+    m.attr("__version__") = EQlib::version();
     m.attr("__email__") = "thomas.oberbichler@gmail.com";
     m.attr("__status__") = "Development";
 
