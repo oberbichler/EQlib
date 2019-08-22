@@ -26,7 +26,8 @@ public:     // constructors
         const double act_value,
         const double target,
         const double result,
-        const bool is_fixed) noexcept
+        const bool is_fixed,
+        const std::string name) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
     , m_lower_bound(-std::numeric_limits<double>::infinity())
@@ -34,17 +35,18 @@ public:     // constructors
     , m_target(target)
     , m_result(result)
     , m_is_fixed(is_fixed)
+    , m_name(name)
     { }
 
     Parameter() noexcept
-    : Parameter(0, 0, 0, 0, false)
+    : Parameter(0, 0, 0, 0, false, "")
     { }
 
     Parameter(
         const double value,
         const double target=0,
         const bool is_fixed=false) noexcept
-    : Parameter(value, value, target, 0, is_fixed)
+    : Parameter(value, value, target, 0, is_fixed, "")
     { }
 
 public:     // getters and setters
@@ -192,9 +194,9 @@ public:     // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, "Parameter")
-            .def(py::init<double, double, double, double, bool>(),
+            .def(py::init<double, double, double, double, bool, std::string>(),
                 "ref_value"_a, "act_value"_a, "target"_a=0, "result"_a=0,
-                "is_fixed"_a=false)
+                "is_fixed"_a=false, "name"_a="")
             .def(py::init<double, double, bool>(), "value"_a, "target"_a=0,
                 "is_fixed"_a=false)
             .def(py::init<>())
@@ -211,11 +213,17 @@ public:     // python
             .def_property("is_fixed", &Type::is_fixed, &Type::set_is_fixed)
             .def_property("name", &Type::name, &Type::set_name)
             .def(py::pickle([](const Type& self) {
-                    return py::make_tuple(self.ref_value(), self.act_value(),
-                        self.target(), self.result(), self.is_fixed());
-                        // FIXME: add missing properties
+                    return py::make_tuple(
+                        self.ref_value(),
+                        self.act_value(),
+                        self.target(),
+                        self.result(),
+                        self.is_fixed(),
+                        self.lower_bound(),
+                        self.upper_bound(),
+                        self.name());
                 }, [](py::tuple tuple) {
-                    if (tuple.size() != 5) {
+                    if (tuple.size() != 8) {
                         throw std::runtime_error("Invalid state!");
                     }
 
@@ -224,7 +232,9 @@ public:     // python
                     const auto target = tuple[2].cast<double>();
                     const auto result = tuple[3].cast<double>();
                     const auto is_fixed = tuple[4].cast<bool>();
-                    // FIXME: add missing properties
+                    const auto lower_bound = tuple[5].cast<double>();
+                    const auto upper_bound = tuple[6].cast<double>();
+                    const auto name = tuple[7].cast<std::string>();
 
                     return Type(ref_value, act_value, target, result, is_fixed);
                 }
