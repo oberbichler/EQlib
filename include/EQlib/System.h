@@ -74,23 +74,12 @@ public:     // constructors
         Settings linear_solver)
     : m_load_factor(1)
     {
-        const std::vector<Pointer<Parameter>> dofs;
-        initialize(std::move(elements), dofs, linear_solver);
-    }
-
-    System(
-        std::vector<Pointer<Element>> elements,
-        std::vector<Pointer<Parameter>> dofs,
-        Settings linear_solver)
-    : m_load_factor(1)
-    {
-        initialize(std::move(elements), dofs, linear_solver);
+        initialize(std::move(elements), linear_solver);
     }
 
 private:    // methods
     void initialize(
         std::vector<Pointer<Element>> elements,
-        std::vector<Pointer<Parameter>> dof_list,
         Settings linear_solver)
     {
         Log::info(1, "==> Initialize system...");
@@ -128,33 +117,21 @@ private:    // methods
         std::vector<Pointer<Parameter>> free_dofs;
         std::vector<Pointer<Parameter>> fixed_dofs;
 
-        if (dof_list.size() == 0) {
-            for (size_t i = 0; i < nb_elements; i++) {
-                const auto& element = elements[i];
+        for (size_t i = 0; i < nb_elements; i++) {
+            const auto& element = elements[i];
 
-                for (const auto& dof : element_dofs[i]) {
-                    if (dof_set.find(dof) != dof_set.end()) {
-                        continue;
-                    }
-
-                    dof_set.insert(dof);
-
-                    if (dof->is_fixed()) {
-                        fixed_dofs.push_back(dof);
-                    } else {
-                        free_dofs.push_back(dof);
-                    }
-                }
-            }
-        } else {
-            for (const auto& dof : dof_list) {
+            for (const auto& dof : element_dofs[i]) {
                 if (dof_set.find(dof) != dof_set.end()) {
                     continue;
                 }
 
                 dof_set.insert(dof);
 
-                free_dofs.push_back(dof);
+                if (dof->is_fixed()) {
+                    fixed_dofs.push_back(dof);
+                } else {
+                    free_dofs.push_back(dof);
+                }
             }
         }
 
@@ -887,11 +864,8 @@ public:     // python
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<std::vector<Pointer<EQlib::Element>>,
-                Settings>(), "elements"_a, "linear_solver"_a = Settings())
-            .def(py::init<std::vector<Pointer<EQlib::Element>>,
-                std::vector<EQlib::Pointer<Parameter>>, Settings>(),
-                "elements"_a, "dofs"_a, "linear_solver"_a = Settings())
+            .def(py::init<std::vector<Pointer<EQlib::Element>>, Settings>(),
+                "elements"_a, "linear_solver"_a = Settings())
             // properties
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
