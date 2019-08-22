@@ -56,7 +56,7 @@ if (DEFINED ENV{CONDA_PREFIX})
 
     target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
     target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
-    
+
     if (USE_IPOPT)
         target_link_libraries(EQlib PRIVATE ${IPOPT_LIBRARY})
         add_definitions(-DIPOPT)
