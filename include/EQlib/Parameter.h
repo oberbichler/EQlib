@@ -155,12 +155,12 @@ public:     // methods
             return format(
                 "<Parameter value={} is_fixed={} bounds=({}, {}) at {:#x}>",
                 act_value(), is_fixed(), lower_bound(), upper_bound(),
-                size_t(&m_act_value));
+                size_t(this));
         } else {
             return format(
                 "<Parameter '{}' value={} is_fixed={} bounds=({}, {}) at {:#x}>",
                 name(), act_value(), is_fixed(), lower_bound(), upper_bound(),
-                size_t(&m_act_value));
+                size_t(this));
         }
     }
 
