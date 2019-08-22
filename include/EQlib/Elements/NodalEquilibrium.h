@@ -52,26 +52,26 @@ public:     // methods
     {
         std::vector<Pointer<Parameter>> dof_list(m_nb_dofs);
 
-        size_t offset = 0;
+        size_t dof = 0;
 
-        dof_list[offset++] = m_node->x();
-        dof_list[offset++] = m_node->y();
-        dof_list[offset++] = m_node->z();
+        dof_list[dof++] = m_node->x();
+        dof_list[dof++] = m_node->y();
+        dof_list[dof++] = m_node->z();
 
         for (const auto& [force, node] : m_connections) {
-            dof_list[offset++] = node->x();
-            dof_list[offset++] = node->y();
-            dof_list[offset++] = node->z();
-            dof_list[offset++] = force;
+            dof_list[dof++] = node->x();
+            dof_list[dof++] = node->y();
+            dof_list[dof++] = node->z();
+            dof_list[dof++] = *force;
         }
 
         for (const auto& [force, direction] : m_loads) {
             if (std::holds_alternative<Pointer<Parameter>>(force)) {
-                dof_list[offset++] = std::get<Pointer<Parameter>>(force);
+                dof_list[dof++] = *std::get<Pointer<Parameter>>(force);
             }
         }
 
-        assert(offset == m_nb_dofs);
+        assert(dof == m_nb_dofs);
 
         return dof_list;
     }
@@ -80,15 +80,11 @@ public:     // methods
     {
         using namespace hyperjet;
 
-        HyperJet x(m_node->x()->act_value(), m_nb_dofs);
-        HyperJet y(m_node->y()->act_value(), m_nb_dofs);
-        HyperJet z(m_node->z()->act_value(), m_nb_dofs);
+        size_t dof = 0;
 
-        size_t offset = 0;
-
-        x.g(offset++) = 1;
-        y.g(offset++) = 1;
-        z.g(offset++) = 1;
+        const auto x = HyperJet::variable(m_node->x(), m_nb_dofs, dof++);
+        const auto y = HyperJet::variable(m_node->y(), m_nb_dofs, dof++);
+        const auto z = HyperJet::variable(m_node->z(), m_nb_dofs, dof++);
 
         Eigen::Matrix<HyperJet, 3, 1> residual;
 
@@ -97,44 +93,27 @@ public:     // methods
         residual[2] = HyperJet(m_nb_dofs);
 
         for (const auto& [force, node] : m_connections) {
-            Eigen::Matrix<HyperJet, 3, 1> f_i;
+            Eigen::Matrix<HyperJet, 3, 1> direction;
 
-            f_i[0] = HyperJet(node->x()->act_value(), m_nb_dofs);
-            f_i[1] = HyperJet(node->y()->act_value(), m_nb_dofs);
-            f_i[2] = HyperJet(node->z()->act_value(), m_nb_dofs);
+            direction[0] = HyperJet::variable(node->x(), m_nb_dofs, dof++) - x;
+            direction[1] = HyperJet::variable(node->y(), m_nb_dofs, dof++) - y;
+            direction[2] = HyperJet::variable(node->z(), m_nb_dofs, dof++) - z;
 
-            HyperJet s_i(*force, m_nb_dofs);
+            const auto s = HyperJet::variable(*force, m_nb_dofs, dof++);
 
-            f_i[0].g(offset++) = 1;
-            f_i[1].g(offset++) = 1;
-            f_i[2].g(offset++) = 1;
-
-            f_i[0] -= x;
-            f_i[1] -= y;
-            f_i[2] -= z;
-
-            s_i.g(offset++) = 1;
-
-            const HyperJet l_i = f_i.norm();
-
-            f_i *= s_i / l_i;
-
-            residual += f_i;
+            residual = residual + s * direction / direction.norm();
         }
 
         for (const auto& [force, direction] : m_loads) {
             if (std::holds_alternative<Pointer<Parameter>>(force)) {
-                HyperJet s_i(*std::get<Pointer<Parameter>>(force), m_nb_dofs);
+                const auto s = HyperJet::variable(
+                    *std::get<Pointer<Parameter>>(force), m_nb_dofs, dof++);
 
-                s_i.g(offset++) = 1;
-
-                residual += s_i * direction / direction.norm();
+                residual = residual + s * direction / direction.norm();
             } else {
-                const double s_i = std::get<double>(force);
+                const auto s = std::get<double>(force);
 
-                const Vector3D f_i = s_i * direction / direction.norm();
-
-                residual = residual + f_i;
+                residual = residual + s * direction / direction.norm();;
             }
         }
 
@@ -148,7 +127,7 @@ public:     // methods
             h = f.h();
         }
 
-        assert(offset == m_nb_dofs);
+        assert(dof == m_nb_dofs);
 
         return f.f();
     }

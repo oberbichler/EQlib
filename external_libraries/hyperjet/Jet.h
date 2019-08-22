@@ -6,7 +6,7 @@
 
 namespace hyperjet {
 
-template <typename T>
+template <typename T = double>
 class Jet {
 public:     // Types
     using Scalar = T;
@@ -47,6 +47,14 @@ public:     // Methods
     , m_g(g)
     { }
 
+    static Jet<T>
+    variable(const double value, const int size, const int index)
+    {
+        Jet<T> result(value, size);
+        result.g(index) = 1;
+        return result;
+    }
+
     T&
     f()
     {
@@ -82,6 +90,7 @@ public:     // Methods
     {
         return m_g(index);
     }
+
 
     inline size_t
     size() const
