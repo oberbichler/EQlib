@@ -7,6 +7,7 @@
 #include "Settings.h"
 #include "Timer.h"
 
+#include "LinearSolvers/EigenLinearSolver.h"
 #include "LinearSolvers/LinearSolver.h"
 
 #include <sparsehash/dense_hash_map>
@@ -64,7 +65,7 @@ private:    // variables
 
     int m_stopping_reason;
 
-    Unique<LinearSolverBase> m_solver;
+    Unique<LinearSolver> m_solver;
 
     double m_load_factor;
 
