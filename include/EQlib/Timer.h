@@ -1,33 +1,39 @@
 #pragma once
 
 #include <chrono>
-#include <stack>
 
 namespace EQlib {
 
 class Timer
 {
-private:
+private:    // types
     using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
     using Duration = std::chrono::duration<double>;
 
-private:
+private:    // variables
     Time m_start;
 
-public:
-    Timer()
-    : m_start(std::chrono::high_resolution_clock::now())
-    { }
-
-    void start()
+private:    // methods
+    static Time now() noexcept
     {
-        m_start = std::chrono::high_resolution_clock::now();
+        return std::chrono::high_resolution_clock::now();
     }
 
-    double ellapsed() const
+public:     // constructors
+    Timer() noexcept
+    : m_start(now())
     {
-        const auto now = std::chrono::high_resolution_clock::now();
-        const Duration duration = now - m_start;
+    }
+
+public:     // methods
+    void start() noexcept
+    {
+        m_start = now();
+    }
+
+    double ellapsed() const noexcept
+    {
+        const Duration duration = now() - m_start;
         return duration.count();
     }
 
@@ -36,9 +42,9 @@ public:     // python
     static void register_python(TModule& m)
     {
         namespace py = pybind11;
-        using namespace pybind11::literals;
+        using namespace py::literals;
 
-        using Type = EQlib::Timer;
+        using Type = Timer;
 
         py::class_<Type>(m, "Timer")
             .def(py::init<>())
