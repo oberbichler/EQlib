@@ -64,7 +64,7 @@ private:    // variables
 
     int m_stopping_reason;
 
-    std::unique_ptr<LinearSolverBase> m_solver;
+    Unique<LinearSolverBase> m_solver;
 
     double m_load_factor;
 
