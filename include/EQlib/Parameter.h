@@ -236,7 +236,10 @@ public:     // python
                     const auto upper_bound = tuple[6].cast<double>();
                     const auto name = tuple[7].cast<std::string>();
 
-                    return Type(ref_value, act_value, target, result, is_fixed);
+                    return Type(ref_value, act_value, target, result, is_fixed,
+                        name);
+
+                    // FIXME: set upper/lower bounds
                 }
             ))
             .def("__float__", [](const Type& self) { return self.act_value(); })
