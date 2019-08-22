@@ -8,12 +8,11 @@ namespace EQlib {
 class Timer
 {
 private:
-    using TimePoint = std::chrono::time_point<
-        std::chrono::high_resolution_clock>;
+    using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
     using Duration = std::chrono::duration<double>;
 
 private:
-    TimePoint m_start;
+    Time m_start;
 
 public:
     Timer()
