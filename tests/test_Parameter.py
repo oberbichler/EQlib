@@ -12,7 +12,7 @@ class TestParameter(unittest.TestCase):
         self.assertEqual(parameter.result, 4.0)
         self.assertEqual(parameter.lower_bound, -float('inf'))
         self.assertEqual(parameter.upper_bound, float('inf'))
-        self.assertEqual(parameter.isfixed, False)
+        self.assertEqual(parameter.is_fixed, False)
         self.assertEqual(parameter.name, '')
 
     def test_getters_and_setters(self):
@@ -36,8 +36,8 @@ class TestParameter(unittest.TestCase):
         parameter.upper_bound = 2.3
         self.assertEqual(parameter.upper_bound, 2.3)
 
-        parameter.isfixed = True
-        self.assertEqual(parameter.isfixed, True)
+        parameter.is_fixed = True
+        self.assertEqual(parameter.is_fixed, True)
 
         parameter.name = 'Example'
         self.assertEqual(parameter.name, 'Example')
