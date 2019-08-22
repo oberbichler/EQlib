@@ -14,7 +14,7 @@ namespace EQlib {
 class Log
 {
 private:    // methods
-    static std::shared_ptr<spdlog::logger>
+    static Pointer<spdlog::logger>
     create()
     {
         auto logger = spdlog::stdout_color_mt("console");
@@ -25,7 +25,7 @@ private:    // methods
     }
 
 private:    // variables
-    static const inline std::shared_ptr<spdlog::logger> s_console = create();
+    static const inline Pointer<spdlog::logger> s_console = create();
 
     static inline int s_info_level = 0;
 

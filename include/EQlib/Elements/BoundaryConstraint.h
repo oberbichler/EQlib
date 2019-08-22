@@ -40,13 +40,13 @@ public:     // constructors
     }
 
 public:     // methods
-    std::vector<Dof> dofs() const override
+    std::vector<Pointer<Parameter>> dofs() const override
     {
-        std::vector<Dof> dof_list(m_nb_dofs);
+        std::vector<Pointer<Parameter>> dof_list(m_nb_dofs);
 
         size_t offset = 0;
 
-        dof_list[offset++] = *m_parameter;
+        dof_list[offset++] = m_parameter;
 
         assert(offset == m_nb_dofs);
 
@@ -56,7 +56,7 @@ public:     // methods
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
         using namespace hyperjet;
-        
+
         HyperJet value(m_parameter->act_value(), m_nb_dofs);
 
         size_t offset = 0;
@@ -73,11 +73,12 @@ public:     // methods
             f = 0.5 * (value - m_upper_bound).pow(2) * m_weight;
         }
 
+        if (g.size() > 0) {
+            g = f.g();
+        }
+
         if (h.size() > 0) {
-            g = f.g();
             h = f.h();
-        } else if (g.size() > 0) {
-            g = f.g();
         }
 
         assert(offset == m_nb_dofs);

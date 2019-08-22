@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Define.h"
-#include "Dof.h"
+#include "Parameter.h"
 #include "Element.h"
 #include "Log.h"
+#include "Settings.h"
 #include "Timer.h"
 
 #include <Eigen/PardisoSupport>
@@ -54,19 +55,27 @@ template <typename TSolver>
 struct LinearSolver : LinearSolverBase
 {
     TSolver m_solver;
+    bool is_analyzed;
 
-    LinearSolver()
+    LinearSolver() : is_analyzed(false)
     {
         LinearSolverSetup<TSolver>::apply(m_solver);
     }
 
     void analyze(Ref<const Sparse> a)
     {
+        if (is_analyzed) {
+            return;
+        }
+
         m_solver.analyzePattern(a);
+
+        is_analyzed = true;
     }
 
     void factorize(Ref<const Sparse> a)
     {
+        analyze(a);
         m_solver.factorize(a);
     }
 
@@ -97,16 +106,16 @@ private:    // types
     };
 
 private:    // variables
-    std::vector<Dof> m_dofs;
+    std::vector<Pointer<Parameter>> m_dofs;
 
-    google::dense_hash_map<Dof, int> m_dof_indices;
+    google::dense_hash_map<Pointer<Parameter>, int> m_dof_indices;
 
     int m_nb_free_dofs;
     int m_nb_fixed_dofs;
 
     int m_max_element_size;
 
-    std::vector<std::shared_ptr<Element>> m_elements;
+    std::vector<Pointer<Element>> m_elements;
     std::vector<std::vector<Index>> m_index_table;
 
     std::vector<std::vector<int>> m_pattern;
@@ -128,18 +137,18 @@ private:    // variables
 
 public:     // constructors
     System(
-        std::vector<std::shared_ptr<Element>> elements,
-        py::dict linear_solver)
+        std::vector<Pointer<Element>> elements,
+        Settings linear_solver)
     : m_load_factor(1)
     {
-        const std::vector<Dof> dofs;
+        const std::vector<Pointer<Parameter>> dofs;
         initialize(std::move(elements), dofs, linear_solver);
     }
 
     System(
-        std::vector<std::shared_ptr<Element>> elements,
-        std::vector<Dof> dofs,
-        py::dict linear_solver)
+        std::vector<Pointer<Element>> elements,
+        std::vector<Pointer<Parameter>> dofs,
+        Settings linear_solver)
     : m_load_factor(1)
     {
         initialize(std::move(elements), dofs, linear_solver);
@@ -147,9 +156,9 @@ public:     // constructors
 
 private:    // methods
     void initialize(
-        std::vector<std::shared_ptr<Element>> elements,
-        std::vector<Dof> dof_list,
-        py::dict linear_solver)
+        std::vector<Pointer<Element>> elements,
+        std::vector<Pointer<Parameter>> dof_list,
+        Settings linear_solver)
     {
         Log::info(1, "==> Initialize system...");
         Log::info(2, "The system consists of {} elements", elements.size());
@@ -162,7 +171,7 @@ private:    // methods
 
         const auto nb_elements = elements.size();
 
-        std::vector<std::vector<Dof>> element_dofs(nb_elements);
+        std::vector<std::vector<Pointer<Parameter>>> element_dofs(nb_elements);
 
         m_max_element_size = 0;
 
@@ -182,9 +191,9 @@ private:    // methods
 
         Log::info(3, "Creating set of unique dofs...");
 
-        tsl::robin_set<Dof> dof_set;
-        std::vector<Dof> free_dofs;
-        std::vector<Dof> fixed_dofs;
+        tsl::robin_set<Pointer<Parameter>> dof_set;
+        std::vector<Pointer<Parameter>> free_dofs;
+        std::vector<Pointer<Parameter>> fixed_dofs;
 
         if (dof_list.size() == 0) {
             for (size_t i = 0; i < nb_elements; i++) {
@@ -197,7 +206,7 @@ private:    // methods
 
                     dof_set.insert(dof);
 
-                    if (dof.isfixed()) {
+                    if (dof->is_fixed()) {
                         fixed_dofs.push_back(dof);
                     } else {
                         free_dofs.push_back(dof);
@@ -236,7 +245,7 @@ private:    // methods
         Log::info(3, "Creating dof indices...");
 
         m_dof_indices.resize(m_dofs.size());
-        m_dof_indices.set_empty_key(Dof());
+        m_dof_indices.set_empty_key(Pointer<Parameter>());
 
         for (int i = 0; i < m_dofs.size(); i++) {
             m_dof_indices[m_dofs[i]] = i;
@@ -352,55 +361,50 @@ private:    // methods
         Log::info(3, "Initializing solver...");
 
         const auto linear_solver_type =
-            get_or_default<std::string>(linear_solver, "type", "pardiso_ldlt");
+            get_or_default(linear_solver, "type", "pardiso_ldlt");
 
         if (linear_solver_type == "pardiso_ldlt") {
             Log::info(2, "Using Pardiso LDL^T solver");
 
-            m_solver = std::make_unique<
+            m_solver = new_<
                 LinearSolver<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>>();
         } else if (linear_solver_type == "pardiso_llt") {
             Log::info(2, "Using Pardiso LL^T solver");
 
-            m_solver = std::make_unique<
-                LinearSolver<Eigen::PardisoLLT<Sparse, Eigen::Upper>>>();
+            m_solver = new_<LinearSolver<Eigen::PardisoLLT<Sparse,
+                Eigen::Upper>>>();
         } else if (linear_solver_type == "pardiso_lu") {
             Log::info(2, "Using Pardiso LU solver");
 
-            m_solver = std::make_unique<
-                LinearSolver<Eigen::PardisoLU<Sparse>>>();
+            m_solver = new_<LinearSolver<Eigen::PardisoLU<Sparse>>>();
         } else if (linear_solver_type == "conjugate_gradient") {
             Log::info(2, "Using Eigen Conjugate Gradient solver");
 
             if (TSymmetric) {
-                m_solver = std::make_unique<LinearSolver<
-                    Eigen::ConjugateGradient<Sparse, Eigen::Upper>>>();
+                m_solver = new_<LinearSolver<Eigen::ConjugateGradient<Sparse,
+                    Eigen::Upper>>>();
             } else {
-                m_solver = std::make_unique<
-                    LinearSolver<Eigen::ConjugateGradient<Sparse,
+                m_solver = new_<LinearSolver<Eigen::ConjugateGradient<Sparse,
                     Eigen::Lower | Eigen::Upper>>>();
             }
         } else if (linear_solver_type == "sparse_lu") {
             Log::info(2, "Using Eigen Sparse LU solver");
 
-            m_solver = std::make_unique<
-                LinearSolver<Eigen::SparseLU<Sparse>>>();
+            m_solver = new_<LinearSolver<Eigen::SparseLU<Sparse>>>();
         } else {
             throw std::runtime_error("Unknown linear solver");
         }
-
-        m_solver->analyze(m_h);
 
         Log::info(1, "System initialized in {:.3f} sec", timer.ellapsed());
     }
 
 public:     // getters and setters
-    const Dof& dof(const int index) const
+    const Pointer<Parameter>& dof(const int index) const
     {
         return m_dofs[index];
     }
 
-    const std::vector<Dof>& dofs() const
+    const std::vector<Pointer<Parameter>>& dofs() const
     {
         return m_dofs;
     }
@@ -477,7 +481,7 @@ public:     // getters and setters
         Vector result(nb_free_dofs());
 
         for (int i = 0; i < result.size(); i++) {
-            result[i] = m_dofs[i].delta();
+            result[i] = m_dofs[i]->delta();
         }
 
         return result;
@@ -490,7 +494,7 @@ public:     // getters and setters
         }
 
         for (int i = 0; i < value.size(); i++) {
-            m_dofs[i].set_delta(value[i]);
+            m_dofs[i]->set_delta(value[i]);
         }
     }
 
@@ -509,7 +513,7 @@ public:     // getters and setters
         m_load_factor = value;
     }
 
-    std::vector<std::shared_ptr<Element>> elements() const
+    std::vector<Pointer<Element>> elements() const
     {
         return m_elements;
     }
@@ -551,7 +555,7 @@ public:     // methods
         }
     }
 
-    int dof_index(const Dof& dof) const
+    int dof_index(const Pointer<Parameter>& dof) const
     {
         const auto it = m_dof_indices.find(dof);
 
@@ -613,7 +617,7 @@ public:     // methods
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        py::gil_scoped_release release;
+        pybind11::gil_scoped_release release;
 
         // compute g and h
 
@@ -812,7 +816,7 @@ public:     // methods
         Timer timer;
 
         for (int i = 0; i < nb_free_dofs(); i++) {
-            m_target[i] = m_dofs[i].target();
+            m_target[i] = m_dofs[i]->target();
         }
 
         if (m_load_factor != 1.0) {
@@ -871,7 +875,7 @@ public:     // methods
             Log::info(2, "Updating system...");
 
             for (int i = 0; i < nb_free_dofs(); i++) {
-                m_dofs[i].set_delta(m_dofs[i].delta() + m_x(i));
+                m_dofs[i]->set_delta(m_dofs[i]->delta() + m_x(i));
             }
 
             // check x norm
@@ -888,7 +892,7 @@ public:     // methods
         }
 
         for (int i = 0; i < nb_free_dofs(); i++) {
-            m_dofs[i].set_residual(m_residual(i));
+            m_dofs[i]->set_residual(m_residual(i));
         }
 
         switch (m_stopping_reason) {
@@ -911,8 +915,8 @@ public:     // methods
 
         Timer timer;
 
-        for (int i = 0; i < nb_dofs(); i++) {
-            m_target[i] = m_dofs[i].target();
+        for (int i = 0; i < nb_free_dofs(); i++) {
+            m_target[i] = m_dofs[i]->target();
         }
 
         if (m_load_factor != 1.0) {
@@ -933,7 +937,7 @@ public:     // methods
 
         if (update_dofs) {
             for (int i = 0; i < nb_free_dofs(); i++) {
-                m_dofs[i].set_delta(m_x(i));
+                m_dofs[i]->set_delta(m_x(i));
             }
         }
 
@@ -948,17 +952,17 @@ public:     // python
         using namespace pybind11::literals;
 
         using Type = System<TSymmetric>;
-        using Holder = std::shared_ptr<Type>;
+        using Holder = Pointer<Type>;
 
         const std::string name = TSymmetric ? "SymmetricSystem" : "System";
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>, py::dict>(),
-                "elements"_a, "linear_solver"_a = py::dict())
-            .def(py::init<std::vector<std::shared_ptr<EQlib::Element>>,
-                std::vector<EQlib::Dof>, py::dict>(), "elements"_a, "dofs"_a,
-                "linear_solver"_a = py::dict())
+            .def(py::init<std::vector<Pointer<EQlib::Element>>,
+                Settings>(), "elements"_a, "linear_solver"_a = Settings())
+            .def(py::init<std::vector<Pointer<EQlib::Element>>,
+                std::vector<EQlib::Pointer<Parameter>>, Settings>(),
+                "elements"_a, "dofs"_a, "linear_solver"_a = Settings())
             // properties
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)

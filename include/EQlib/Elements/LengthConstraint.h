@@ -37,9 +37,9 @@ public:     // constructors
     }
 
 public:     // methods
-    std::vector<Dof> dofs() const override
+    std::vector<Pointer<Parameter>> dofs() const override
     {
-        std::vector<Dof> dof_list(m_nb_dofs);
+        std::vector<Pointer<Parameter>> dof_list(m_nb_dofs);
 
         size_t offset = 0;
 
@@ -57,10 +57,10 @@ public:     // methods
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
         using namespace hyperjet;
-        
-        HyperJet x_a(m_nodes[0]->x(), m_nb_dofs);
-        HyperJet y_a(m_nodes[0]->y(), m_nb_dofs);
-        HyperJet z_a(m_nodes[0]->z(), m_nb_dofs);
+
+        HyperJet x_a(m_nodes[0]->x()->act_value(), m_nb_dofs);
+        HyperJet y_a(m_nodes[0]->y()->act_value(), m_nb_dofs);
+        HyperJet z_a(m_nodes[0]->z()->act_value(), m_nb_dofs);
 
         size_t offset = 0;
 
@@ -72,9 +72,9 @@ public:     // methods
 
         for (size_t i = 1; i < m_nodes.size(); i++)
         {
-            HyperJet x_b(m_nodes[i]->x(), m_nb_dofs);
-            HyperJet y_b(m_nodes[i]->y(), m_nb_dofs);
-            HyperJet z_b(m_nodes[i]->z(), m_nb_dofs);
+            HyperJet x_b(m_nodes[i]->x()->act_value(), m_nb_dofs);
+            HyperJet y_b(m_nodes[i]->y()->act_value(), m_nb_dofs);
+            HyperJet z_b(m_nodes[i]->z()->act_value(), m_nb_dofs);
 
             x_b.g(offset++) = 1;
             y_b.g(offset++) = 1;
@@ -93,11 +93,12 @@ public:     // methods
 
         const auto f = 0.5 * length.pow(2);
 
+        if (g.size() > 0) {
+            g = f.g();
+        }
+
         if (h.size() > 0) {
-            g = f.g();
             h = f.h();
-        } else if (g.size() > 0) {
-            g = f.g();
         }
 
         assert(offset == m_nb_dofs);

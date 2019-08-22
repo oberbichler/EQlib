@@ -8,14 +8,25 @@
 #include <pybind11/pybind11.h>
 
 #include <string>
+#include <variant>
 
 namespace EQlib {
+
+// --- memory
 
 template <typename T>
 using Pointer = std::shared_ptr<T>;
 
 template <typename T>
 using Unique = std::unique_ptr<T>;
+
+template <typename T, typename... TArgs>
+Unique<T> new_(TArgs&&... args)
+{
+    return Unique<T>(new T(std::forward<TArgs>(args)...));
+}
+
+// --- linear algebra
 
 using Vector3D = Eigen::Vector3d;
 
@@ -32,15 +43,7 @@ using Ref = Eigen::Ref<T>;
 template <typename T>
 using Map = Eigen::Map<T>;
 
-namespace py = pybind11;
-
-template <typename T>
-T get_or_default(py::dict options, std::string key, T default_value) {
-    if (!options.contains(key.c_str())) {
-        return default_value;
-    }
-    return options[key.c_str()].cast<T>();
-}
+// --- format
 
 template <typename... Args>
 std::string format(Args&&... args)
@@ -48,4 +51,4 @@ std::string format(Args&&... args)
     return fmt::format(std::forward<Args>(args)...);
 }
 
-} // namespace EQlib
+} // namespace

@@ -22,7 +22,7 @@ class Shell3D3P : public Element
     using HyperDualMatrix = Eigen::Matrix<HyperDual, TRows, TCols>;
 
 private:    // variables
-    std::vector<std::shared_ptr<Node>> m_nodes;
+    std::vector<Pointer<Node>> m_nodes;
     Matrix m_shape_functions;
     double m_thickness;
     double m_young_modulus;
@@ -31,7 +31,7 @@ private:    // variables
 
 public:     // constructor
     Shell3D3P(
-        std::vector<std::shared_ptr<Node>> nodes,
+        std::vector<Pointer<Node>> nodes,
         Matrix shape_functions,
         double thickness,
         double young_modulus,
@@ -85,14 +85,14 @@ public:     // constructor
         return result;
     }
 
-    std::vector<Dof> dofs() const override
+    std::vector<Pointer<Parameter>> dofs() const override
     {
-        std::vector<Dof> dof_list(m_nodes.size() * 3);
+        std::vector<Pointer<Parameter>> dof_list(m_nodes.size() * 3);
 
         for (size_t i = 0; i < m_nodes.size(); i++) {
-            dof_list[i * 3 + 0] = m_nodes[i]->x().dof();
-            dof_list[i * 3 + 1] = m_nodes[i]->y().dof();
-            dof_list[i * 3 + 2] = m_nodes[i]->z().dof();
+            dof_list[i * 3 + 0] = m_nodes[i]->x();
+            dof_list[i * 3 + 1] = m_nodes[i]->y();
+            dof_list[i * 3 + 2] = m_nodes[i]->z();
         }
 
         return dof_list;

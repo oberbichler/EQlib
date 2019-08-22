@@ -6,7 +6,6 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include <EQlib/Dof.h>
 #include <EQlib/Element.h>
 #include <EQlib/Log.h>
 #include <EQlib/Node.h>
