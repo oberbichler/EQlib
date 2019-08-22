@@ -8,26 +8,25 @@
 namespace EQlib {
 
 template <typename TSolver>
+struct EigenLinearSolverSetup
+{
+    static void apply(TSolver& solver)
+    {
+    }
+};
+
+template <>
+struct EigenLinearSolverSetup<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>
+{
+    static void apply(Eigen::PardisoLDLT<Sparse, Eigen::Upper>& solver)
+    {
+        solver.pardisoParameterArray()[1] = 3;
+    }
+};
+
+template <typename TSolver>
 struct EigenLinearSolver : LinearSolver
 {
-private:    // types
-    template <typename TSolver>
-    struct Setup
-    {
-        static void apply(TSolver& solver)
-        {
-        }
-    };
-
-    template <>
-    struct Setup<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>
-    {
-        static void apply(Eigen::PardisoLDLT<Sparse, Eigen::Upper>& solver)
-        {
-            solver.pardisoParameterArray()[1] = 3;
-        }
-    };
-
 private:    // variables
     TSolver m_solver;
     bool is_analyzed;
@@ -35,7 +34,7 @@ private:    // variables
 public:     // constructors
     EigenLinearSolver() : is_analyzed(false)
     {
-        Setup<TSolver>::apply(m_solver);
+        EigenLinearSolverSetup<TSolver>::apply(m_solver);
     }
 
 public:     // methods
