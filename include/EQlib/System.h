@@ -72,18 +72,17 @@ public:     // constructors
     System(
         std::vector<Pointer<Element>> elements,
         Settings linear_solver)
-    : m_load_factor(1)
+    : m_elements(std::move(elements))
+    , m_load_factor(1)
     {
-        initialize(std::move(elements), linear_solver);
+        initialize(linear_solver);
     }
 
 private:    // methods
-    void initialize(
-        std::vector<Pointer<Element>> elements,
-        Settings linear_solver)
+    void initialize(Settings linear_solver)
     {
         Log::info(1, "==> Initialize system...");
-        Log::info(2, "The system consists of {} elements", elements.size());
+        Log::info(2, "The system consists of {} elements", m_elements.size());
 
         Timer timer;
 
@@ -91,14 +90,14 @@ private:    // methods
 
         Log::info(3, "Getting element dofs...");
 
-        const auto nb_elements = elements.size();
+        const auto nb_elements = m_elements.size();
 
         std::vector<std::vector<Pointer<Parameter>>> element_dofs(nb_elements);
 
         m_max_element_size = 0;
 
         for (size_t i = 0; i < nb_elements; i++) {
-            const auto& element = elements[i];
+            const auto& element = m_elements[i];
 
             element_dofs[i] = element->dofs();
 
@@ -118,7 +117,7 @@ private:    // methods
         std::vector<Pointer<Parameter>> fixed_dofs;
 
         for (size_t i = 0; i < nb_elements; i++) {
-            const auto& element = elements[i];
+            const auto& element = m_elements[i];
 
             for (const auto& dof : element_dofs[i]) {
                 if (dof_set.find(dof) != dof_set.end()) {
@@ -166,7 +165,7 @@ private:    // methods
         Log::info(3, "Creating index table for elements...");
 
         for (size_t i = 0; i < nb_elements; i++) {
-            const auto& element = elements[i];
+            const auto& element = m_elements[i];
 
             const auto& dofs = element_dofs[i];
 
@@ -237,8 +236,6 @@ private:    // methods
             std::sort(rows.begin(), rows.end());
             m_pattern[col] = std::move(rows);
         }
-
-        m_elements = std::move(elements);
 
         // setup system vectors and matrices
 
