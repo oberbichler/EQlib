@@ -52,26 +52,26 @@ public:     // methods
     {
         std::vector<Pointer<Parameter>> dof_list(m_nb_dofs);
 
-        size_t dof = 0;
+        size_t offset = 0;
 
-        dof_list[dof++] = m_node->x();
-        dof_list[dof++] = m_node->y();
-        dof_list[dof++] = m_node->z();
+        dof_list[offset++] = m_node->x();
+        dof_list[offset++] = m_node->y();
+        dof_list[offset++] = m_node->z();
 
         for (const auto& [force, node] : m_connections) {
-            dof_list[dof++] = node->x();
-            dof_list[dof++] = node->y();
-            dof_list[dof++] = node->z();
-            dof_list[dof++] = force;
+            dof_list[offset++] = node->x();
+            dof_list[offset++] = node->y();
+            dof_list[offset++] = node->z();
+            dof_list[offset++] = force;
         }
 
         for (const auto& [force, direction] : m_loads) {
             if (std::holds_alternative<Pointer<Parameter>>(force)) {
-                dof_list[dof++] = std::get<Pointer<Parameter>>(force);
+                dof_list[offset++] = std::get<Pointer<Parameter>>(force);
             }
         }
 
-        assert(dof == m_nb_dofs);
+        assert(offset == m_nb_dofs);
 
         return dof_list;
     }
@@ -80,11 +80,11 @@ public:     // methods
     {
         using namespace hyperjet;
 
-        size_t dof = 0;
+        size_t offset = 0;
 
-        const auto x = HyperJet::variable(m_node->x()->act_value(), m_nb_dofs, dof++);
-        const auto y = HyperJet::variable(m_node->y()->act_value(), m_nb_dofs, dof++);
-        const auto z = HyperJet::variable(m_node->z()->act_value(), m_nb_dofs, dof++);
+        const auto x = HyperJet::variable(m_node->x()->act_value(), m_nb_dofs, offset++);
+        const auto y = HyperJet::variable(m_node->y()->act_value(), m_nb_dofs, offset++);
+        const auto z = HyperJet::variable(m_node->z()->act_value(), m_nb_dofs, offset++);
 
         Eigen::Matrix<HyperJet, 3, 1> residual;
 
@@ -95,11 +95,11 @@ public:     // methods
         for (const auto& [force, node] : m_connections) {
             Eigen::Matrix<HyperJet, 3, 1> direction;
 
-            direction[0] = HyperJet::variable(node->x()->act_value(), m_nb_dofs, dof++) - x;
-            direction[1] = HyperJet::variable(node->y()->act_value(), m_nb_dofs, dof++) - y;
-            direction[2] = HyperJet::variable(node->z()->act_value(), m_nb_dofs, dof++) - z;
+            direction[0] = HyperJet::variable(node->x()->act_value(), m_nb_dofs, offset++) - x;
+            direction[1] = HyperJet::variable(node->y()->act_value(), m_nb_dofs, offset++) - y;
+            direction[2] = HyperJet::variable(node->z()->act_value(), m_nb_dofs, offset++) - z;
 
-            const auto s = HyperJet::variable(force->act_value(), m_nb_dofs, dof++);
+            const auto s = HyperJet::variable(force->act_value(), m_nb_dofs, offset++);
 
             residual = residual + s * direction / direction.norm();
         }
@@ -107,7 +107,7 @@ public:     // methods
         for (const auto& [force, direction] : m_loads) {
             if (std::holds_alternative<Pointer<Parameter>>(force)) {
                 const auto s = HyperJet::variable(
-                    *std::get<Pointer<Parameter>>(force), m_nb_dofs, dof++);
+                    *std::get<Pointer<Parameter>>(force), m_nb_dofs, offset++);
 
                 residual = residual + s * direction / direction.norm();
             } else {
@@ -127,7 +127,7 @@ public:     // methods
             h = f.h();
         }
 
-        assert(dof == m_nb_dofs);
+        assert(offset == m_nb_dofs);
 
         return f.f();
     }
