@@ -48,8 +48,8 @@ public:     // methods
     {
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
-            x_l[i] = dof.lower_bound() - dof.ref_value();
-            x_u[i] = dof.upper_bound() - dof.ref_value();
+            x_l[i] = dof->lower_bound() - dof->ref_value();
+            x_u[i] = dof->upper_bound() - dof->ref_value();
         }
 
         return true;
@@ -68,7 +68,7 @@ public:     // methods
         // we initialize x in bounds, in the upper right quadrant
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
-            x[i] = dof.delta();
+            x[i] = dof->delta();
         }
 
         return true;
@@ -147,7 +147,7 @@ public:     // methods
     {
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
-            dof.set_delta(x[i]);
+            dof->set_delta(x[i]);
         }
     }
 };
