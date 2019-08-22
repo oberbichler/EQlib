@@ -7,7 +7,7 @@
 #include "Settings.h"
 #include "Timer.h"
 
-#include <Eigen/PardisoSupport>
+#include "LinearSolvers/LinearSolver.h"
 
 #include <sparsehash/dense_hash_map>
 
@@ -22,73 +22,6 @@
 #include <unordered_set>
 
 namespace EQlib {
-
-struct LinearSolverBase
-{
-    virtual void analyze(Ref<const Sparse> a) = 0;
-
-    virtual void factorize(Ref<const Sparse> a) = 0;
-
-    virtual void solve(Ref<const Vector> b, Ref<Vector> x) = 0;
-
-    virtual Eigen::ComputationInfo info() const = 0;
-};
-
-template <typename TSolver>
-struct LinearSolverSetup
-{
-    static void apply(TSolver& solver)
-    {
-    }
-};
-
-template <>
-struct LinearSolverSetup<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>
-{
-    static void apply(Eigen::PardisoLDLT<Sparse, Eigen::Upper>& solver)
-    {
-        solver.pardisoParameterArray()[1] = 3;
-    }
-};
-
-template <typename TSolver>
-struct LinearSolver : LinearSolverBase
-{
-    TSolver m_solver;
-    bool is_analyzed;
-
-    LinearSolver() : is_analyzed(false)
-    {
-        LinearSolverSetup<TSolver>::apply(m_solver);
-    }
-
-    void analyze(Ref<const Sparse> a)
-    {
-        if (is_analyzed) {
-            return;
-        }
-
-        m_solver.analyzePattern(a);
-
-        is_analyzed = true;
-    }
-
-    void factorize(Ref<const Sparse> a)
-    {
-        analyze(a);
-        m_solver.factorize(a);
-    }
-
-    void solve(Ref<const Vector> b, Ref<Vector> x)
-    {
-        x = m_solver.solve(b);
-    }
-
-    Eigen::ComputationInfo info() const
-    {
-        return m_solver.info();
-    }
-};
 
 template <bool TSymmetric = true>
 class System
@@ -366,31 +299,27 @@ private:    // methods
         if (linear_solver_type == "pardiso_ldlt") {
             Log::info(2, "Using Pardiso LDL^T solver");
 
-            m_solver = new_<
-                LinearSolver<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>>();
+            m_solver = new_<PardisoLDLT>();
         } else if (linear_solver_type == "pardiso_llt") {
             Log::info(2, "Using Pardiso LL^T solver");
 
-            m_solver = new_<LinearSolver<Eigen::PardisoLLT<Sparse,
-                Eigen::Upper>>>();
+            m_solver = new_<PardisoLLT>();
         } else if (linear_solver_type == "pardiso_lu") {
             Log::info(2, "Using Pardiso LU solver");
 
-            m_solver = new_<LinearSolver<Eigen::PardisoLU<Sparse>>>();
+            m_solver = new_<PardisoLU>();
         } else if (linear_solver_type == "conjugate_gradient") {
             Log::info(2, "Using Eigen Conjugate Gradient solver");
 
             if (TSymmetric) {
-                m_solver = new_<LinearSolver<Eigen::ConjugateGradient<Sparse,
-                    Eigen::Upper>>>();
+                m_solver = new_<SymmetricConjugateGradient>();
             } else {
-                m_solver = new_<LinearSolver<Eigen::ConjugateGradient<Sparse,
-                    Eigen::Lower | Eigen::Upper>>>();
+                m_solver = new_<ConjugateGradient>();
             }
         } else if (linear_solver_type == "sparse_lu") {
             Log::info(2, "Using Eigen Sparse LU solver");
 
-            m_solver = new_<LinearSolver<Eigen::SparseLU<Sparse>>>();
+            m_solver = new_<SparseLU>();
         } else {
             throw std::runtime_error("Unknown linear solver");
         }
