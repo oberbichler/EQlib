@@ -21,7 +21,7 @@ private:    // variables
 
 public:     // constructors
     Worhp(Pointer<System<true>> system)
-    : m_info_level(0), m_system(std::move(system)), m_maxiter(100), m_rtol(1e-6)
+    : m_info_level(0), m_system(system), m_maxiter(100), m_rtol(1e-6)
     { }
 
 public:     // methods
@@ -35,6 +35,55 @@ public:     // methods
         return m_maxiter;
     }
 
+    void compute_f(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    {
+        m_system->set_x(opt->X);
+        m_system->assemble<0>(false);
+
+        opt->F = wsp->ScaleObj * m_system->f();
+    }
+
+    void compute_g(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    {
+    }
+
+    void compute_df(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    {
+        m_system->set_x(opt->X);
+        m_system->assemble<1>(false);
+
+        for (int i = 0; i < m_system->nb_free_dofs(); i++) {
+            wsp->DF.val[i] = wsp->ScaleObj * m_system->g(i);
+        }
+    }
+
+    void compute_dg(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    {
+    }
+
+    void compute_h(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    {
+        // Only scale the F part of HM
+
+        m_system->set_x(opt->X);
+        m_system->assemble<2>(false);
+
+        Sparse h = m_system->h().transpose();
+
+        int i = 0;
+        int j = h.nonZeros() - m_system->nb_free_dofs();
+
+        for (int k = 0; k < h.outerSize(); ++k) {
+            for (Sparse::InnerIterator it(h, k); it; ++it){
+                if (it.row() == it.col()) {
+                    wsp->HM.val[j++] = wsp->ScaleObj * it.value();
+                } else {
+                    wsp->HM.val[i++] = wsp->ScaleObj * it.value();
+                }
+            }
+        }
+    }
+
     void minimize()
     {
         // setup
@@ -44,76 +93,124 @@ public:     // methods
 
         Timer timer;
 
-        OptVar    opt;
+        OptVar opt;
         Workspace wsp;
-        Params    par;
-        Control   cnt;
-    
-        // Check Version of library and header files
+        Params par;
+        Control cnt;
+
         CHECK_WORHP_VERSION
-    
-        // Properly zeros everything, or else the following routines could get confused
+
         WorhpPreInit(&opt, &wsp, &par, &cnt);
-    
-        // Uncomment this to get more info on data structures
-        //WorhpDiag(&opt, &wsp, &par, &cnt);
-    
-        /*
-        * Parameter initialisation routine that must be called
-        * when using ReadParamsNoInit instead of ReadParams.
-        */
+
         int status;
         InitParams(&status, &par);
-    
-        /*
-        * We can now set parameters that may be overruled by those in the
-        * parameter file. This is useful for setting a non-default standard
-        * parameter value that may still be overwritten.
-        */
-        par.NLPprint = 1;  // Let's prefer the slim output format
-                        // unless the parameter file says differently
-    
-        /*
-        * Parameter XML import routine that does not reset
-        * all parameters to default values (InitParams does this)
-        */
+
+        par.NLPprint = 0;
+
         ReadParamsNoInit(&status, "worhp.xml", &par);
-        if (status == DataError || status == InitError)
-        {
-            return;// EXIT_FAILURE;
+
+        if (status == DataError || status == InitError) {
+            Log::error("Could not read settings from XML");
+            return;;
         }
-    
-        /*
-        * WORHP data structure initialisation routine.
-        * Calling this routine prior to WORHP is mandatory.
-        * Before calling WorhpInit, set the problem and matrix dimensions as
-        *
-        * opt.n      = number of variables,
-        * opt.m      = number of constraints (lin + nonlin, excluding box con's),
-        * wsp.DF.nnz = nonzero entries of the objective function gradient,
-        * wsp.DG.nnz = nonzero entries of the constraint Jacobian,
-        * wsp.HM.nnz = nonzero entries of the Lagrange Hessian.
-        *
-        * Set nnz to 'WorhpMatrix_Init_Dense' to have WorhpInit allocate and
-        * create a dense matrix structure appropriate for the matrix kind and
-        * its dimensions. Setting it to its dense dimension achieves the same.
-        */
-        opt.n = 4;  // This problem has 4 variables
-        opt.m = 3;  // and 3 constraints (excluding box constraints)
-    
-        // All derivatives for this problem have a sparse structure, so
-        // set the amount of nonzeros here
-        wsp.DF.nnz = 3;
-        wsp.DG.nnz = 6;
-        wsp.HM.nnz = 1 + opt.n;  // 1 entry on strict lower triangle
-                                // plus full diagonal
-    
+
+        opt.n = m_system->nb_free_dofs();
+        opt.m = 0;
+
+        wsp.DF.nnz = m_system->nb_free_dofs();
+        wsp.DG.nnz = 0;
+        wsp.HM.nnz = m_system->h_nb_nonzeros();
+
         WorhpInit(&opt, &wsp, &par, &cnt);
-        if (cnt.status != FirstCall)
-        {
-            std::cout << "Main: Initialisation failed." << std::endl;
-            return;// EXIT_FAILURE;
+
+        if (cnt.status != FirstCall) {
+            Log::error("Initialisation failed");
+            return;
         }
+
+        for (int i = 0; i < m_system->nb_free_dofs(); i++) {
+            opt.X[i] = m_system->dof(i)->delta();
+            opt.Lambda[i] = 0.0;
+            opt.XL[i] = m_system->dof(i)->lower_bound();
+            opt.XU[i] = m_system->dof(i)->upper_bound();
+        }
+
+        if (wsp.DF.NeedStructure) {
+            for (int i = 0; i < m_system->nb_free_dofs(); i++) {
+                wsp.DF.row[i] = i + 1;
+            }
+        }
+
+        if (wsp.DG.NeedStructure) {
+        }
+
+        if (wsp.HM.NeedStructure) {
+            int i = 0;
+            int j = m_system->h_nb_nonzeros() - m_system->nb_free_dofs();
+
+            Sparse h = m_system->h().transpose();
+
+            for (int k = 0; k < h.outerSize(); ++k) {
+                for (Sparse::InnerIterator it(h, k); it; ++it){
+                    const int row = it.row() + 1;
+                    const int col = it.col() + 1;
+
+                    if (row == col) {
+                        wsp.HM.row[j] = row;
+                        wsp.HM.col[j] = col;
+                        j += 1;
+                    } else {
+                        wsp.HM.row[i] = row;
+                        wsp.HM.col[i] = col;
+                        i += 1;
+                    }
+                }
+            }
+        }
+
+        while (cnt.status < TerminateSuccess && cnt.status > TerminateError) {
+            if (GetUserAction(&cnt, callWorhp)) {
+                ::Worhp(&opt, &wsp, &par, &cnt);
+            }
+
+            if (GetUserAction(&cnt, iterOutput)) {
+                IterationOutput(&opt, &wsp, &par, &cnt);
+                DoneUserAction(&cnt, iterOutput);
+            }
+
+            if (GetUserAction(&cnt, evalF)) {
+                compute_f(&opt, &wsp, &par, &cnt);
+                DoneUserAction(&cnt, evalF);
+            }
+
+            if (GetUserAction(&cnt, evalG)) {
+                compute_g(&opt, &wsp, &par, &cnt);
+                DoneUserAction(&cnt, evalG);
+            }
+
+            if (GetUserAction(&cnt, evalDF)) {
+                compute_df(&opt, &wsp, &par, &cnt);
+                DoneUserAction(&cnt, evalDF);
+            }
+
+            if (GetUserAction(&cnt, evalDG)) {
+                compute_dg(&opt, &wsp, &par, &cnt);
+                DoneUserAction(&cnt, evalDG);
+            }
+
+            if (GetUserAction(&cnt, evalHM)) {
+                compute_h(&opt, &wsp, &par, &cnt);
+                DoneUserAction(&cnt, evalHM);
+            }
+
+            if (GetUserAction(&cnt, fidif)) {
+                WorhpFidif(&opt, &wsp, &par, &cnt);
+            }
+        }
+
+        StatusMsg(&opt, &wsp, &par, &cnt);
+
+        WorhpFree(&opt, &wsp, &par, &cnt);
 
         Log::info(1, "System minimized in {:.3f} sec", timer.ellapsed());
     }
