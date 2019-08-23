@@ -891,7 +891,8 @@ public:     // python
             .def_property_readonly("f", &Type::f)
             .def_property_readonly("g",
                 py::overload_cast<void>(&Type::g, py::const_))
-            .def_property_readonly("h", &Type::h)
+            .def_property_readonly("h",
+                py::overload_cast<>(&Type::h, py::const_))
             .def_property_readonly("message", &Type::message)
             .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
             .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)
