@@ -21,6 +21,7 @@ include_directories(
     "include"
     ${CMAKE_BINARY_DIR}/generated
     SYSTEM "external_libraries"
+    SYSTEM "C:/Users/Oberbichler/source/worhp_1.13-2_win64/include"
 )
 
 find_package(OpenMP)
@@ -56,6 +57,8 @@ if (DEFINED ENV{CONDA_PREFIX})
 
     target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
     target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
+
+    target_link_libraries(EQlib PRIVATE "C:/Users/Oberbichler/source/worhp_1.13-2_win64/bin/worhp.lib")
 
     if (USE_IPOPT)
         target_link_libraries(EQlib PRIVATE ${IPOPT_LIBRARY})

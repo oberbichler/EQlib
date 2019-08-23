@@ -14,6 +14,7 @@
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/System.h>
+#include <EQlib/Worhp.h>
 
 #include <EQlib/Elements/BoundaryConstraint.h>
 #include <EQlib/Elements/EqualSubdivisionConstraint.h>
@@ -89,6 +90,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // NewtonDescent
     EQlib::NewtonDescent::register_python(m);
+
+    // Worhp
+    EQlib::Worhp::register_python(m);
 
     // --- Elements
 
