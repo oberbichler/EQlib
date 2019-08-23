@@ -348,7 +348,7 @@ public:     // getters and setters
         return m_g(index);
     }
 
-    Sparse h() const
+    const Sparse& h() const
     {
         return m_h;
     }
