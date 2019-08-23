@@ -343,6 +343,11 @@ public:     // getters and setters
         return m_g;
     }
 
+    double g(const int index) const
+    {
+        return m_g(index);
+    }
+
     Sparse h() const
     {
         return m_h;
@@ -874,7 +879,8 @@ public:     // python
             .def_property_readonly("nb_elements", &Type::nb_elements)
             .def_property_readonly("elements", &Type::elements)
             .def_property_readonly("f", &Type::f)
-            .def_property_readonly("g", &Type::g)
+            .def_property_readonly("g",
+                py::overload_cast<void>(&Type::g, py::const_))
             .def_property_readonly("h", &Type::h)
             .def_property_readonly("message", &Type::message)
             .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
