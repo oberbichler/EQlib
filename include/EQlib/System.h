@@ -358,6 +358,11 @@ public:     // getters and setters
         return m_h.coeff(row, col);
     }
 
+    int h_nb_nonzeros() const
+    {
+        return static_cast<int>(m_h.nonZeros());
+    }
+
     Vector h_inv_v(Ref<const Vector> v)
     {
         if (nb_free_dofs() > 0) {
