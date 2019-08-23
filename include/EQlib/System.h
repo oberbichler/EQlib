@@ -417,6 +417,11 @@ public:     // getters and setters
         }
     }
 
+    void set_x(double* const values) const
+    {
+        set_x(Map<const Vector>(values, nb_free_dofs()));
+    }
+
     Vector residual() const
     {
         return m_residual;
@@ -882,7 +887,8 @@ public:     // python
             // properties
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
-            .def_property("x", &Type::x, &Type::set_x)
+            .def_property("x", &Type::x,
+                py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
             // readonly properties
             .def_property_readonly("dofs", &Type::dofs)
             .def_property_readonly("nb_dofs", &Type::nb_dofs)
