@@ -353,6 +353,11 @@ public:     // getters and setters
         return m_h;
     }
 
+    double h(const int row, const int col) const
+    {
+        return m_h.coeff(row, col);
+    }
+
     Vector h_inv_v(Ref<const Vector> v)
     {
         if (nb_free_dofs() > 0) {
