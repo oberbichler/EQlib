@@ -15,6 +15,12 @@
 #include <EQlib/Parameter.h>
 #include <EQlib/System.h>
 #include <EQlib/Worhp.h>
+#include <EQlib/Equation.h>
+#include <EQlib/Variable.h>
+#include <EQlib/Objective.h>
+#include <EQlib/Constraint.h>
+#include <EQlib/Problem.h>
+#include <EQlib/Worhp2.h>
 
 #include <EQlib/Elements/BoundaryConstraint.h>
 #include <EQlib/Elements/EqualSubdivisionConstraint.h>
@@ -107,4 +113,23 @@ PYBIND11_MODULE(EQlib, m) {
 
     // NodalEquilibrium
     EQlib::NodalEquilibrium::register_python(m);
+
+
+    // Equation
+    EQlib::Equation::register_python(m);
+
+    // Variable
+    EQlib::Variable::register_python(m);
+
+    // Objective
+    EQlib::Objective::register_python(m);
+
+    // Constraint
+    EQlib::Constraint::register_python(m);
+
+    // Problem
+    EQlib::Problem::register_python(m);
+
+    // Worhp2
+    EQlib::Worhp2::register_python(m);
 }
