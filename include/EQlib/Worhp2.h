@@ -282,6 +282,10 @@ public:     // methods
 
         StatusMsg(&opt, &wsp, &par, &cnt);
 
+        m_problem->set_sigma(wsp.ScaleObj);
+        m_problem->set_x(opt.X);
+        m_problem->set_equation_multipliers(opt.Mu);
+
         WorhpFree(&opt, &wsp, &par, &cnt);
 
         Log::info(1, "System minimized in {:.3f} sec", timer.ellapsed());
