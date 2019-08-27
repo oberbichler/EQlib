@@ -477,9 +477,29 @@ public:     // methods
         return m_dg;
     }
 
+    Ref<Vector> dg_values() noexcept
+    {
+        return Map<Vector>(m_dg.valuePtr(), m_dg.nonZeros());
+    }
+
+    double& dg(const int index)
+    {
+        return *(m_dg.valuePtr() + index);
+    }
+
     const Sparse& hl() const noexcept
     {
         return m_hl;
+    }
+
+    Ref<Vector> hl_values() noexcept
+    {
+        return Map<Vector>(m_hl.valuePtr(), m_hl.nonZeros());
+    }
+
+    double& hl(const int index)
+    {
+        return *(m_hl.valuePtr() + index);
     }
 
 public:     // python
@@ -504,8 +524,8 @@ public:     // python
             .def_property_readonly("f", &Type::f)
             .def_property_readonly("g", py::overload_cast<>(&Type::g, py::const_))
             .def_property_readonly("df", py::overload_cast<>(&Type::df, py::const_))
-            .def_property_readonly("dg", &Type::dg)
-            .def_property_readonly("hl", &Type::hl)
+            .def_property_readonly("dg", py::overload_cast<>(&Type::dg, py::const_))
+            .def_property_readonly("hl", py::overload_cast<>(&Type::hl, py::const_))
             .def_property_readonly("x", &Type::x)
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
