@@ -209,6 +209,7 @@ public:     // constructors
         }
     }
 
+public:     // methods
     void compute()
     {
         m_f = 0.0;
