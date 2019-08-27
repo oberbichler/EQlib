@@ -21,6 +21,19 @@ private:    // types
     using Objectives = std::vector<Pointer<Objective>>;
     using Constraints = std::vector<Pointer<Constraint>>;
 
+    struct VectorIndex
+    {
+        int local;
+        int global;
+    };
+
+    struct SparseIndex
+    {
+        int local_row;
+        int local_col;
+        int global;
+    };
+
 private:    // variables
     Objectives m_objectives;
     Constraints m_constraints;
@@ -34,6 +47,12 @@ private:    // variables
     google::dense_hash_map<Pointer<Variable>, int> m_variable_indices;
 
     std::vector<std::tuple<std::vector<int>, std::vector<int>>> m_element_indices;
+
+    std::vector<std::vector<VectorIndex>> m_element_f_indices;
+    std::vector<std::vector<VectorIndex>> m_element_g_indices;
+    std::vector<std::vector<VectorIndex>> m_element_df_indices;
+    std::vector<std::vector<SparseIndex>> m_element_dg_indices;
+    std::vector<std::vector<SparseIndex>> m_element_hl_indices;
 
     double m_f;
     Vector m_g;
@@ -57,8 +76,12 @@ public:     // constructors
 
         for (auto it = m_objectives.begin(); it != m_objectives.end(); ++it) {
             for (const auto& variable : (*it)->variables()) {
+                if (variable->is_fixed()) {
+                    continue;
+                }
+
                 const auto find = variable_set.find(variable);
-                
+
                 if (find != variable_set.end()) {
                     continue;
                 }
@@ -81,8 +104,12 @@ public:     // constructors
             }
 
             for (const auto& variable : (*it)->variables()) {
+                if (variable->is_fixed()) {
+                    continue;
+                }
+
                 const auto find = variable_set.find(variable);
-                
+
                 if (find != variable_set.end()) {
                     continue;
                 }
@@ -121,7 +148,11 @@ public:     // constructors
             variable_indices.reserve(variables.size());
 
             for (const auto& variable : variables) {
-                variable_indices.push_back(m_variable_indices[variable]);
+                if (!variable->is_fixed()) {
+                    variable_indices.push_back(m_variable_indices[variable]);
+                } else {
+                    variable_indices.push_back(-1);
+                }
             }
 
             m_element_indices.emplace_back(std::vector<int>(0), variable_indices);
@@ -142,7 +173,11 @@ public:     // constructors
             }
 
             for (const auto& variable : variables) {
-                variable_indices.push_back(m_variable_indices[variable]);
+                if (!variable->is_fixed()) {
+                    variable_indices.push_back(m_variable_indices[variable]);
+                } else {
+                    variable_indices.push_back(-1);
+                }
             }
 
             m_element_indices.emplace_back(equation_indices, variable_indices);
@@ -161,7 +196,7 @@ public:     // constructors
 
             for (const auto row : variable_indices) {
                 for (const auto col : variable_indices) {
-                    if (col > row) { // only lower triangle
+                    if (col > row || col < 0 || row < 0) { // only lower triangle
                         continue;
                     }
                     m_pattern_hl[col].insert(row);
@@ -175,13 +210,16 @@ public:     // constructors
 
             for (const auto row : equation_indices) {
                 for (const auto col : variable_indices) {
+                    if (col < 0 || row < 0) {
+                        continue;
+                    }
                     m_pattern_dg[col].insert(row);
                 }
             }
 
             for (const auto row : variable_indices) {
                 for (const auto col : variable_indices) {
-                    if (col > row) { // only lower triangle
+                    if (col > row || col < 0 || row < 0) { // only lower triangle
                         continue;
                     }
                     m_pattern_hl[col].insert(row);
@@ -218,6 +256,103 @@ public:     // constructors
                 m_hl.insert(row, col) = 1;
             }
         }
+
+        // store sparse indices
+
+        int nb_elements = objectives.size() + constraints.size();
+
+        m_element_g_indices.reserve(nb_elements);
+        m_element_df_indices.reserve(nb_elements);
+        m_element_dg_indices.reserve(nb_elements);
+        m_element_hl_indices.reserve(nb_elements);
+
+        for (int i = 0; i < m_objectives.size(); i++) {
+            const auto& [equation_indices, variable_indices] = m_element_indices[i];
+
+            const auto n = variable_indices.size();
+            
+            std::vector<VectorIndex> df_indices;
+            df_indices.reserve(n);
+
+            std::vector<SparseIndex> hl_indices;
+            hl_indices.reserve(n * n);
+
+            for (int local_row = 0; local_row < n; local_row++) {
+                const int global_row = variable_indices[local_row];
+
+                df_indices.push_back({local_row, global_row});
+
+                for (int local_col = 0; local_col < n; local_col++) {
+                    const int global_col = variable_indices[local_col];
+
+                    if (global_col > global_row || global_col < 0 || global_row < 0) {
+                        continue;
+                    }
+
+                    const int global = &(m_hl.coeffRef(global_row, global_col))
+                        - m_hl.valuePtr();
+
+                    hl_indices.push_back({local_row, local_col, global});
+                }
+            }
+
+            m_element_df_indices.push_back(df_indices);
+            m_element_hl_indices.push_back(hl_indices);
+        }
+
+        for (int i = 0; i < m_constraints.size(); i++) {
+            const auto& [equation_indices, variable_indices] = m_element_indices[m_objectives.size() + i];
+
+            const auto m = equation_indices.size();
+            const auto n = variable_indices.size();
+            
+            std::vector<VectorIndex> g_indices;
+            g_indices.reserve(m);
+
+            std::vector<SparseIndex> dg_indices;
+            dg_indices.reserve(m * n);
+
+            std::vector<SparseIndex> hl_indices;
+            hl_indices.reserve(n * n);
+            
+            for (int local_row = 0; local_row < m; local_row++) {
+                const int global_row = equation_indices[local_row];
+
+                g_indices.push_back({local_row, global_row});
+
+                for (int local_col = 0; local_col < n; local_col++) {
+                    const int global_col = variable_indices[local_col];
+
+                    if (global_col < 0 || global_row < 0) {
+                        continue;
+                    }
+
+                    const int global = &(m_dg.coeffRef(global_row, global_col)) - m_dg.valuePtr();
+
+                    dg_indices.push_back({local_row, local_col, global});
+                }
+            }
+
+            for (int local_row = 0; local_row < n; local_row++) {
+                const int global_row = variable_indices[local_row];
+
+                for (int local_col = 0; local_col < n; local_col++) {
+                    const int global_col = variable_indices[local_col];
+
+                    if (global_col > global_row || global_col < 0 || global_row < 0) {
+                        continue;
+                    }
+
+                    const int global = &(m_hl.coeffRef(global_row, global_col)) - m_hl.valuePtr();
+
+                    hl_indices.push_back({local_row, local_col, global});
+                }
+            }
+
+            m_element_g_indices.push_back(g_indices);
+            m_element_dg_indices.push_back(dg_indices);
+            m_element_hl_indices.push_back(hl_indices);
+        }
     }
 
 public:     // methods
@@ -226,8 +361,8 @@ public:     // methods
         m_f = 0.0;
         m_g.setZero();
         m_df.setZero();
-        Map<Vector>(m_dg.valuePtr(), m_dg.nonZeros()).setZero();
-        Map<Vector>(m_hl.valuePtr(), m_hl.nonZeros()).setZero();
+        dg_values().setZero();
+        hl_values().setZero();
         
         for (int i = 0; i < m_objectives.size(); i++) {
             const auto& [equation_indices, variable_indices] =
@@ -244,26 +379,18 @@ public:     // methods
 
             m_f += f;
 
-            for (int local_row = 0; local_row < n; local_row++) {
-                const int global_row = variable_indices[local_row];
-                m_df[global_row] += g(local_row);
+            for (const auto& index : m_element_df_indices[i]) {
+                df(index.global) += g(index.local);
+            }
 
-                for (int local_col = 0; local_col < n; local_col++) {
-                    const int global_col = variable_indices[local_col];
-
-                    if (global_col > global_row) {
-                        continue;
-                    }
-
-                    m_hl.coeffRef(global_row, global_col) +=
-                        h(local_row, local_col);
-                }
+            for (const auto& index : m_element_hl_indices[i]) {
+                hl(index.global) += h(index.local_row, index.local_col);
             }
         }
 
         m_f *= sigma();
         m_df *= sigma();
-        Map<Vector>(m_hl.valuePtr(), m_hl.nonZeros()) *= sigma();
+        hl_values() *= sigma();
 
         for (int i = 0; i < m_constraints.size(); i++) {
             const auto& [equation_indices, variable_indices] = m_element_indices[m_objectives.size() + i];
@@ -272,6 +399,10 @@ public:     // methods
 
             const auto m = equation_indices.size();
             const auto n = variable_indices.size();
+
+            if (n == 0 || m == 0) {
+                continue;
+            }
 
             std::vector<double> buffer(m * n + m * n * n);
             
@@ -291,37 +422,22 @@ public:     // methods
 
             constraint->compute(rs, gs, hs);
 
-            for (int local_row = 0; local_row < m; local_row++) {
-                const int global_row = equation_indices[local_row];
-                m_g[global_row] += rs(local_row);
-
-                for (int local_col = 0; local_col < n; local_col++) {
-                    const int global_col = variable_indices[local_col];
-
-                    m_dg.coeffRef(global_row, global_col) +=
-                        gs[local_row](local_col);
-                }
-            }
-
-            for (int k = 0; k < m; k++) {
+            hs[0] *= m_equations[equation_indices[0]]->multiplier();
+            for (int k = 1; k < m; k++) {
                 const auto& equation = m_equations[equation_indices[k]];
-
-                hs[k] *= equation->multiplier();
-
-                for (int local_row = 0; local_row < n; local_row++) {
-                    const int global_row = variable_indices[local_row];
-
-                    for (int local_col = 0; local_col < n; local_col++) {
-                        const int global_col = variable_indices[local_col];
-
-                        if (global_col > global_row) {
-                            continue;
-                        }
-
-                        m_hl.coeffRef(global_row, global_col) +=
-                            hs[k](local_row, local_col);
-                    }
-                }
+                hs[0] += equation->multiplier() * hs[k];
+            }
+            
+            for (const auto& index : m_element_g_indices[i]) {
+                g(index.global) += rs(index.local);
+            }
+            
+            for (const auto& index : m_element_dg_indices[i]) {
+                dg(index.global) += gs[index.local_row](index.local_col);
+            }
+            
+            for (const auto& index : m_element_hl_indices[m_objectives.size() + i]) {
+                hl(index.global) += hs[0](index.local_row, index.local_col);
             }
         }
     }
