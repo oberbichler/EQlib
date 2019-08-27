@@ -41,7 +41,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -52,7 +52,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -65,7 +65,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -78,7 +78,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -97,7 +97,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -134,17 +134,16 @@ public:     // methods
         // const auto print = [](int mode, const char* message)
         // {
         //     switch (mode) {
-        //     case WORHP_PRINT_MESSAGE:
-        //         Log::info(message);
-        //         break;
         //     case WORHP_PRINT_WARNING:
         //         Log::warn(message);
         //         break;
         //     case WORHP_PRINT_ERROR:
         //         Log::error(message);
         //         break;
+        //     default:
+        //         Log::info(message);
+        //         break;
         //     }
-
         // };
 
         // SetWorhpPrint(print);
@@ -281,6 +280,10 @@ public:     // methods
         }
 
         StatusMsg(&opt, &wsp, &par, &cnt);
+
+        m_problem->set_sigma(wsp.ScaleObj);
+        m_problem->set_x(opt.X);
+        m_problem->set_equation_multipliers(opt.Mu);
 
         WorhpFree(&opt, &wsp, &par, &cnt);
 
