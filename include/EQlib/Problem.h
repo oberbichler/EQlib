@@ -53,6 +53,8 @@ public:     // constructors
         tsl::robin_set<Pointer<Equation>> equation_set;
         tsl::robin_set<Pointer<Variable>> variable_set;
 
+        // get lists of unique variables and equations
+
         for (auto it = m_objectives.begin(); it != m_objectives.end(); ++it) {
             for (const auto& variable : (*it)->variables()) {
                 const auto find = variable_set.find(variable);
@@ -90,6 +92,8 @@ public:     // constructors
             }
         }
 
+        // compute indices for variables and equations
+
         m_equation_indices.set_empty_key(nullptr);
         m_variable_indices.set_empty_key(nullptr);
 
@@ -105,6 +109,8 @@ public:     // constructors
             const auto& variable = m_variables[i];
             m_variable_indices[variable] = i;
         }
+
+        // compute indices for elements
 
         m_element_indices.reserve(m_objectives.size() + m_constraints.size());
 
@@ -141,6 +147,8 @@ public:     // constructors
 
             m_element_indices.emplace_back(equation_indices, variable_indices);
         }
+
+        // analyse sparse patterns
 
         const int n = m_variables.size();
         const int m = m_equations.size();
@@ -188,6 +196,8 @@ public:     // constructors
             size_dg[col] = m_pattern_dg[col].size();
             size_hl[col] = m_pattern_hl[col].size();
         }
+
+        // allocate memory
 
         m_g = Vector(m);
 
