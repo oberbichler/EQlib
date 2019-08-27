@@ -507,6 +507,8 @@ public:     // python
             .def_property_readonly("dg", &Type::dg)
             .def_property_readonly("hl", &Type::hl)
             .def_property_readonly("x", &Type::x)
+            .def_property_readonly("nb_equations", &Type::nb_equations)
+            .def_property_readonly("nb_variables", &Type::nb_variables)
             .def_property_readonly("variable_multipliers", &Type::variable_multipliers)
             .def_property_readonly("equation_multipliers", &Type::equation_multipliers)
             // properties
