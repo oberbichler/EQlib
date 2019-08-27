@@ -41,7 +41,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -52,7 +52,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -65,7 +65,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -78,7 +78,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 
@@ -97,7 +97,7 @@ public:     // methods
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
-        m_problem->set_mu(opt->Mu);
+        m_problem->set_equation_multipliers(opt->Mu);
 
         m_problem->compute();
 

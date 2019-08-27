@@ -353,7 +353,7 @@ public:     // methods
         set_x(Map<const Vector>(value, nb_variables()));
     }
 
-    Vector lambda() const
+    Vector variable_multipliers() const
     {
         Vector result(nb_variables());
 
@@ -364,7 +364,7 @@ public:     // methods
         return result;
     }
 
-    void set_lambda(Ref<const Vector> value) const
+    void set_variable_multipliers(Ref<const Vector> value) const
     {
         if (value.size() != nb_variables()) {
             throw std::runtime_error("Invalid size");
@@ -375,12 +375,12 @@ public:     // methods
         }
     }
 
-    void set_lambda(double* const value) const
+    void set_variable_multipliers(double* const value) const
     {
-        set_lambda(Map<const Vector>(value, nb_variables()));
+        set_variable_multipliers(Map<const Vector>(value, nb_variables()));
     }
 
-    Vector mu() const
+    Vector equation_multipliers() const
     {
         Vector result(nb_equations());
 
@@ -391,7 +391,7 @@ public:     // methods
         return result;
     }
 
-    void set_mu(Ref<const Vector> value) const
+    void set_equation_multipliers(Ref<const Vector> value) const
     {
         if (value.size() != nb_equations()) {
             throw std::runtime_error("Invalid size");
@@ -402,9 +402,9 @@ public:     // methods
         }
     }
 
-    void set_mu(double* const value) const
+    void set_equation_multipliers(double* const value) const
     {
-        set_mu(Map<const Vector>(value, nb_equations()));
+        set_equation_multipliers(Map<const Vector>(value, nb_equations()));
     }
 
     double sigma() const noexcept
@@ -507,6 +507,8 @@ public:     // python
             .def_property_readonly("dg", &Type::dg)
             .def_property_readonly("hl", &Type::hl)
             .def_property_readonly("x", &Type::x)
+            .def_property_readonly("variable_multipliers", &Type::variable_multipliers)
+            .def_property_readonly("equation_multipliers", &Type::equation_multipliers)
             // properties
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
             // methods
