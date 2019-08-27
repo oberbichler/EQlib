@@ -342,6 +342,44 @@ public:     // methods
         set_x(Map<const Vector>(value, nb_variables()));
     }
 
+    Vector lambda() const
+    {
+        Vector result(nb_variables());
+
+        for (int i = 0; i < result.size(); i++) {
+            result(i) = variable(i)->multiplier();
+        }
+
+        return result;
+    }
+
+    void set_lambda(Ref<const Vector> value) const
+    {
+        if (value.size() != nb_variables()) {
+            throw std::runtime_error("Invalid size");
+        }
+
+        for (int i = 0; i < value.size(); i++) {
+            variable(i)->set_multiplier(value[i]);
+        }
+    }
+
+    void set_lambda(double* const value) const
+    {
+        set_lambda(Map<const Vector>(value, nb_variables()));
+    }
+
+    Vector mu() const
+    {
+        Vector result(nb_equations());
+
+        for (int i = 0; i < result.size(); i++) {
+            result(i) = equation(i)->multiplier();
+        }
+
+        return result;
+    }
+
     void set_mu(Ref<const Vector> value) const
     {
         if (value.size() != nb_equations()) {
