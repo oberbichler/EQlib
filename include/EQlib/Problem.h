@@ -457,7 +457,7 @@ public:     // methods
         return m_g;
     }
 
-    double g(const int index) const noexcept
+    double& g(const int index)
     {
         return m_g(index);
     }
@@ -467,7 +467,7 @@ public:     // methods
         return m_df;
     }
 
-    double df(const int index) const noexcept
+    double& df(const int index)
     {
         return m_df(index);
     }
