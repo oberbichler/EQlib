@@ -110,22 +110,6 @@ public:     // constructors
         for (const auto& objective : m_objectives) {
             const auto variables = objective->variables();
 
-
-
-            
-            const auto nn = variables.size();
-            
-            std::vector<double> buffer(nn + nn * nn);
-
-            Map<Vector> g(buffer.data(), nn);
-            Map<Matrix> h(buffer.data() + nn, nn, nn);
-
-            const double f = objective->compute(g, h);
-
-
-
-
-
             std::vector<int> variable_indices;
             variable_indices.reserve(variables.size());
 
