@@ -134,17 +134,16 @@ public:     // methods
         // const auto print = [](int mode, const char* message)
         // {
         //     switch (mode) {
-        //     case WORHP_PRINT_MESSAGE:
-        //         Log::info(message);
-        //         break;
         //     case WORHP_PRINT_WARNING:
         //         Log::warn(message);
         //         break;
         //     case WORHP_PRINT_ERROR:
         //         Log::error(message);
         //         break;
+        //     default:
+        //         Log::info(message);
+        //         break;
         //     }
-
         // };
 
         // SetWorhpPrint(print);
