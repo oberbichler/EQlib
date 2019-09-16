@@ -15,6 +15,7 @@ private:    // static variables
 private:    // variables
     double m_lower_bound;
     double m_upper_bound;
+    bool m_is_active;
     double m_multiplier;
     std::string m_name;
 
@@ -26,6 +27,7 @@ public:     // constructors
         const std::string name) noexcept
     : m_lower_bound(lower_bound)
     , m_upper_bound(upper_bound)
+    , m_is_active(true)
     , m_multiplier(multiplier)
     , m_name(name)
     { }
@@ -35,6 +37,16 @@ public:     // constructors
     { }
 
 public:     // getters and setters
+    bool is_active() const noexcept
+    {
+        return m_is_active;
+    }
+
+    void set_is_active(const bool value) noexcept
+    {
+        m_is_active = value;
+    }
+
     double lower_bound() const noexcept
     {
         return m_lower_bound;
@@ -117,6 +129,7 @@ public:     // python
                 "lower_bound"_a=-infinity, "upper_bound"_a=infinity,
                 "multiplier"_a=0.0, "name"_a="")
             .def(py::init<>())
+            .def_property("is_active", &Type::is_active, &Type::set_is_active)
             .def_property("lower_bound", &Type::lower_bound,
                 &Type::set_lower_bound)
             .def_property("upper_bound", &Type::upper_bound,
