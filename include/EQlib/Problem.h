@@ -41,10 +41,10 @@ private:    // types
     };
 
 private:    // variables
+    double m_sigma;
+
     Objectives m_objectives;
     Constraints m_constraints;
-
-    double m_sigma;
 
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
