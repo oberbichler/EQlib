@@ -21,17 +21,23 @@ private:    // types
     using Objectives = std::vector<Pointer<Objective>>;
     using Constraints = std::vector<Pointer<Constraint>>;
 
-    struct VectorIndex
-    {
-        int local;
-        int global;
-    };
+    using Equations = std::vector<Pointer<Equation>>;
+    using Variables = std::vector<Pointer<Variable>>;
 
-    struct SparseIndex
+    struct Index
     {
-        int local_row;
-        int local_col;
-        int global;
+        Index(index local, index global)
+        : local(local), global(global)
+        {
+        }
+
+        index local;
+        index global;
+
+        bool operator<(const Index& other) const noexcept
+        {
+            return global < other.global;
+        }
     };
 
 private:    // variables
@@ -43,16 +49,18 @@ private:    // variables
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
 
-    google::dense_hash_map<Pointer<Equation>, int> m_equation_indices;
-    google::dense_hash_map<Pointer<Variable>, int> m_variable_indices;
+    google::dense_hash_map<Pointer<Equation>, index> m_equation_indices;
+    google::dense_hash_map<Pointer<Variable>, index> m_variable_indices;
 
-    std::vector<std::tuple<std::vector<int>, std::vector<int>>> m_element_indices;
+    std::vector<index> m_element_f_nb_variables;
+    std::vector<index> m_element_g_nb_variables;
+    std::vector<index> m_element_g_nb_equations;
 
-    std::vector<std::vector<VectorIndex>> m_element_f_indices;
-    std::vector<std::vector<VectorIndex>> m_element_g_indices;
-    std::vector<std::vector<VectorIndex>> m_element_df_indices;
-    std::vector<std::vector<SparseIndex>> m_element_dg_indices;
-    std::vector<std::vector<SparseIndex>> m_element_hl_indices;
+    std::vector<std::vector<Index>> m_element_f_variable_indices;
+    std::vector<std::vector<Index>> m_element_f_df_indices;
+
+    std::vector<std::vector<Index>> m_element_g_equation_indices;
+    std::vector<std::vector<Index>> m_element_g_variable_indices;
 
     double m_f;
     Vector m_g;
@@ -69,32 +77,53 @@ public:     // constructors
     , m_constraints(std::move(constraints))
     , m_sigma(1.0)
     {
-        tsl::robin_set<Pointer<Equation>> equation_set;
-        tsl::robin_set<Pointer<Variable>> variable_set;
+        Log::info(1, "==> Initialize problem...");
 
-        // get lists of unique variables and equations
+        const auto nb_elements_f = length(m_objectives);
+        const auto nb_elements_g = length(m_constraints);
 
-        for (auto it = m_objectives.begin(); it != m_objectives.end(); ++it) {
-            for (const auto& variable : (*it)->variables()) {
-                if (variable->is_fixed()) {
-                    continue;
-                }
+        Log::info(2, "The problem consists of {} objective elements", nb_elements_f);
+        Log::info(2, "The problem consists of {} constraint elements", nb_elements_g);
 
-                const auto find = variable_set.find(variable);
 
-                if (find != variable_set.end()) {
-                    continue;
-                }
+        Log::info(3, "Getting equations and variables...");
 
-                variable_set.insert(variable);
-                m_variables.push_back(variable);
-            }
+        m_element_f_nb_variables.resize(nb_elements_f);
+        m_element_g_nb_variables.resize(nb_elements_g);
+        m_element_g_nb_equations.resize(nb_elements_g);
+
+        std::vector<Variables> variables_f(nb_elements_f);
+
+        std::vector<Equations> equations_g(nb_elements_g);
+        std::vector<Variables> variables_g(nb_elements_g);
+
+        for (index i = 0; i < nb_elements_f; i++) {
+            const auto& element = *m_objectives[i];
+
+            variables_f[i] = element.variables();
+
+            m_element_f_nb_variables[i] = length(variables_f[i]);
         }
 
-        for (auto it = m_constraints.begin(); it != m_constraints.end(); ++it) {
-            for (const auto& equation : (*it)->equations()) {
+        for (index i = 0; i < nb_elements_g; i++) {
+            const auto& element = *m_constraints[i];
+
+            equations_g[i] = element.equations();
+            variables_g[i] = element.variables();
+
+            m_element_g_nb_variables[i] = length(variables_g[i]);
+            m_element_g_nb_equations[i] = length(equations_g[i]);
+        }
+
+
+        Log::info(3, "Creating the set of unique equations...");
+
+        tsl::robin_set<Pointer<Equation>> equation_set;
+
+        for (const auto& equations : equations_g) {
+            for (const auto& equation : equations) {
                 const auto find = equation_set.find(equation);
-                
+
                 if (find != equation_set.end()) {
                     continue;
                 }
@@ -102,8 +131,15 @@ public:     // constructors
                 equation_set.insert(equation);
                 m_equations.push_back(equation);
             }
+        }
 
-            for (const auto& variable : (*it)->variables()) {
+
+        Log::info(3, "Creating the set of unique variables...");
+
+        tsl::robin_set<Pointer<Variable>> variable_set;
+
+        for (const auto& variables : variables_f) {
+            for (const auto& variable : variables) {
                 if (variable->is_fixed()) {
                     continue;
                 }
@@ -119,239 +155,212 @@ public:     // constructors
             }
         }
 
-        // compute indices for variables and equations
+        for (const auto& variables : variables_g) {
+            for (const auto& variable : variables) {
+                if (variable->is_fixed()) {
+                    continue;
+                }
+
+                const auto find = variable_set.find(variable);
+
+                if (find != variable_set.end()) {
+                    continue;
+                }
+
+                variable_set.insert(variable);
+                m_variables.push_back(variable);
+            }
+        }
+
+        const auto nb_equations = length(m_equations);
+        const auto nb_variables = length(m_variables);
+
+        Log::info(2, "The problem contains {} variables", nb_variables);
+        Log::info(2, "The problem contains {} constraint equations", nb_equations);
+
+
+        Log::info(3, "Compute indices for variables and equations...");
 
         m_equation_indices.set_empty_key(nullptr);
         m_variable_indices.set_empty_key(nullptr);
 
-        m_equation_indices.resize(m_equations.size());
-        m_variable_indices.resize(m_variables.size());
+        m_equation_indices.resize(nb_equations);
+        m_variable_indices.resize(nb_variables);
 
-        for (int i = 0; i < m_equations.size(); i++) {
+        for (index i = 0; i < length(m_equations); i++) {
             const auto& equation = m_equations[i];
             m_equation_indices[equation] = i;
         }
 
-        for (int i = 0; i < m_variables.size(); i++) {
+        for (index i = 0; i < length(m_variables); i++) {
             const auto& variable = m_variables[i];
             m_variable_indices[variable] = i;
         }
 
-        // compute indices for elements
 
-        m_element_indices.reserve(m_objectives.size() + m_constraints.size());
+        Log::info(3, "Compute indices for elements...");
 
-        for (const auto& objective : m_objectives) {
-            const auto variables = objective->variables();
+        // variable indices f
 
-            std::vector<int> variable_indices;
+        m_element_f_variable_indices.resize(nb_elements_f);
+
+        for (index i = 0; i < nb_elements_f; i++) {
+            const auto& variables = variables_f[i];
+
+            std::vector<Index> variable_indices;
             variable_indices.reserve(variables.size());
 
-            for (const auto& variable : variables) {
-                if (!variable->is_fixed()) {
-                    variable_indices.push_back(m_variable_indices[variable]);
-                } else {
-                    variable_indices.push_back(-1);
+            for (index local = 0; local < length(variables); local++) {
+                const auto& variable = variables[local];
+
+                if (variable->is_fixed()) {
+                    continue;
                 }
+
+                const auto global = m_variable_indices[variable];
+
+                variable_indices.emplace_back(local, global);
             }
 
-            m_element_indices.emplace_back(std::vector<int>(0), variable_indices);
+            std::sort(variable_indices.begin(), variable_indices.end());
+
+            m_element_f_variable_indices[i] = std::move(variable_indices);
         }
 
-        for (const auto& constraint : m_constraints) {
-            const auto equations = constraint->equations();
-            const auto variables = constraint->variables();
+        // equation indices g
 
-            std::vector<int> equation_indices;
+        m_element_g_equation_indices.resize(nb_elements_g);
+
+        for (index i = 0; i < nb_elements_g; i++) {
+            const auto& equations = equations_g[i];
+
+            std::vector<Index> equation_indices;
             equation_indices.reserve(equations.size());
 
-            std::vector<int> variable_indices;
+            for (index local = 0; local < length(equations); local++) {
+                const auto& equation = equations[local];
+
+                if (!equation->is_active()) {
+                    continue;
+                }
+
+                const auto global = m_equation_indices[equation];
+
+                equation_indices.emplace_back(local, global);
+            }
+
+            m_element_g_equation_indices[i] = std::move(equation_indices);
+        }
+
+        // variable indices g
+
+        m_element_g_variable_indices.resize(nb_elements_g);
+
+        for (index i = 0; i < nb_elements_g; i++) {
+            const auto& variables = variables_g[i];
+
+            std::vector<Index> variable_indices;
             variable_indices.reserve(variables.size());
 
-            for (const auto& equation : equations) {
-                equation_indices.push_back(m_equation_indices[equation]);
-            }
+            for (index local = 0; local < length(variables); local++) {
+                const auto& variable = variables[local];
 
-            for (const auto& variable : variables) {
-                if (!variable->is_fixed()) {
-                    variable_indices.push_back(m_variable_indices[variable]);
-                } else {
-                    variable_indices.push_back(-1);
+                if (variable->is_fixed()) {
+                    continue;
                 }
+
+                const auto global = m_variable_indices[variable];
+
+                variable_indices.emplace_back(local, global);
             }
 
-            m_element_indices.emplace_back(equation_indices, variable_indices);
+            std::sort(variable_indices.begin(), variable_indices.end());
+
+            m_element_g_variable_indices[i] = std::move(variable_indices);
         }
 
-        // analyse sparse patterns
 
-        const int n = m_variables.size();
-        const int m = m_equations.size();
+        Log::info(3, "Analyse sparse patterns...");
 
-        std::vector<tsl::robin_set<int>> m_pattern_dg(n);
-        std::vector<tsl::robin_set<int>> m_pattern_hl(n);
+        const auto n = length(m_variables);
+        const auto m = length(m_equations);
 
-        for (int i = 0; i < m_objectives.size(); i++) {
-            const auto& [equation_indices, variable_indices] = m_element_indices[i];
+        std::vector<tsl::robin_set<index>> m_pattern_dg(n);
+        std::vector<tsl::robin_set<index>> m_pattern_hl(n);
 
-            for (const auto row : variable_indices) {
-                for (const auto col : variable_indices) {
-                    if (col > row || col < 0 || row < 0) { // only lower triangle
-                        continue;
-                    }
-                    m_pattern_hl[col].insert(row);
+        for (index i = 0; i < length(m_objectives); i++) {
+            const auto& variable_indices = m_element_f_variable_indices[i];
+
+            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
+                const auto col = variable_indices[col_i];
+
+                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                    const auto row = variable_indices[row_i];
+
+                    m_pattern_hl[col.global].insert(row.global);
                 }
             }
         }
 
-        for (int i = 0; i < m_constraints.size(); i++) {
-            const auto& [equation_indices, variable_indices] =
-                m_element_indices[m_objectives.size() + i];
+        for (index i = 0; i < length(m_constraints); i++) {
+            const auto& equation_indices = m_element_g_equation_indices[i];
+            const auto& variable_indices = m_element_g_variable_indices[i];
 
             for (const auto row : equation_indices) {
                 for (const auto col : variable_indices) {
-                    if (col < 0 || row < 0) {
-                        continue;
-                    }
-                    m_pattern_dg[col].insert(row);
+                    m_pattern_dg[col.global].insert(row.global);
                 }
             }
 
-            for (const auto row : variable_indices) {
-                for (const auto col : variable_indices) {
-                    if (col > row || col < 0 || row < 0) { // only lower triangle
-                        continue;
-                    }
-                    m_pattern_hl[col].insert(row);
+            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
+                const auto col = variable_indices[col_i];
+
+                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                    const auto row = variable_indices[row_i];
+
+                    m_pattern_hl[col.global].insert(row.global);
                 }
             }
         }
 
-        Eigen::VectorXi size_dg(n);
-        Eigen::VectorXi size_hl(n);
+        Eigen::VectorXi sparse_size_dg(n);
+        Eigen::VectorXi sparse_size_hl(n);
 
-        for (int col = 0; col < n; col++) {
-            size_dg[col] = m_pattern_dg[col].size();
-            size_hl[col] = m_pattern_hl[col].size();
+        for (index col = 0; col < n; col++) {
+            sparse_size_dg[col] = length(m_pattern_dg[col]);
+            sparse_size_hl[col] = length(m_pattern_hl[col]);
         }
 
-        // allocate memory
+
+        Log::info(3, "Allocate memory...");
 
         m_g = Vector(m);
 
         m_df = Vector(n);
 
-        m_dg = Sparse(m, n);
-        m_dg.reserve(size_dg);
-        
-        m_hl = Sparse(n, n);
-        m_hl.reserve(size_hl);
+        if (m > 0 && n > 0) {
+            m_dg = Sparse(m, n);
+            m_dg.reserve(sparse_size_dg);
 
-        for (int col = 0; col < n; col++) {
-            for (const int row : m_pattern_dg[col]) {
-                m_dg.insert(row, col) = 1;
-            }
-
-            for (const int row : m_pattern_hl[col]) {
-                m_hl.insert(row, col) = 1;
+            for (index col = 0; col < n; col++) {
+                for (const index row : m_pattern_dg[col]) {
+                    m_dg.insert(row, col) = 1;
+                }
             }
         }
 
-        // store sparse indices
+        if (n > 0) {
+            m_hl = Sparse(n, n);
+            m_hl.reserve(sparse_size_hl);
 
-        int nb_elements = objectives.size() + constraints.size();
+            index i = 0;
 
-        m_element_g_indices.reserve(nb_elements);
-        m_element_df_indices.reserve(nb_elements);
-        m_element_dg_indices.reserve(nb_elements);
-        m_element_hl_indices.reserve(nb_elements);
-
-        for (int i = 0; i < m_objectives.size(); i++) {
-            const auto& [equation_indices, variable_indices] = m_element_indices[i];
-
-            const auto n = variable_indices.size();
-            
-            std::vector<VectorIndex> df_indices;
-            df_indices.reserve(n);
-
-            std::vector<SparseIndex> hl_indices;
-            hl_indices.reserve(n * n);
-
-            for (int local_row = 0; local_row < n; local_row++) {
-                const int global_row = variable_indices[local_row];
-
-                df_indices.push_back({local_row, global_row});
-
-                for (int local_col = 0; local_col < n; local_col++) {
-                    const int global_col = variable_indices[local_col];
-
-                    if (global_col > global_row || global_col < 0 || global_row < 0) {
-                        continue;
-                    }
-
-                    const int global = &(m_hl.coeffRef(global_row, global_col))
-                        - m_hl.valuePtr();
-
-                    hl_indices.push_back({local_row, local_col, global});
+            for (index col = 0; col < n; col++) {
+                for (const index row : m_pattern_hl[col]) {
+                    m_hl.insert(row, col) = 1;
                 }
             }
 
-            m_element_df_indices.push_back(df_indices);
-            m_element_hl_indices.push_back(hl_indices);
-        }
-
-        for (int i = 0; i < m_constraints.size(); i++) {
-            const auto& [equation_indices, variable_indices] = m_element_indices[m_objectives.size() + i];
-
-            const auto m = equation_indices.size();
-            const auto n = variable_indices.size();
-            
-            std::vector<VectorIndex> g_indices;
-            g_indices.reserve(m);
-
-            std::vector<SparseIndex> dg_indices;
-            dg_indices.reserve(m * n);
-
-            std::vector<SparseIndex> hl_indices;
-            hl_indices.reserve(n * n);
-            
-            for (int local_row = 0; local_row < m; local_row++) {
-                const int global_row = equation_indices[local_row];
-
-                g_indices.push_back({local_row, global_row});
-
-                for (int local_col = 0; local_col < n; local_col++) {
-                    const int global_col = variable_indices[local_col];
-
-                    if (global_col < 0 || global_row < 0) {
-                        continue;
-                    }
-
-                    const int global = &(m_dg.coeffRef(global_row, global_col)) - m_dg.valuePtr();
-
-                    dg_indices.push_back({local_row, local_col, global});
-                }
-            }
-
-            for (int local_row = 0; local_row < n; local_row++) {
-                const int global_row = variable_indices[local_row];
-
-                for (int local_col = 0; local_col < n; local_col++) {
-                    const int global_col = variable_indices[local_col];
-
-                    if (global_col > global_row || global_col < 0 || global_row < 0) {
-                        continue;
-                    }
-
-                    const int global = &(m_hl.coeffRef(global_row, global_col)) - m_hl.valuePtr();
-
-                    hl_indices.push_back({local_row, local_col, global});
-                }
-            }
-
-            m_element_g_indices.push_back(g_indices);
-            m_element_dg_indices.push_back(dg_indices);
-            m_element_hl_indices.push_back(hl_indices);
         }
     }
 
@@ -363,15 +372,14 @@ public:     // methods
         m_df.setZero();
         dg_values().setZero();
         hl_values().setZero();
-        
-        for (int i = 0; i < m_objectives.size(); i++) {
-            const auto& [equation_indices, variable_indices] =
-                m_element_indices[i];
+
+        for (index i = 0; i < length(m_objectives); i++) {
+            const auto& variable_indices = m_element_f_variable_indices[i];
 
             const auto& objective = m_objectives[i];
 
-            const auto n = variable_indices.size();
-            
+            const auto n = m_element_f_nb_variables[i];
+
             Vector g(n);
             Matrix h(n, n);
 
@@ -379,12 +387,16 @@ public:     // methods
 
             m_f += f;
 
-            for (const auto& index : m_element_df_indices[i]) {
-                df(index.global) += g(index.local);
-            }
+            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
+                const auto col = variable_indices[col_i];
 
-            for (const auto& index : m_element_hl_indices[i]) {
-                hl(index.global) += h(index.local_row, index.local_col);
+                df(col.global) += g(col.local);
+
+                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                    const auto row = variable_indices[row_i];
+
+                    hl(row.global, col.global) += h(row.local, col.local);
+                }
             }
         }
 
@@ -392,52 +404,58 @@ public:     // methods
         m_df *= sigma();
         hl_values() *= sigma();
 
-        for (int i = 0; i < m_constraints.size(); i++) {
-            const auto& [equation_indices, variable_indices] = m_element_indices[m_objectives.size() + i];
+        for (index i = 0; i < length(m_constraints); i++) {
+            const auto& equation_indices = m_element_g_equation_indices[i];
+            const auto& variable_indices = m_element_g_variable_indices[i];
 
             const auto& constraint = m_constraints[i];
 
-            const auto m = equation_indices.size();
-            const auto n = variable_indices.size();
+            const auto m = m_element_g_nb_equations[i];
+            const auto n = m_element_g_nb_variables[i];
 
             if (n == 0 || m == 0) {
                 continue;
             }
 
             std::vector<double> buffer(m * n + m * n * n);
-            
-            Vector rs(m);
+
+            Vector fs(m);
             std::vector<Ref<Vector>> gs;
             std::vector<Ref<Matrix>> hs;
-            
+
             gs.reserve(m);
             hs.reserve(m);
-            
-            for (int k = 0; k < m; k++) {
+
+            for (index k = 0; k < m; k++) {
                 Map<Vector> g(buffer.data() + k * n, n);
                 Map<Matrix> h(buffer.data() + m * n + k * n * n, n, n);
                 gs.push_back(g);
                 hs.push_back(h);
             }
 
-            constraint->compute(rs, gs, hs);
+            constraint->compute(fs, gs, hs);
 
-            hs[0] *= m_equations[equation_indices[0]]->multiplier();
-            for (int k = 1; k < m; k++) {
-                const auto& equation = m_equations[equation_indices[k]];
-                hs[0] += equation->multiplier() * hs[k];
-            }
-            
-            for (const auto& index : m_element_g_indices[i]) {
-                g(index.global) += rs(index.local);
-            }
-            
-            for (const auto& index : m_element_dg_indices[i]) {
-                dg(index.global) += gs[index.local_row](index.local_col);
-            }
-            
-            for (const auto& index : m_element_hl_indices[m_objectives.size() + i]) {
-                hl(index.global) += hs[0](index.local_row, index.local_col);
+            for (const auto& equation_index : equation_indices) {
+                const auto& equation = m_equations[equation_index.global];
+
+                g(equation_index.global) += fs(equation_index.local);
+
+                auto& local_g = gs[equation_index.local];
+                auto& local_h = hs[equation_index.local];
+
+                local_h *= equation->multiplier();
+
+                for (index col_i = 0; col_i < length(variable_indices); col_i++) {
+                    const auto col = variable_indices[col_i];
+
+                    dg(equation_index.global, col.global) += local_g(col.local);
+
+                    for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                        const auto row = variable_indices[row_i];
+
+                        hl(row.global, col.global) += local_h(row.local, col.local);
+                    }
+                }
             }
         }
     }
@@ -446,7 +464,7 @@ public:     // methods
     {
         Vector result(nb_variables());
 
-        for (int i = 0; i < result.size(); i++) {
+        for (index i = 0; i < length(result); i++) {
             result(i) = variable(i)->act_value();
         }
 
@@ -455,11 +473,11 @@ public:     // methods
 
     void set_x(Ref<const Vector> value) const
     {
-        if (value.size() != nb_variables()) {
+        if (length(value) != nb_variables()) {
             throw std::runtime_error("Invalid size");
         }
 
-        for (int i = 0; i < value.size(); i++) {
+        for (index i = 0; i < length(value); i++) {
             variable(i)->set_act_value(value[i]);
         }
     }
@@ -473,7 +491,7 @@ public:     // methods
     {
         Vector result(nb_variables());
 
-        for (int i = 0; i < result.size(); i++) {
+        for (index i = 0; i < length(result); i++) {
             result(i) = variable(i)->multiplier();
         }
 
@@ -482,11 +500,11 @@ public:     // methods
 
     void set_variable_multipliers(Ref<const Vector> value) const
     {
-        if (value.size() != nb_variables()) {
+        if (length(value) != nb_variables()) {
             throw std::runtime_error("Invalid size");
         }
 
-        for (int i = 0; i < value.size(); i++) {
+        for (index i = 0; i < length(value); i++) {
             variable(i)->set_multiplier(value[i]);
         }
     }
@@ -500,7 +518,7 @@ public:     // methods
     {
         Vector result(nb_equations());
 
-        for (int i = 0; i < result.size(); i++) {
+        for (index i = 0; i < length(result); i++) {
             result(i) = equation(i)->multiplier();
         }
 
@@ -509,11 +527,11 @@ public:     // methods
 
     void set_equation_multipliers(Ref<const Vector> value) const
     {
-        if (value.size() != nb_equations()) {
+        if (length(value) != nb_equations()) {
             throw std::runtime_error("Invalid size");
         }
 
-        for (int i = 0; i < value.size(); i++) {
+        for (index i = 0; i < length(value); i++) {
             equation(i)->set_multiplier(value[i]);
         }
     }
@@ -543,22 +561,22 @@ public:     // methods
         return m_variables;
     }
 
-    int nb_equations() const noexcept
+    index nb_equations() const noexcept
     {
-        return static_cast<int>(m_equations.size());
+        return length(m_equations);
     }
 
-    int nb_variables() const noexcept
+    index nb_variables() const noexcept
     {
-        return static_cast<int>(m_variables.size());
+        return length(m_variables);
     }
 
-    const Pointer<Variable>& variable(const int index) const noexcept
+    const Pointer<Variable>& variable(const index index) const
     {
         return m_variables.at(index);
     }
 
-    const Pointer<Equation>& equation(const int index) const noexcept
+    const Pointer<Equation>& equation(const index index) const
     {
         return m_equations.at(index);
     }
@@ -573,7 +591,7 @@ public:     // methods
         return m_g;
     }
 
-    double& g(const int index)
+    double& g(const index index)
     {
         return m_g(index);
     }
@@ -583,7 +601,7 @@ public:     // methods
         return m_df;
     }
 
-    double& df(const int index)
+    double& df(const index index)
     {
         return m_df(index);
     }
@@ -598,9 +616,14 @@ public:     // methods
         return Map<Vector>(m_dg.valuePtr(), m_dg.nonZeros());
     }
 
-    double& dg(const int index)
+    double& dg(const index index)
     {
         return *(m_dg.valuePtr() + index);
+    }
+
+    double& dg(const index row, const index col)
+    {
+        return m_dg.coeffRef(row, col);
     }
 
     const Sparse& hl() const noexcept
@@ -613,9 +636,14 @@ public:     // methods
         return Map<Vector>(m_hl.valuePtr(), m_hl.nonZeros());
     }
 
-    double& hl(const int index)
+    double& hl(const index index)
     {
         return *(m_hl.valuePtr() + index);
+    }
+
+    double& hl(const index row, const index col)
+    {
+        return m_hl.coeffRef(row, col);
     }
 
 public:     // python
