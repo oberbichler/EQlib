@@ -1,11 +1,25 @@
 cmake_minimum_required(VERSION 3.12)
 
+# get commit hash
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 set(CMAKE_CXX_STANDARD 20)
 
 project(EQlib-py)
 
+configure_file(
+  ${CMAKE_SOURCE_DIR}/include/EQlib/Version.h.in
+  ${CMAKE_BINARY_DIR}/generated/EQlib/Version.h
+)
+
 include_directories(
     "include"
+    ${CMAKE_BINARY_DIR}/generated
     SYSTEM "external_libraries"
 )
 
@@ -21,7 +35,6 @@ add_subdirectory(external_libraries/pybind11)
 
 add_definitions(
     -DEIGEN_DEFAULT_TO_ROW_MAJOR
-    -DEQLIB_VERSION="${EQLIB_VERSION}"
     -DFMT_HEADER_ONLY
 )
 
@@ -42,8 +55,12 @@ if (DEFINED ENV{CONDA_PREFIX})
     find_library(TBB_DBG_LIBRARY tbb_debug HINTS $ENV{CONDA_PREFIX}/Library/lib $ENV{CONDA_PREFIX}/lib)
 
     target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
-    target_link_libraries(EQlib PRIVATE ${IPOPT_LIBRARY})
     target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
+
+    if (USE_IPOPT)
+        target_link_libraries(EQlib PRIVATE ${IPOPT_LIBRARY})
+        add_definitions(-DIPOPT)
+    endif()
 
     target_link_libraries(IGAlib PRIVATE ${MKL_LIBRARY})
     target_link_libraries(IGAlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})

@@ -1,15 +1,15 @@
 #pragma once
 
+#include "Define.h"
+#include "Settings.h"
 #include "System.h"
-
-#include <memory>
 
 namespace EQlib {
 
 class NewtonDescent
 {
 private:    // members
-    std::shared_ptr<System<true>> m_system;
+    Pointer<System<true>> m_system;
 
 private:    // methods
     double linesearch_armijo(Ref<const Vector> x,
@@ -372,14 +372,14 @@ private:    // methods
     }
 
 public:     // constructor
-    NewtonDescent(std::shared_ptr<System<true>> system)
+    NewtonDescent(Pointer<System<true>> system)
     : m_system(std::move(system))
     {
     }
 
 public:     // method
     void minimize(const int maxiter, const double rtol, const double xtol,
-        const py::dict& line_search)
+        const Settings& line_search)
     {
         // setup
 
@@ -387,7 +387,7 @@ public:     // method
         Log::info(2, "Using Newton Descent minimizer");
 
         const auto line_search_type =
-            get_or_default<std::string>(line_search, "type", "armijo");
+            get_or_default(line_search, "type", "armijo");
 
         std::function<double (Ref<const Vector>, Ref<const Vector>,
             const double&)> line_search_function;
@@ -422,7 +422,7 @@ public:     // method
         Vector target(nb_dofs);
 
         for (int i = 0; i < nb_dofs; i++) {
-            target[i] = m_system->dof(i).target();
+            target[i] = m_system->dof(i)->target();
         }
 
         if (m_system->load_factor() != 1.0) {
@@ -510,9 +510,9 @@ public:     // python
         using Type = EQlib::NewtonDescent;
 
         py::class_<Type>(m, "NewtonDescent")
-            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
-                "xtol"_a=1e-6, "line_search"_a=py::dict())
+                "xtol"_a=1e-6, "line_search"_a=Settings())
         ;
     }
 };

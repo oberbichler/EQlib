@@ -3,15 +3,19 @@ import EQlib as eq
 
 class TestParameter(unittest.TestCase):
 
-    def test_parameter_constructor(self):
+    def test_constructor(self):
         parameter = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
 
         self.assertEqual(parameter.ref_value, 1.0)
         self.assertEqual(parameter.act_value, 2.0)
         self.assertEqual(parameter.target, 3.0)
         self.assertEqual(parameter.result, 4.0)
+        self.assertEqual(parameter.lower_bound, -float('inf'))
+        self.assertEqual(parameter.upper_bound, float('inf'))
+        self.assertEqual(parameter.is_fixed, False)
+        self.assertEqual(parameter.name, '')
 
-    def test_parameter_getters_and_setters(self):
+    def test_getters_and_setters(self):
         parameter = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
 
         parameter.ref_value = 5.1
@@ -26,39 +30,47 @@ class TestParameter(unittest.TestCase):
         parameter.result = 8.4
         self.assertEqual(parameter.result, 8.4)
 
-    def test_parameter_dof_delta(self):
+        parameter.lower_bound = 9.1
+        self.assertEqual(parameter.lower_bound, 9.1)
+
+        parameter.upper_bound = 2.3
+        self.assertEqual(parameter.upper_bound, 2.3)
+
+        parameter.is_fixed = True
+        self.assertEqual(parameter.is_fixed, True)
+
+        parameter.name = 'Example'
+        self.assertEqual(parameter.name, 'Example')
+
+    def test_delta(self):
         parameter = eq.Parameter(ref_value=1, act_value=3, target=4, result=7)
 
-        dof = parameter.dof
+        self.assertEqual(parameter.delta, 2.0)
 
-        self.assertEqual(dof.delta, 2.0)
+        parameter.delta = 5
 
-        dof.delta = 5
-
-        self.assertEqual(dof.delta, 5.0)
+        self.assertEqual(parameter.delta, 5.0)
 
         self.assertEqual(parameter.ref_value, 1.0)
         self.assertEqual(parameter.act_value, 6.0)
         self.assertEqual(parameter.target, 4.0)
         self.assertEqual(parameter.result, 7.0)
 
-    def test_parameter_dof_residual(self):
+    def test_residual(self):
         parameter = eq.Parameter(ref_value=1, act_value=3, target=4, result=7)
 
-        dof = parameter.dof
+        self.assertEqual(parameter.residual, -3.0)
 
-        self.assertEqual(dof.residual, 3.0)
+        parameter.residual = -5
 
-        dof.residual = 5
-
-        self.assertEqual(dof.residual, 5.0)
+        self.assertEqual(parameter.residual, -5.0)
 
         self.assertEqual(parameter.ref_value, 1.0)
         self.assertEqual(parameter.act_value, 3.0)
         self.assertEqual(parameter.target, 4.0)
         self.assertEqual(parameter.result, 9.0)
 
-    def test_parameter_pickle_and_copy(self):
+    def test_pickle_and_copy(self):
         import pickle
         from copy import copy, deepcopy
 
@@ -88,19 +100,13 @@ class TestParameter(unittest.TestCase):
             self.assertEqual(parameter_b.target, 3.0)
             self.assertEqual(parameter_b.result, 4.0)
 
-    def test_parameter_dof_equality(self):
+    def test_equality(self):
         parameter_a = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
         parameter_b = eq.Parameter(ref_value=1, act_value=2, target=3, result=4)
 
-        dof_a_1 = parameter_a.dof
-        dof_a_2 = parameter_a.dof
-
-        dof_b_1 = parameter_b.dof
-        dof_b_2 = parameter_b.dof
-
-        assert(dof_a_1 == dof_a_2)
-        assert(dof_a_1 != dof_b_1)
-        assert(dof_b_1 == dof_b_2)
+        assert(parameter_a == parameter_a)
+        assert(parameter_a != parameter_b)
+        assert(parameter_b == parameter_b)
 
 if __name__ == '__main__':
     unittest.main()

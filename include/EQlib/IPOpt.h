@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Define.h"
 #include "System.h"
 
 #include <coin/IpIpoptApplication.hpp>
@@ -7,7 +8,6 @@
 #include <coin/IpTNLP.hpp>
 
 #include <cassert>
-#include <memory>
 
 namespace EQlib {
 
@@ -18,10 +18,10 @@ public:     // types
     using Number = Ipopt::Number;
 
 private:    // variables
-    std::shared_ptr<System<true>> m_system;
+    Pointer<System<true>> m_system;
 
 public:     // constructors
-    IPOptSystem(std::shared_ptr<System<true>> system)
+    IPOptSystem(Pointer<System<true>> system)
     : m_system(system)
     { }
 
@@ -48,8 +48,8 @@ public:     // methods
     {
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
-            x_l[i] = dof.lower_bound() - dof.ref_value();
-            x_u[i] = dof.upper_bound() - dof.ref_value();
+            x_l[i] = dof->lower_bound() - dof->ref_value();
+            x_u[i] = dof->upper_bound() - dof->ref_value();
         }
 
         return true;
@@ -69,7 +69,7 @@ public:     // methods
         // we initialize x in bounds, in the upper right quadrant
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
-            x[i] = dof.delta();
+            x[i] = dof->delta();
         }
 
         return true;
@@ -151,7 +151,7 @@ public:     // methods
     {
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
-            dof.set_delta(x[i]);
+            dof->set_delta(x[i]);
         }
     }
 };
@@ -165,13 +165,13 @@ public:     // types
     using Number = Ipopt::Number;
 
 private:    // variables
-    std::shared_ptr<System<true>> m_system;
+    Pointer<System<true>> m_system;
     int m_info_level;
     int m_maxiter;
     double m_rtol;
 
 public:     // constructors
-    IPOpt(std::shared_ptr<System<true>> system)
+    IPOpt(Pointer<System<true>> system)
     : m_info_level(0), m_system(std::move(system)), m_maxiter(100), m_rtol(1e-6)
     { }
 
@@ -199,7 +199,7 @@ public:     // methods
 
         Ipopt::SmartPtr<Ipopt::IpoptApplication> app =
             IpoptApplicationFactory();
-        
+
         app->Options()->SetIntegerValue("max_iter", maxiter());
         app->Options()->SetIntegerValue("print_level", info_level());
         app->Options()->SetNumericValue("tol", rtol());
@@ -215,7 +215,7 @@ public:     // methods
         if (status == Ipopt::Solve_Succeeded) {
             // Retrieve some statistics about the solve
             Index iter_count = app->Statistics()->IterationCount();
-            
+
             Log::info(2, "Problem solved in {} iterations", iter_count);
 
             Number final_obj = app->Statistics()->FinalObjective();
@@ -232,7 +232,7 @@ public:     // methods
         return m_rtol;
     }
 
-    std::shared_ptr<System<true>> system() const
+    Pointer<System<true>> system() const
     {
         return m_system;
     }
@@ -263,7 +263,7 @@ public:     // python
 
         py::class_<Type>(m, "IPOpt")
             // constructors
-            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
             // read-only properties
             .def_property_readonly("system", &Type::system)
             // properties

@@ -1,17 +1,16 @@
 #pragma once
 
+#include "Define.h"
 #include "System.h"
 
 #include <Eigen/LU>
-
-#include <memory>
 
 namespace EQlib {
 
 class LBfgs
 {
 private:    // members
-    std::shared_ptr<System<true>> m_system;
+    Pointer<System<true>> m_system;
 
 protected:
     double linesearch_morethuente(Ref<const Vector> x,
@@ -345,7 +344,7 @@ protected:
     }
 
 public:     // constructor
-    LBfgs(std::shared_ptr<System<true>> system)
+    LBfgs(Pointer<System<true>> system)
     : m_system(std::move(system))
     {
     }
@@ -466,7 +465,7 @@ public:     // python
         using Type = EQlib::LBfgs;
 
         py::class_<Type>(m, "LBfgs")
-            .def(py::init<std::shared_ptr<EQlib::System<true>>>(), "system"_a)
+            .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
                 "xtol"_a=1e-6)
         ;

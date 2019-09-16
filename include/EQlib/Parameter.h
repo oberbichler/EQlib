@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Define.h"
-#include "Dof.h"
+#include "Parameter.h"
 
 #include <limits>
 #include <string>
@@ -17,34 +17,36 @@ private:    // variables
     double m_upper_bound;
     double m_target;
     double m_result;
-    bool m_isfixed;
+    bool m_is_fixed;
     std::string m_name;
 
 public:     // constructors
     Parameter(
-        double ref_value,
-        double act_value,
-        double target,
-        double result,
-        bool isfixed) noexcept
+        const double ref_value,
+        const double act_value,
+        const double target,
+        const double result,
+        const bool is_fixed,
+        const std::string name) noexcept
     : m_ref_value(ref_value)
     , m_act_value(act_value)
     , m_lower_bound(-std::numeric_limits<double>::infinity())
     , m_upper_bound(std::numeric_limits<double>::infinity())
     , m_target(target)
     , m_result(result)
-    , m_isfixed(isfixed)
+    , m_is_fixed(is_fixed)
+    , m_name(name)
     { }
 
     Parameter() noexcept
-    : Parameter(0, 0, 0, 0, false)
+    : Parameter(0, 0, 0, 0, false, "")
     { }
 
     Parameter(
-        double value,
-        double target=0,
-        bool isfixed=false) noexcept
-    : Parameter(value, value, target, 0, isfixed)
+        const double value,
+        const double target=0,
+        const bool is_fixed=false) noexcept
+    : Parameter(value, value, target, 0, is_fixed, "")
     { }
 
 public:     // getters and setters
@@ -53,7 +55,7 @@ public:     // getters and setters
         return m_ref_value;
     }
 
-    void set_ref_value(double value) noexcept
+    void set_ref_value(const double value) noexcept
     {
         m_ref_value = value;
     }
@@ -63,7 +65,7 @@ public:     // getters and setters
         return m_act_value;
     }
 
-    void set_act_value(double value) noexcept
+    void set_act_value(const double value) noexcept
     {
         m_act_value = value;
     }
@@ -73,7 +75,7 @@ public:     // getters and setters
         return m_lower_bound;
     }
 
-    void set_lower_bound(double value) noexcept
+    void set_lower_bound(const double value) noexcept
     {
         m_lower_bound = value;
     }
@@ -83,7 +85,7 @@ public:     // getters and setters
         return m_upper_bound;
     }
 
-    void set_upper_bound(double value) noexcept
+    void set_upper_bound(const double value) noexcept
     {
         m_upper_bound = value;
     }
@@ -93,7 +95,7 @@ public:     // getters and setters
         return m_act_value - m_ref_value;
     }
 
-    void set_delta(double value) noexcept
+    void set_delta(const double value) noexcept
     {
         m_act_value = m_ref_value + value;
     }
@@ -103,7 +105,7 @@ public:     // getters and setters
         return m_target;
     }
 
-    void set_target(double value) noexcept
+    void set_target(const double value) noexcept
     {
         m_target = value;
     }
@@ -113,7 +115,7 @@ public:     // getters and setters
         return m_result;
     }
 
-    void set_result(double value) noexcept
+    void set_result(const double value) noexcept
     {
         m_result = value;
     }
@@ -123,19 +125,19 @@ public:     // getters and setters
         return m_target - m_result;
     }
 
-    void set_residual(double value) noexcept
+    void set_residual(const double value) noexcept
     {
         m_result = m_target - value;
     }
 
-    bool isfixed() const noexcept
+    bool is_fixed() const noexcept
     {
-        return m_isfixed;
+        return m_is_fixed;
     }
 
-    void set_isfixed(bool value) noexcept
+    void set_is_fixed(const bool value) noexcept
     {
-        m_isfixed = value;
+        m_is_fixed = value;
     }
 
     std::string name() const noexcept
@@ -149,25 +151,36 @@ public:     // getters and setters
     }
 
 public:     // methods
-    Dof dof() noexcept
-    {
-        return Dof(&m_ref_value, &m_act_value, &m_lower_bound, &m_upper_bound,
-            &m_target, &m_result, m_isfixed);
-    }
-
     std::string to_string() const noexcept
     {
         if (m_name.empty()) {
             return format(
-                "<Parameter value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                act_value(), isfixed(), lower_bound(), upper_bound(),
-                size_t(&m_act_value));
+                "<Parameter value={} is_fixed={} bounds=({}, {}) at {:#x}>",
+                act_value(), is_fixed(), lower_bound(), upper_bound(),
+                size_t(this));
         } else {
             return format(
-                "<Parameter '{}' value={} isfixed={} bounds=({}, {}) at {:#x}>",
-                name(), act_value(), isfixed(), lower_bound(), upper_bound(),
-                size_t(&m_act_value));
+                "<Parameter '{}' value={} is_fixed={} bounds=({}, {}) at {:#x}>",
+                name(), act_value(), is_fixed(), lower_bound(), upper_bound(),
+                size_t(this));
         }
+    }
+
+public:     // comparison
+    bool operator==(const Parameter& other) const noexcept
+    {
+        return &m_act_value == &(other.m_act_value);
+    }
+
+    size_t hash() const noexcept
+    {
+        return (size_t)&m_act_value;
+    }
+
+public:     // operators
+    operator double()
+    {
+        return act_value();
     }
 
 public:     // python
@@ -177,14 +190,15 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::Parameter;
+        using Type = Parameter;
+        using Holder = Pointer<Type>;
 
-        py::class_<Type>(m, "Parameter")
-            .def(py::init<double, double, double, double, bool>(),
+        py::class_<Type, Holder>(m, "Parameter")
+            .def(py::init<double, double, double, double, bool, std::string>(),
                 "ref_value"_a, "act_value"_a, "target"_a=0, "result"_a=0,
-                "isfixed"_a=false)
+                "is_fixed"_a=false, "name"_a="")
             .def(py::init<double, double, bool>(), "value"_a, "target"_a=0,
-                "isfixed"_a=false)
+                "is_fixed"_a=false)
             .def(py::init<>())
             .def_property("ref_value", &Type::ref_value, &Type::set_ref_value)
             .def_property("act_value", &Type::act_value, &Type::set_act_value)
@@ -196,14 +210,20 @@ public:     // python
             .def_property("target", &Type::target, &Type::set_target)
             .def_property("result", &Type::result, &Type::set_result)
             .def_property("residual", &Type::residual, &Type::set_residual)
-            .def_property("isfixed", &Type::isfixed, &Type::set_isfixed)
+            .def_property("is_fixed", &Type::is_fixed, &Type::set_is_fixed)
             .def_property("name", &Type::name, &Type::set_name)
-            .def_property_readonly("dof", &Type::dof)
             .def(py::pickle([](const Type& self) {
-                    return py::make_tuple(self.ref_value(), self.act_value(),
-                        self.target(), self.result(), self.isfixed());
+                    return py::make_tuple(
+                        self.ref_value(),
+                        self.act_value(),
+                        self.target(),
+                        self.result(),
+                        self.is_fixed(),
+                        self.lower_bound(),
+                        self.upper_bound(),
+                        self.name());
                 }, [](py::tuple tuple) {
-                    if (tuple.size() != 5) {
+                    if (tuple.size() != 8) {
                         throw std::runtime_error("Invalid state!");
                     }
 
@@ -211,9 +231,15 @@ public:     // python
                     const auto act_value = tuple[1].cast<double>();
                     const auto target = tuple[2].cast<double>();
                     const auto result = tuple[3].cast<double>();
-                    const auto isfixed = tuple[4].cast<bool>();
+                    const auto is_fixed = tuple[4].cast<bool>();
+                    const auto lower_bound = tuple[5].cast<double>();
+                    const auto upper_bound = tuple[6].cast<double>();
+                    const auto name = tuple[7].cast<std::string>();
 
-                    return Type(ref_value, act_value, target, result, isfixed);
+                    return Type(ref_value, act_value, target, result, is_fixed,
+                        name);
+
+                    // FIXME: set upper/lower bounds
                 }
             ))
             .def("__float__", [](const Type& self) { return self.act_value(); })
