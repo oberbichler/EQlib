@@ -30,7 +30,7 @@ public:     // constructors
 
 public:     // methods
     bool get_nlp_info(Index& n, Index& m, Index& nnz_jac_g, Index& nnz_h_lag,
-        IndexStyleEnum& index_style)
+        IndexStyleEnum& index_style) override
     {
         n = m_system->nb_free_dofs();
         m = 0;
@@ -44,7 +44,7 @@ public:     // methods
     }
 
     bool get_bounds_info(Index n, Number* x_l, Number* x_u, Index m,
-        Number* g_l, Number* g_u)
+        Number* g_l, Number* g_u) override
     {
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
@@ -57,6 +57,7 @@ public:     // methods
 
     bool get_starting_point(Index n, bool init_x, Number* x, bool init_z,
         Number* z_L, Number* z_U, Index m, bool init_lambda, Number* lambda)
+        override
     {
         // Here, we assume we only have starting values for x, if you code
         // your own NLP, you can provide starting values for the others if
@@ -75,6 +76,7 @@ public:     // methods
     }
 
     bool eval_f(Index n, const Number* x, bool new_x, Number& obj_value)
+        override
     {
         m_system->set_x(Map<const Vector>(x, n));
         m_system->assemble<0>(true);
@@ -85,6 +87,7 @@ public:     // methods
     }
 
     bool eval_grad_f(Index n, const Number* x, bool new_x, Number* grad_f)
+        override
     {
         m_system->set_x(Map<const Vector>(x, n));
         m_system->assemble<1>(true);
@@ -95,20 +98,20 @@ public:     // methods
     }
 
     bool eval_g(Index n, const Number* x, bool new_x, Index m, Number* g)
+        override
     {
         return true;
     }
 
     bool eval_jac_g(Index n, const Number* x, bool new_x, Index m,
-        Index nele_jac, Index* iRow, Index* jCol, Number* values)
+        Index nele_jac, Index* iRow, Index* jCol, Number* values) override
     {
         return true;
     }
 
     bool eval_h(Index n, const Number* x, bool new_x, Number obj_factor,
         Index m, const Number* lambda, bool new_lambda, Index nele_hess,
-        Index* iRow, Index* jCol, Number* values
-    )
+        Index* iRow, Index* jCol, Number* values) override
     {
         if (values == nullptr) {
             const auto& h = m_system->h();
@@ -144,7 +147,7 @@ public:     // methods
     void finalize_solution(Ipopt::SolverReturn status, Index n, const Number* x,
         const Number* z_L, const Number* z_U, Index m, const Number* g,
         const Number* lambda, Number obj_value, const Ipopt::IpoptData* ip_data,
-        Ipopt::IpoptCalculatedQuantities* ip_cq)
+        Ipopt::IpoptCalculatedQuantities* ip_cq) override
     {
         for (int i = 0; i < m_system->nb_free_dofs(); i++) {
             const auto& dof = m_system->dof(i);
