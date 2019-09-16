@@ -26,13 +26,13 @@ private:    // types
 
     struct Index
     {
+        index local;
+        index global;
+
         Index(index local, index global)
         : local(local), global(global)
         {
         }
-
-        index local;
-        index global;
 
         bool operator<(const Index& other) const noexcept
         {
