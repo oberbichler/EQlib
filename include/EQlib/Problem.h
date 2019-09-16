@@ -460,6 +460,33 @@ public:     // methods
         }
     }
 
+    Vector delta() const
+    {
+        Vector result(nb_variables());
+
+        for (index i = 0; i < length(result); i++) {
+            result(i) = variable(i)->delta();
+        }
+
+        return result;
+    }
+
+    void set_delta(Ref<const Vector> value) const
+    {
+        if (length(value) != nb_variables()) {
+            throw std::runtime_error("Invalid size");
+        }
+
+        for (index i = 0; i < length(value); i++) {
+            variable(i)->set_delta(value[i]);
+        }
+    }
+
+    void set_delta(double* const value) const
+    {
+        set_delta(Map<const Vector>(value, nb_variables()));
+    }
+
     Vector x() const
     {
         Vector result(nb_variables());
@@ -674,6 +701,8 @@ public:     // python
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
+            .def_property("delta",py::overload_cast<>(&Type::delta, py::const_),
+                py::overload_cast<Ref<const Vector>>(&Type::set_delta, py::const_))
             .def_property("x", py::overload_cast<>(&Type::x, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
             .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_),
