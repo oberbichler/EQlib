@@ -670,13 +670,16 @@ public:     // python
             .def_property_readonly("df", py::overload_cast<>(&Type::df, py::const_))
             .def_property_readonly("dg", py::overload_cast<>(&Type::dg, py::const_))
             .def_property_readonly("hl", py::overload_cast<>(&Type::hl, py::const_))
-            .def_property_readonly("x", &Type::x)
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
-            .def_property_readonly("variable_multipliers", &Type::variable_multipliers)
-            .def_property_readonly("equation_multipliers", &Type::equation_multipliers)
             // properties
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
+            .def_property("x", py::overload_cast<>(&Type::x, py::const_),
+                py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
+            .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_),
+                py::overload_cast<Ref<const Vector>>(&Type::set_variable_multipliers, py::const_))
+            .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_),
+                py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
             .def("compute", &Type::compute)
         ;
