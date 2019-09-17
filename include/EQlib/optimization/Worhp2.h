@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Define.h"
-#include "System.h"
+#include "../Define.h"
+#include "../Log.h"
+#include "../Timer.h"
+#include "../Problem.h"
 
 #include <worhp/worhp.h>
 
@@ -9,19 +11,19 @@
 
 namespace EQlib {
 
-class Worhp
+class Worhp2
 {
 public:     // types
 
 private:    // variables
-    Pointer<System<true>> m_system;
+    Pointer<Problem> m_problem;
     int m_info_level;
     int m_maxiter;
     double m_rtol;
 
 public:     // constructors
-    Worhp(Pointer<System<true>> system)
-    : m_info_level(0), m_system(system), m_maxiter(100), m_rtol(1e-6)
+    Worhp2(Pointer<Problem> problem)
+    : m_info_level(0), m_problem(problem), m_maxiter(100), m_rtol(1e-6)
     { }
 
 public:     // methods
@@ -37,48 +39,79 @@ public:     // methods
 
     void compute_f(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
     {
-        m_system->set_x(opt->X);
-        m_system->assemble<0>(false);
+        m_problem->set_sigma(wsp->ScaleObj);
+        m_problem->set_x(opt->X);
+        m_problem->set_equation_multipliers(opt->Mu);
 
-        opt->F = wsp->ScaleObj * m_system->f();
+        m_problem->compute();
+
+        opt->F = m_problem->f();
     }
 
     void compute_g(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
     {
+        m_problem->set_sigma(wsp->ScaleObj);
+        m_problem->set_x(opt->X);
+        m_problem->set_equation_multipliers(opt->Mu);
+
+        m_problem->compute();
+
+        for (int i = 0; i < m_problem->nb_equations(); i++) {
+            opt->G[i] = m_problem->g(i);
+        }
     }
 
     void compute_df(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
     {
-        m_system->set_x(opt->X);
-        m_system->assemble<1>(false);
+        m_problem->set_sigma(wsp->ScaleObj);
+        m_problem->set_x(opt->X);
+        m_problem->set_equation_multipliers(opt->Mu);
 
-        for (int i = 0; i < m_system->nb_free_dofs(); i++) {
-            wsp->DF.val[i] = wsp->ScaleObj * m_system->g(i);
+        m_problem->compute();
+
+        for (int i = 0; i < m_problem->nb_variables(); i++) {
+            wsp->DF.val[i] = m_problem->df(i);
         }
     }
 
     void compute_dg(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
     {
-    }
+        m_problem->set_sigma(wsp->ScaleObj);
+        m_problem->set_x(opt->X);
+        m_problem->set_equation_multipliers(opt->Mu);
 
-    void compute_h(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
-    {
-        // Only scale the F part of HM
+        m_problem->compute();
 
-        m_system->set_x(opt->X);
-        m_system->assemble<2>(false);
-
-        Sparse h = m_system->h().transpose();
+        const Sparse& dg = m_problem->dg();
 
         int i = 0;
-        int j = h.nonZeros() - m_system->nb_free_dofs();
 
-        for (int k = 0; k < h.outerSize(); ++k) {
-            for (Sparse::InnerIterator it(h, k); it; ++it){
+        for (int k = 0; k < dg.outerSize(); ++k) {
+            for (Sparse::InnerIterator it(dg, k); it; ++it){
+                wsp->DG.val[i++] = it.value();
+            }
+        }
+    }
+
+    void compute_hl(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    {
+        m_problem->set_sigma(wsp->ScaleObj);
+        m_problem->set_x(opt->X);
+        m_problem->set_equation_multipliers(opt->Mu);
+
+        m_problem->compute();
+
+        const Sparse& hl = m_problem->hl();
+
+        int i = 0;
+        int j = hl.nonZeros() - m_problem->nb_variables();
+
+        for (int k = 0; k < hl.outerSize(); ++k) {
+            for (Sparse::InnerIterator it(hl, k); it; ++it){
                 if (it.row() == it.col()) {
-                    wsp->HM.val[j++] = wsp->ScaleObj * it.value();
+                    wsp->HM.val[j++] = it.value();
                 } else {
-                    wsp->HM.val[i++] = wsp->ScaleObj * it.value();
+                    wsp->HM.val[i++] = it.value();
                 }
             }
         }
@@ -88,7 +121,7 @@ public:     // methods
     {
         // setup
 
-        Log::info(1, "==> Minimizing nonlinear system...");
+        Log::info(1, "==> Minimizing nonlinear problem...");
         Log::info(2, "Using WORHP");
 
         Timer timer;
@@ -97,6 +130,23 @@ public:     // methods
         Workspace wsp;
         Params par;
         Control cnt;
+
+        // const auto print = [](int mode, const char* message)
+        // {
+        //     switch (mode) {
+        //     case WORHP_PRINT_WARNING:
+        //         Log::warn(message);
+        //         break;
+        //     case WORHP_PRINT_ERROR:
+        //         Log::error(message);
+        //         break;
+        //     default:
+        //         Log::info(message);
+        //         break;
+        //     }
+        // };
+
+        // SetWorhpPrint(print);
 
         CHECK_WORHP_VERSION
 
@@ -114,12 +164,12 @@ public:     // methods
             return;;
         }
 
-        opt.n = m_system->nb_free_dofs();
-        opt.m = 0;
+        opt.n = m_problem->nb_variables();
+        opt.m = m_problem->nb_equations();
 
-        wsp.DF.nnz = m_system->nb_free_dofs();
-        wsp.DG.nnz = 0;
-        wsp.HM.nnz = m_system->h_nb_nonzeros();
+        wsp.DF.nnz = m_problem->nb_variables();
+        wsp.DG.nnz = m_problem->dg().nonZeros();
+        wsp.HM.nnz = m_problem->hl().nonZeros();
 
         WorhpInit(&opt, &wsp, &par, &cnt);
 
@@ -128,30 +178,51 @@ public:     // methods
             return;
         }
 
-        for (int i = 0; i < m_system->nb_free_dofs(); i++) {
-            opt.X[i] = m_system->dof(i)->delta();
-            opt.Lambda[i] = 0.0;
-            opt.XL[i] = m_system->dof(i)->lower_bound();
-            opt.XU[i] = m_system->dof(i)->upper_bound();
+        for (int i = 0; i < m_problem->nb_variables(); i++) {
+            opt.X[i] = m_problem->variable(i)->delta();
+            opt.XL[i] = m_problem->variable(i)->lower_bound();
+            opt.XU[i] = m_problem->variable(i)->upper_bound();
+            opt.Lambda[i] = m_problem->variable(i)->multiplier();
+        }
+
+        for (int i = 0; i < m_problem->nb_equations(); i++) {
+            opt.GL[i] = m_problem->equation(i)->lower_bound();
+            opt.GU[i] = m_problem->equation(i)->upper_bound();
+            opt.Mu[i] = m_problem->equation(i)->multiplier();
         }
 
         if (wsp.DF.NeedStructure) {
-            for (int i = 0; i < m_system->nb_free_dofs(); i++) {
+            for (int i = 0; i < m_problem->nb_variables(); i++) {
                 wsp.DF.row[i] = i + 1;
             }
         }
 
         if (wsp.DG.NeedStructure) {
+            const Sparse dg = m_problem->dg();
+            
+            int i = 0;
+            
+            for (int k = 0; k < dg.outerSize(); ++k) {
+                for (Sparse::InnerIterator it(dg, k); it; ++it){
+                    const int row = it.row() + 1;
+                    const int col = it.col() + 1;
+
+                    wsp.DG.row[i] = row;
+                    wsp.DG.col[i] = col;
+
+                    i += 1;
+                }
+            }
         }
 
         if (wsp.HM.NeedStructure) {
             int i = 0;
-            int j = m_system->h_nb_nonzeros() - m_system->nb_free_dofs();
+            int j = m_problem->hl().nonZeros() - m_problem->nb_variables();
 
-            Sparse h = m_system->h().transpose();
+            const Sparse hl = m_problem->hl();
 
-            for (int k = 0; k < h.outerSize(); ++k) {
-                for (Sparse::InnerIterator it(h, k); it; ++it){
+            for (int k = 0; k < hl.outerSize(); ++k) {
+                for (Sparse::InnerIterator it(hl, k); it; ++it){
                     const int row = it.row() + 1;
                     const int col = it.col() + 1;
 
@@ -199,7 +270,7 @@ public:     // methods
             }
 
             if (GetUserAction(&cnt, evalHM)) {
-                compute_h(&opt, &wsp, &par, &cnt);
+                compute_hl(&opt, &wsp, &par, &cnt);
                 DoneUserAction(&cnt, evalHM);
             }
 
@@ -209,6 +280,10 @@ public:     // methods
         }
 
         StatusMsg(&opt, &wsp, &par, &cnt);
+
+        m_problem->set_sigma(wsp.ScaleObj);
+        m_problem->set_x(opt.X);
+        m_problem->set_equation_multipliers(opt.Mu);
 
         WorhpFree(&opt, &wsp, &par, &cnt);
 
@@ -220,9 +295,9 @@ public:     // methods
         return m_rtol;
     }
 
-    Pointer<System<true>> system() const
+    Pointer<Problem> problem() const
     {
-        return m_system;
+        return m_problem;
     }
 
     void set_info_level(int value)
@@ -247,13 +322,13 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = Worhp;
+        using Type = Worhp2;
 
-        py::class_<Type>(m, "Worhp")
+        py::class_<Type>(m, "Worhp2")
             // constructors
-            .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
+            .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
             // read-only properties
-            .def_property_readonly("system", &Type::system)
+            .def_property_readonly("problem", &Type::problem)
             // properties
             .def_property("info_level", &Type::info_level,
                 &Type::set_info_level)

@@ -6,22 +6,22 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include <EQlib/Element.h>
-#include <EQlib/LBfgs.h>
-#include <EQlib/LevenbergMarquardt.h>
-#include <EQlib/Log.h>
-#include <EQlib/optimization/GradientDescent.h>
-#include <EQlib/NewtonDescent.h>
-#include <EQlib/Node.h>
-#include <EQlib/Parameter.h>
-#include <EQlib/System.h>
-#include <EQlib/Worhp.h>
-#include <EQlib/Equation.h>
-#include <EQlib/Variable.h>
-#include <EQlib/Objective.h>
 #include <EQlib/Constraint.h>
+#include <EQlib/Element.h>
+#include <EQlib/Equation.h>
+#include <EQlib/Log.h>
+#include <EQlib/Node.h>
+#include <EQlib/Objective.h>
+#include <EQlib/optimization/GradientDescent.h>
+#include <EQlib/optimization/LBfgs.h>
+#include <EQlib/optimization/LevenbergMarquardt.h>
+#include <EQlib/optimization/NewtonDescent.h>
+#include <EQlib/optimization/Worhp.h>
+#include <EQlib/optimization/Worhp2.h>
+#include <EQlib/Parameter.h>
 #include <EQlib/Problem.h>
-#include <EQlib/Worhp2.h>
+#include <EQlib/System.h>
+#include <EQlib/Variable.h>
 
 #include <EQlib/Elements/BoundaryConstraint.h>
 #include <EQlib/Elements/EqualSubdivisionConstraint.h>

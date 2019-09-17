@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Define.h"
-#include "System.h"
+#include "../Define.h"
+#include "../System.h"
 
 #include <Eigen/LU>
 
