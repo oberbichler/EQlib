@@ -449,7 +449,7 @@ public:     // methods
         m_xtol = value;
     }
 
-    void minimize()
+    void run()
     {
         // setup
 
@@ -524,7 +524,7 @@ public:     // python
 
         py::class_<Type>(m, "GradientDescent")
             .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
-            .def("minimize", &Type::minimize)
+            .def("run", &Type::run)
             .def_property("rtol", &Type::rtol, &Type::set_rtol)
             .def_property("maxiter", &Type::maxiter, &Type::set_maxiter)
             .def_property_readonly("iterations", &Type::iterations)
