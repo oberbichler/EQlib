@@ -394,7 +394,7 @@ public:     // constructor
     , m_xtol(1e-6)
     {
         if (m_problem->is_constrained()) {
-            std::runtime_error("Constraints are not supported");
+            throw std::runtime_error("Constraints are not supported");
         }
     }
 
