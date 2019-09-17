@@ -30,6 +30,9 @@
 #include <EQlib/solver/LBfgs.h>
 #include <EQlib/solver/LevenbergMarquardt.h>
 #include <EQlib/solver/NewtonDescent.h>
+#ifdef USE_WORHP
+#include <EQlib/solver/WorhpSolver.h>
+#endif
 
 #include <EQlib/Elements/BoundaryConstraint.h>
 #include <EQlib/Elements/EqualSubdivisionConstraint.h>
@@ -102,6 +105,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // NewtonDescent
     EQlib::NewtonDescent::register_python(solver);
+
+    // Worhp
+    EQlib::WorhpSolver::register_python(solver);
 
 
     // --- optimizer
