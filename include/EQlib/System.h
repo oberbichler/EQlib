@@ -395,6 +395,33 @@ public:     // getters and setters
     }
     }
 
+    Vector delta() const
+    {
+        Vector result(nb_free_dofs());
+
+        for (index i = 0; i < length(result); i++) {
+            result(i) = dof(i)->delta();
+        }
+
+        return result;
+    }
+
+    void set_delta(Ref<const Vector> value) const
+    {
+        if (length(value) != nb_free_dofs()) {
+            throw std::runtime_error("Invalid size");
+        }
+
+        for (index i = 0; i < length(value); i++) {
+            dof(i)->set_delta(value[i]);
+        }
+    }
+
+    void set_delta(double* const value) const
+    {
+        set_delta(Map<const Vector>(value, nb_free_dofs()));
+    }
+
     Vector x() const
     {
         Vector result(nb_free_dofs());
@@ -887,6 +914,8 @@ public:     // python
             // properties
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
+            .def_property("delta", &Type::delta,
+                py::overload_cast<Ref<const Vector>>(&Type::set_delta, py::const_))
             .def_property("x", &Type::x,
                 py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
             // readonly properties
