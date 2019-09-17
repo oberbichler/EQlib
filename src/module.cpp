@@ -20,6 +20,7 @@
 #include <EQlib/optimization/Worhp2.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/Problem.h>
+#include <EQlib/Point.h>
 #include <EQlib/System.h>
 #include <EQlib/Variable.h>
 
@@ -69,6 +70,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // Node
     EQlib::Node::register_python(m);
+
+    // Point
+    EQlib::Point::register_python(m);
 
     // Parameter
     EQlib::Parameter::register_python(m);
