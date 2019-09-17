@@ -145,7 +145,7 @@ class TestProblem(unittest.TestCase):
         assert_equal(problem.hl.nonzero(), [[0, 1, 1, 2, 2, 2, 3], [0, 0, 1, 0, 1, 2, 3]])
 
         assert_almost_equal(problem.equation_multipliers, [3.2, 9.3, 11.6])
-        assert_almost_equal(problem.variable_multipliers, [0, 0, 0, 0])
+        assert_almost_equal(problem.variable_multipliers, [1, 1, 1, 1])
 
         problem.compute()
 
