@@ -710,7 +710,8 @@ public:     // python
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
             .def(py::init<Objectives, Constraints, Settings>(),
-                "objectives"_a, "constraints"_a, "linear_solver"_a = Settings())
+                "objective"_a, "constraints"_a=py::list(),
+                "linear_solver"_a=Settings())
             // read-only properties
             .def_property_readonly("is_constrained", &Type::is_constrained)
             .def_property_readonly("equations", &Type::equations)
