@@ -85,7 +85,7 @@ endif()
 find_library(WORHP_LIBRARY worhp)
 
 if(WORHP_LIBRARY)
-    message("-- Found WORHP: ${WORHP_ROOT}")
+    message("-- Found WORHP: ${WORHP_LIBRARY}")
     add_definitions(-DUSE_WORHP)
     target_include_directories(EQlib SYSTEM PRIVATE "${WORHP_ROOT}/include")
     target_link_libraries(EQlib PRIVATE ${WORHP_LIBRARY})
