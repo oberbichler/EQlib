@@ -460,6 +460,11 @@ public:     // methods
         }
     }
 
+    bool is_constrained() const noexcept
+    {
+        return !m_constraints.empty();
+    }
+
     Vector delta() const
     {
         Vector result(nb_variables());
@@ -690,6 +695,7 @@ public:     // python
             .def(py::init<Objectives, Constraints, Settings>(),
                 "objectives"_a, "constraints"_a, "linear_solver"_a = Settings())
             // read-only properties
+            .def_property_readonly("is_constrained", &Type::is_constrained)
             .def_property_readonly("equations", &Type::equations)
             .def_property_readonly("variables", &Type::variables)
             .def_property_readonly("f", &Type::f)
