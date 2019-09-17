@@ -20,11 +20,11 @@ private:    // methods
         double alpha = alpha_init;
 
         m_system->set_x(x + alpha * search_dir);
-        m_system->assemble<0>(true);
+        m_system->assemble<0>(false);
         double f = m_system->f();
 
         m_system->set_x(x);
-        m_system->assemble<1>(true);
+        m_system->assemble<1>(false);
         const double f_in = m_system->f();
         const Vector grad = m_system->g();
 
@@ -34,7 +34,7 @@ private:    // methods
             alpha *= rho;
 
             m_system->set_x(x + alpha * search_dir);
-            m_system->assemble<0>(true);
+            m_system->assemble<0>(false);
             f = m_system->f();
         }
 
@@ -48,7 +48,7 @@ private:    // methods
         double ak = alpha_init;
 
         m_system->set_x(x);
-        m_system->assemble<1>(true);
+        m_system->assemble<1>(false);
         double fval = m_system->f();
         Vector g = m_system->g();
 
@@ -127,7 +127,7 @@ private:    // methods
             x = wa + stp * s;
 
             m_system->set_x(x);
-            m_system->assemble<1>(true);
+            m_system->assemble<1>(false);
             f = m_system->f();
             g = m_system->g();
             nfev++;
@@ -444,7 +444,7 @@ public:     // method
 
             Log::info(2, "Iteration {}", iteration + 1);
 
-            m_system->assemble<2>(true);
+            m_system->assemble<2>(false);
 
             Log::info(2, "The current value is {}", m_system->f());
 
