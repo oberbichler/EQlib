@@ -2,7 +2,8 @@
 
 #include "../Define.h"
 #include "../Settings.h"
-#include "../System.h"
+#include "../Timer.h"
+#include "../Problem.h"
 
 namespace EQlib {
 
@@ -11,7 +12,7 @@ class GradientDescent
 private:    // types
 
 private:    // members
-    Pointer<System<true>> m_system;
+    Pointer<Problem> m_problem;
     index m_iterations;
     index m_maxiter;
     index m_fevals;
@@ -29,23 +30,23 @@ private:    // methods
         const double rho = 0.9;
         double alpha = alpha_init;
 
-        const double f_in = m_system->f();
-        const Vector grad = m_system->g();
+        const double f_in = m_problem->f();
+        const Vector grad = m_problem->df();
 
-        m_system->set_x(x + alpha * search_dir);
-        m_system->assemble<0>(false);
+        m_problem->set_x(x + alpha * search_dir);
+        m_problem->compute(); //assemble<0>(false);
         m_fevals += 1;
-        double f = m_system->f();
+        double f = m_problem->f();
 
         const double cache = c * grad.dot(search_dir);
 
         while(f > f_in + alpha * cache) {
             alpha *= rho;
 
-            m_system->set_x(x + alpha * search_dir);
-            m_system->assemble<0>(false);
+            m_problem->set_x(x + alpha * search_dir);
+            m_problem->compute(); //assemble<0>(false);
             m_fevals += 1;
-            f = m_system->f();
+            f = m_problem->f();
         }
 
         return alpha;
@@ -57,12 +58,12 @@ private:    // methods
         // assume step width
         double ak = alpha_init;
 
-        m_system->set_x(x);
-        m_system->assemble<1>(false);
+        m_problem->set_x(x);
+        m_problem->compute(); //assemble<1>(false);
         m_fevals += 1;
         m_gevals += 1;
-        double fval = m_system->f();
-        Vector g = m_system->g();
+        double fval = m_problem->f();
+        Vector g = m_problem->df();
 
         Vector s = search_dir.eval();
         Vector xx = x.eval();
@@ -138,12 +139,12 @@ private:    // methods
             // test new point
             x = wa + stp * s;
 
-            m_system->set_x(x);
-            m_system->assemble<1>(false);
+            m_problem->set_x(x);
+            m_problem->compute(); //assemble<1>(false);
             m_fevals += 1;
             m_gevals += 1;
-            f = m_system->f();
-            g = m_system->g();
+            f = m_problem->f();
+            g = m_problem->df();
             nfev++;
 
             double dg = g.dot(s);
@@ -386,12 +387,15 @@ private:    // methods
     }
 
 public:     // constructor
-    GradientDescent(Pointer<System<true>> system)
-    : m_system(std::move(system))
+    GradientDescent(Pointer<Problem> problem)
+    : m_problem(std::move(problem))
     , m_maxiter(100)
     , m_rtol(1e-6)
     , m_xtol(1e-6)
     {
+        if (m_problem->is_constrained()) {
+            std::runtime_error("Constraints are not supported");
+        }
     }
 
 public:     // methods
@@ -449,14 +453,14 @@ public:     // methods
     {
         // setup
 
-        Log::info(1, "==> Minimizing nonlinear system...");
+        Log::info(1, "==> Minimizing nonlinear problem...");
         Log::info(2, "Using Gradient Descent minimizer");
 
         Timer timer;
 
-        const auto n = m_system->nb_free_dofs();
+        const auto n = m_problem->nb_variables();
 
-        Vector x = m_system->x();
+        Vector x = m_problem->x();
         Vector delta(n);
         Vector direction(n);
 
@@ -465,11 +469,11 @@ public:     // methods
         m_gevals = 0;
 
         while (true) {
-            m_system->assemble<1>(false);
+            m_problem->compute(); //assemble<1>(false);
             m_fevals += 1;
             m_gevals += 1;
 
-            direction = -m_system->g();
+            direction = -m_problem->df();
 
             m_rnorm = direction.norm();
             
@@ -495,7 +499,7 @@ public:     // methods
 
             x += delta;
 
-            m_system->set_x(x);
+            m_problem->set_x(x);
 
             m_iterations += 1;
             
@@ -506,7 +510,7 @@ public:     // methods
 
         Log::info(2, "{} iterations", m_iterations);
 
-        Log::info(1, "System minimized in {:.3f} sec", timer.ellapsed());
+        Log::info(1, "Problem minimized in {:.3f} sec", timer.ellapsed());
     }
 
 public:     // python
@@ -519,7 +523,7 @@ public:     // python
         using Type = EQlib::GradientDescent;
 
         py::class_<Type>(m, "GradientDescent")
-            .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
+            .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
             .def("minimize", &Type::minimize)
             .def_property("rtol", &Type::rtol, &Type::set_rtol)
             .def_property("maxiter", &Type::maxiter, &Type::set_maxiter)
