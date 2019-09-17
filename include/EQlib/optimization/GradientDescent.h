@@ -9,7 +9,6 @@ namespace EQlib {
 class GradientDescent
 {
 private:    // types
-    using index = std::ptrdiff_t;
 
 private:    // members
     Pointer<System<true>> m_system;
