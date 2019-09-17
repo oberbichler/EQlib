@@ -12,16 +12,24 @@
 #include <EQlib/Log.h>
 #include <EQlib/Node.h>
 #include <EQlib/Objective.h>
-#include <EQlib/optimization/GradientDescent.h>
-#include <EQlib/optimization/LBfgs.h>
-#include <EQlib/optimization/LevenbergMarquardt.h>
-#include <EQlib/optimization/NewtonDescent.h>
-#include <EQlib/optimization/NewtonRaphson.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/Problem.h>
 #include <EQlib/Point.h>
 #include <EQlib/System.h>
 #include <EQlib/Variable.h>
+
+#include <EQlib/optimizer/GradientDescent.h>
+#ifdef USE_IPOPT
+#include <EQlib/optimizer/IPOpt.h>
+#endif
+#include <EQlib/optimizer/NewtonRaphson.h>
+#ifdef USE_WORHP
+#include <EQlib/optimizer/Worhp.h>
+#endif
+
+#include <EQlib/solver/LBfgs.h>
+#include <EQlib/solver/LevenbergMarquardt.h>
+#include <EQlib/solver/NewtonDescent.h>
 
 #include <EQlib/Elements/BoundaryConstraint.h>
 #include <EQlib/Elements/EqualSubdivisionConstraint.h>
@@ -29,14 +37,6 @@
 #include <EQlib/Elements/NodalEquilibrium.h>
 
 #include <EQlib/Version.h>
-
-#ifdef USE_WORHP
-#include <EQlib/optimization/Worhp.h>
-#endif
-
-#ifdef USE_IPOPT
-#include <EQlib/optimization/IPOpt.h>
-#endif
 
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
@@ -111,6 +111,11 @@ PYBIND11_MODULE(EQlib, m) {
     // GradientDescent
     EQlib::GradientDescent::register_python(optimizer);
 
+    // IPOpt
+    #ifdef USE_IPOPT
+    EQlib::IPOpt::register_python(optimizer);
+    #endif
+
     // NewtonRaphson
     EQlib::NewtonRaphson::register_python(optimizer);
 
@@ -119,10 +124,6 @@ PYBIND11_MODULE(EQlib, m) {
     EQlib::Worhp::register_python(optimizer);
     #endif
 
-    // IPOpt
-    #ifdef USE_IPOPT
-    EQlib::IPOpt::register_python(optimizer);
-    #endif
 
     // --- Elements
 
