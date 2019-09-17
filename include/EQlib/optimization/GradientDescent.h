@@ -415,7 +415,7 @@ public:     // methods
 
     void set_maxiter(const index value) noexcept
     {
-        m_maxiter;
+        m_maxiter = value;
     }
 
     double rnorm() const noexcept
