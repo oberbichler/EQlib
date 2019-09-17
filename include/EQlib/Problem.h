@@ -43,6 +43,8 @@ private:    // types
 private:    // variables
     double m_sigma;
 
+    bool m_parallel;
+
     Objectives m_objectives;
     Constraints m_constraints;
 
@@ -460,6 +462,16 @@ public:     // methods
         }
     }
 
+    bool parallel() const noexcept
+    {
+        return m_parallel;
+    }
+
+    void set_parallel(const bool value) noexcept
+    {
+        m_parallel = value;
+    }
+
     bool is_constrained() const noexcept
     {
         return !m_constraints.empty();
@@ -706,6 +718,7 @@ public:     // python
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
+            .def_property("parallel", &Type::parallel, &Type::set_parallel)
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
             .def_property("delta",py::overload_cast<>(&Type::delta, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_delta, py::const_))
