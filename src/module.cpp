@@ -17,8 +17,6 @@
 #include <EQlib/optimization/LevenbergMarquardt.h>
 #include <EQlib/optimization/NewtonDescent.h>
 #include <EQlib/optimization/NewtonRaphson.h>
-#include <EQlib/optimization/Worhp.h>
-#include <EQlib/optimization/Worhp2.h>
 #include <EQlib/Parameter.h>
 #include <EQlib/Problem.h>
 #include <EQlib/Point.h>
@@ -32,8 +30,12 @@
 
 #include <EQlib/Version.h>
 
-#ifdef IPOPT
-#include <EQlib/IPOpt.h>
+#ifdef USE_WORHP
+#include <EQlib/optimization/Worhp.h>
+#endif
+
+#ifdef USE_IPOPT
+#include <EQlib/optimization/IPOpt.h>
 #endif
 
 PYBIND11_MODULE(EQlib, m) {
@@ -87,30 +89,40 @@ PYBIND11_MODULE(EQlib, m) {
     // Timer
     EQlib::Timer::register_python(m);
 
-    // --- Solver
 
-#ifdef IPOPT
-    // IPOpt
-    EQlib::IPOpt::register_python(m);
-#endif
+    // --- solver
+
+    auto solver = m.def_submodule("solver");
 
     // LBfgs
-    EQlib::LBfgs::register_python(m);
+    EQlib::LBfgs::register_python(solver);
 
     // LevenbergMarquardt
-    EQlib::LevenbergMarquardt::register_python(m);
-
-    // GradientDescent
-    EQlib::GradientDescent::register_python(m);
+    EQlib::LevenbergMarquardt::register_python(solver);
 
     // NewtonDescent
-    EQlib::NewtonDescent::register_python(m);
+    EQlib::NewtonDescent::register_python(solver);
+
+
+    // --- optimizer
+
+    auto optimizer = m.def_submodule("optimizer");
+
+    // GradientDescent
+    EQlib::GradientDescent::register_python(optimizer);
 
     // NewtonRaphson
-    EQlib::NewtonRaphson::register_python(m);
+    EQlib::NewtonRaphson::register_python(optimizer);
 
     // Worhp
-    EQlib::Worhp::register_python(m);
+    #ifdef USE_WORHP
+    EQlib::Worhp::register_python(optimizer);
+    #endif
+
+    // IPOpt
+    #ifdef USE_IPOPT
+    EQlib::IPOpt::register_python(optimizer);
+    #endif
 
     // --- Elements
 
@@ -141,7 +153,4 @@ PYBIND11_MODULE(EQlib, m) {
 
     // Problem
     EQlib::Problem::register_python(m);
-
-    // Worhp2
-    EQlib::Worhp2::register_python(m);
 }
