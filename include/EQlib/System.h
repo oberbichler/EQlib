@@ -400,7 +400,7 @@ public:     // getters and setters
         Vector result(nb_free_dofs());
 
         for (int i = 0; i < result.size(); i++) {
-            result[i] = m_dofs[i]->delta();
+            result[i] = m_dofs[i]->act_value();
         }
 
         return result;
@@ -413,7 +413,7 @@ public:     // getters and setters
         }
 
         for (int i = 0; i < value.size(); i++) {
-            m_dofs[i]->set_delta(value[i]);
+            m_dofs[i]->set_act_value(value[i]);
         }
     }
 

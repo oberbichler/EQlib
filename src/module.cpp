@@ -10,6 +10,7 @@
 #include <EQlib/LBfgs.h>
 #include <EQlib/LevenbergMarquardt.h>
 #include <EQlib/Log.h>
+#include <EQlib/optimization/GradientDescent.h>
 #include <EQlib/NewtonDescent.h>
 #include <EQlib/Node.h>
 #include <EQlib/Parameter.h>
@@ -93,6 +94,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // LevenbergMarquardt
     EQlib::LevenbergMarquardt::register_python(m);
+
+    // GradientDescent
+    EQlib::GradientDescent::register_python(m);
 
     // NewtonDescent
     EQlib::NewtonDescent::register_python(m);
