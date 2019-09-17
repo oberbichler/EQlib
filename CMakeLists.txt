@@ -80,6 +80,7 @@ endif()
 
 if(DEFINED WORHP_ROOT)
     message("-- Found WORHP: ${WORHP_ROOT}")
+    add_definitions(-DUSE_WORHP)
     target_include_directories(EQlib SYSTEM PRIVATE "${WORHP_ROOT}/include")
     target_link_libraries(EQlib PRIVATE "${WORHP_ROOT}/bin/worhp.lib")
 else()
