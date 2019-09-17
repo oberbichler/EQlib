@@ -16,6 +16,7 @@
 #include <EQlib/optimization/LBfgs.h>
 #include <EQlib/optimization/LevenbergMarquardt.h>
 #include <EQlib/optimization/NewtonDescent.h>
+#include <EQlib/optimization/NewtonRaphson.h>
 #include <EQlib/optimization/Worhp.h>
 #include <EQlib/optimization/Worhp2.h>
 #include <EQlib/Parameter.h>
@@ -104,6 +105,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // NewtonDescent
     EQlib::NewtonDescent::register_python(m);
+
+    // NewtonRaphson
+    EQlib::NewtonRaphson::register_python(m);
 
     // Worhp
     EQlib::Worhp::register_python(m);
