@@ -479,7 +479,7 @@ public:     // methods
 
     bool is_constrained() const noexcept
     {
-        return !m_constraints.empty();
+        return !m_equations.empty();
     }
 
     Vector delta() const
