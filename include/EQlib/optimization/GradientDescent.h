@@ -386,6 +386,9 @@ private:    // methods
 public:     // constructor
     GradientDescent(Pointer<System<true>> system)
     : m_system(std::move(system))
+    , m_maxiter(100)
+    , m_rtol(1e-6)
+    , m_xtol(1e-6)
     {
     }
 
