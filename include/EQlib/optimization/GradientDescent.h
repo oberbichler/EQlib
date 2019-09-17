@@ -17,7 +17,9 @@ private:    // members
     index m_fevals;
     index m_gevals;
     double m_rnorm;
+    double m_xnorm;
     double m_rtol;
+    double m_xtol;
 
 private:    // methods
     double linesearch_armijo(Ref<const Vector> x,
@@ -433,6 +435,16 @@ public:     // methods
         m_rtol = value;
     }
 
+    double xtol() const noexcept
+    {
+        return m_xtol;
+    }
+
+    void set_xtol(const double value) noexcept
+    {
+        m_xtol = value;
+    }
+
     void minimize()
     {
         // setup
@@ -442,6 +454,12 @@ public:     // methods
 
         Timer timer;
 
+        const auto n = m_system->nb_free_dofs();
+
+        Vector x = m_system->x();
+        Vector delta(n);
+        Vector direction(n);
+
         m_iterations = 0;
         m_fevals = 0;
         m_gevals = 0;
@@ -450,11 +468,12 @@ public:     // methods
             m_system->assemble<1>(false);
             m_fevals += 1;
             m_gevals += 1;
-            
-            Vector x = m_system->x();
-            Vector direction = -m_system->g();
+
+            direction = -m_system->g();
 
             m_rnorm = direction.norm();
+            
+            Log::info(2, "The norm of the residual is {}", m_rnorm);
 
             if (m_rnorm < m_rtol) {
                 break;
@@ -462,9 +481,21 @@ public:     // methods
 
             const double rate = linesearch_morethuente(x, direction, 1.0);
 
-            Vector delta = rate * direction;
+            delta = rate * direction;
+            
+            Log::info(2, "The line search rate is {}", rate);
 
-            m_system->set_x(x + delta);
+            m_xnorm = delta.norm();
+            
+            Log::info(2, "The norm of the step is {}", m_xnorm);
+
+            if (m_xnorm < m_xtol) {
+                break;
+            }
+
+            x += delta;
+
+            m_system->set_x(x);
 
             m_iterations += 1;
             
