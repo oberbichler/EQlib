@@ -5,6 +5,8 @@
 #include "Objective.h"
 #include "Settings.h"
 
+#include <Eigen/PardisoSupport>
+
 #include <sparsehash/dense_hash_map>
 
 #include <tsl/robin_set.h>
@@ -69,6 +71,8 @@ private:    // variables
     Vector m_df;
     Sparse m_dg;
     Sparse m_hl;
+
+    Eigen::PardisoLDLT<Sparse, Eigen::Lower> m_linear_solver;
 
 public:     // constructors
     Problem(
@@ -460,12 +464,42 @@ public:     // methods
                 }
             }
         }
+
+        m_linear_solver.analyzePattern(m_hl);
     }
 
-    Pointer<Problem> clone() const
+    Vector hl_inv_v(Ref<const Vector> v)
     {
-        return new_<Problem>(*this);
+        if (nb_variables() == 0) {
+            return Vector(0);
+        }
+
+        m_linear_solver.factorize(m_hl);
+
+        if (m_linear_solver.info() != Eigen::Success) {
+            throw std::runtime_error("Factorization failed");
+        }
+
+        Vector x(nb_variables());
+
+        x = m_linear_solver.solve(v);
+
+        if (m_linear_solver.info() != Eigen::Success) {
+            throw std::runtime_error("Solve failed");
+        }
+
+        return x;
     }
+
+    Vector hl_v(Ref<const Vector> v) const
+    {
+        return m_hl.selfadjointView<Eigen::Lower>() * v;
+    }
+
+    // Pointer<Problem> clone() const
+    // {
+    //     return new_<Problem>(*this);
+    // }
 
     bool parallel() const noexcept
     {
@@ -735,8 +769,10 @@ public:     // python
             .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
-            .def("clone", &Type::clone)
+            // .def("clone", &Type::clone)
             .def("compute", &Type::compute)
+            .def("hl_inv_v", &Type::hl_inv_v)
+            .def("hl_v", &Type::hl_v)
         ;
     }
 };
