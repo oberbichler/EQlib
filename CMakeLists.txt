@@ -79,10 +79,16 @@ endif()
 
 
 if(DEFINED WORHP_ROOT)
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${WORHP_ROOT}/bin")
+endif()
+
+find_library(WORHP_LIBRARY worhp)
+
+if(WORHP_LIBRARY)
     message("-- Found WORHP: ${WORHP_ROOT}")
     add_definitions(-DUSE_WORHP)
     target_include_directories(EQlib SYSTEM PRIVATE "${WORHP_ROOT}/include")
-    target_link_libraries(EQlib PRIVATE "${WORHP_ROOT}/bin/worhp.lib")
+    target_link_libraries(EQlib PRIVATE ${WORHP_LIBRARY})
 else()
     message("-- WORHP not found")
 endif()
