@@ -40,7 +40,7 @@ public:     // constructors
     { }
 
     Variable() noexcept
-    : Variable(0, 0, 0, 0, 0, false, "")
+    : Variable(0.0, 0.0, -infinity, infinity, false, 1.0, "")
     { }
 
     Variable(
@@ -49,7 +49,12 @@ public:     // constructors
         const double upper_bound,
         const bool is_fixed,
         const std::string name) noexcept
-    : Variable(value, value, lower_bound, upper_bound, 0.0, is_fixed, "")
+    : Variable(value, value, lower_bound, upper_bound, is_fixed, 1.0, "")
+    { }
+
+    Variable(
+        const double value) noexcept
+    : Variable(value, value, -infinity, infinity, false, 1.0, "")
     { }
 
 public:     // getters and setters
