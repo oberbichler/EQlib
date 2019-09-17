@@ -462,6 +462,11 @@ public:     // methods
         }
     }
 
+    Pointer<Problem> clone() const
+    {
+        return new_<Problem>(*this);
+    }
+
     bool parallel() const noexcept
     {
         return m_parallel;
@@ -729,6 +734,7 @@ public:     // python
             .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
+            .def("clone", &Type::clone)
             .def("compute", &Type::compute)
         ;
     }
