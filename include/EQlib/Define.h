@@ -12,6 +12,14 @@
 
 namespace EQlib {
 
+using index = std::ptrdiff_t;
+
+template <typename T>
+inline index length(const T& container) noexcept
+{
+    return static_cast<index>(container.size());
+}
+
 // --- memory
 
 template <typename T>

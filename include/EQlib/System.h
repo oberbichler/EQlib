@@ -7,8 +7,8 @@
 #include "Settings.h"
 #include "Timer.h"
 
-#include "LinearSolvers/EigenLinearSolver.h"
-#include "LinearSolvers/LinearSolver.h"
+#include "linear_solvers/EigenLinearSolver.h"
+#include "linear_solvers/LinearSolver.h"
 
 #include <sparsehash/dense_hash_map>
 
@@ -343,9 +343,24 @@ public:     // getters and setters
         return m_g;
     }
 
-    Sparse h() const
+    double g(const int index) const
+    {
+        return m_g(index);
+    }
+
+    const Sparse& h() const
     {
         return m_h;
+    }
+
+    double h(const int row, const int col) const
+    {
+        return m_h.coeff(row, col);
+    }
+
+    int h_nb_nonzeros() const
+    {
+        return static_cast<int>(m_h.nonZeros());
     }
 
     Vector h_inv_v(Ref<const Vector> v)
@@ -380,12 +395,39 @@ public:     // getters and setters
     }
     }
 
+    Vector delta() const
+    {
+        Vector result(nb_free_dofs());
+
+        for (index i = 0; i < length(result); i++) {
+            result(i) = dof(i)->delta();
+        }
+
+        return result;
+    }
+
+    void set_delta(Ref<const Vector> value) const
+    {
+        if (length(value) != nb_free_dofs()) {
+            throw std::runtime_error("Invalid size");
+        }
+
+        for (index i = 0; i < length(value); i++) {
+            dof(i)->set_delta(value[i]);
+        }
+    }
+
+    void set_delta(double* const value) const
+    {
+        set_delta(Map<const Vector>(value, nb_free_dofs()));
+    }
+
     Vector x() const
     {
         Vector result(nb_free_dofs());
 
         for (int i = 0; i < result.size(); i++) {
-            result[i] = m_dofs[i]->delta();
+            result[i] = m_dofs[i]->act_value();
         }
 
         return result;
@@ -398,8 +440,13 @@ public:     // getters and setters
         }
 
         for (int i = 0; i < value.size(); i++) {
-            m_dofs[i]->set_delta(value[i]);
+            m_dofs[i]->set_act_value(value[i]);
         }
+    }
+
+    void set_x(double* const values) const
+    {
+        set_x(Map<const Vector>(values, nb_free_dofs()));
     }
 
     Vector residual() const
@@ -867,15 +914,20 @@ public:     // python
             // properties
             .def_property("load_factor", &Type::load_factor,
                 &Type::set_load_factor)
-            .def_property("x", &Type::x, &Type::set_x)
+            .def_property("delta", &Type::delta,
+                py::overload_cast<Ref<const Vector>>(&Type::set_delta, py::const_))
+            .def_property("x", &Type::x,
+                py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
             // readonly properties
             .def_property_readonly("dofs", &Type::dofs)
             .def_property_readonly("nb_dofs", &Type::nb_dofs)
             .def_property_readonly("nb_elements", &Type::nb_elements)
             .def_property_readonly("elements", &Type::elements)
             .def_property_readonly("f", &Type::f)
-            .def_property_readonly("g", &Type::g)
-            .def_property_readonly("h", &Type::h)
+            .def_property_readonly("g",
+                py::overload_cast<void>(&Type::g, py::const_))
+            .def_property_readonly("h",
+                py::overload_cast<>(&Type::h, py::const_))
             .def_property_readonly("message", &Type::message)
             .def_property_readonly("nb_free_dofs", &Type::nb_free_dofs)
             .def_property_readonly("nb_fixed_dofs", &Type::nb_fixed_dofs)

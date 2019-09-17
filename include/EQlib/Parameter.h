@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Define.h"
-#include "Parameter.h"
 
 #include <limits>
 #include <string>

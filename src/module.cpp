@@ -6,14 +6,30 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include <EQlib/Constraint.h>
 #include <EQlib/Element.h>
-#include <EQlib/LBfgs.h>
-#include <EQlib/LevenbergMarquardt.h>
+#include <EQlib/Equation.h>
 #include <EQlib/Log.h>
-#include <EQlib/NewtonDescent.h>
 #include <EQlib/Node.h>
+#include <EQlib/Objective.h>
 #include <EQlib/Parameter.h>
+#include <EQlib/Problem.h>
+#include <EQlib/Point.h>
 #include <EQlib/System.h>
+#include <EQlib/Variable.h>
+
+#include <EQlib/optimizer/GradientDescent.h>
+#ifdef USE_IPOPT
+#include <EQlib/optimizer/IPOpt.h>
+#endif
+#include <EQlib/optimizer/NewtonRaphson.h>
+#ifdef USE_WORHP
+#include <EQlib/optimizer/Worhp.h>
+#endif
+
+#include <EQlib/solver/LBfgs.h>
+#include <EQlib/solver/LevenbergMarquardt.h>
+#include <EQlib/solver/NewtonDescent.h>
 
 #include <EQlib/Elements/BoundaryConstraint.h>
 #include <EQlib/Elements/EqualSubdivisionConstraint.h>
@@ -21,10 +37,6 @@
 #include <EQlib/Elements/NodalEquilibrium.h>
 
 #include <EQlib/Version.h>
-
-#ifdef IPOPT
-#include <EQlib/IPOpt.h>
-#endif
 
 PYBIND11_MODULE(EQlib, m) {
     m.doc() = "EQlib by Thomas Oberbichler";
@@ -62,6 +74,9 @@ PYBIND11_MODULE(EQlib, m) {
     // Node
     EQlib::Node::register_python(m);
 
+    // Point
+    EQlib::Point::register_python(m);
+
     // Parameter
     EQlib::Parameter::register_python(m);
 
@@ -74,21 +89,41 @@ PYBIND11_MODULE(EQlib, m) {
     // Timer
     EQlib::Timer::register_python(m);
 
-    // --- Solver
 
-#ifdef IPOPT
-    // IPOpt
-    EQlib::IPOpt::register_python(m);
-#endif
+    // --- solver
+
+    auto solver = m.def_submodule("solver");
 
     // LBfgs
-    EQlib::LBfgs::register_python(m);
+    EQlib::LBfgs::register_python(solver);
 
     // LevenbergMarquardt
-    EQlib::LevenbergMarquardt::register_python(m);
+    EQlib::LevenbergMarquardt::register_python(solver);
 
     // NewtonDescent
-    EQlib::NewtonDescent::register_python(m);
+    EQlib::NewtonDescent::register_python(solver);
+
+
+    // --- optimizer
+
+    auto optimizer = m.def_submodule("optimizer");
+
+    // GradientDescent
+    EQlib::GradientDescent::register_python(optimizer);
+
+    // IPOpt
+    #ifdef USE_IPOPT
+    EQlib::IPOpt::register_python(optimizer);
+    #endif
+
+    // NewtonRaphson
+    EQlib::NewtonRaphson::register_python(optimizer);
+
+    // Worhp
+    #ifdef USE_WORHP
+    EQlib::Worhp::register_python(optimizer);
+    #endif
+
 
     // --- Elements
 
@@ -103,4 +138,20 @@ PYBIND11_MODULE(EQlib, m) {
 
     // NodalEquilibrium
     EQlib::NodalEquilibrium::register_python(m);
+
+
+    // Equation
+    EQlib::Equation::register_python(m);
+
+    // Variable
+    EQlib::Variable::register_python(m);
+
+    // Objective
+    EQlib::Objective::register_python(m);
+
+    // Constraint
+    EQlib::Constraint::register_python(m);
+
+    // Problem
+    EQlib::Problem::register_python(m);
 }
