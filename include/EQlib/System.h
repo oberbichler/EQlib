@@ -7,8 +7,8 @@
 #include "Settings.h"
 #include "Timer.h"
 
-#include "LinearSolvers/EigenLinearSolver.h"
-#include "LinearSolvers/LinearSolver.h"
+#include "linear_solvers/EigenLinearSolver.h"
+#include "linear_solvers/LinearSolver.h"
 
 #include <sparsehash/dense_hash_map>
 
