@@ -80,7 +80,7 @@ public:     // methods
             HyperJet dy = y_b - y_a;
             HyperJet dz = z_b - z_a;
 
-            lengths[i - 1] += (dx * dx + dy * dy + dz * dz).sqrt();
+            lengths[i - 1] = (dx * dx + dy * dy + dz * dz).sqrt();
 
             x_a = x_b;
             y_a = y_b;
