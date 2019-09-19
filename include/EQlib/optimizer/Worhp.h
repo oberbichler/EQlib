@@ -167,6 +167,8 @@ public:     // methods
         opt.n = m_problem->nb_variables();
         opt.m = m_problem->nb_equations();
 
+        const int nnz = (m_problem->hl().nonZeros() + n) / 2
+
         wsp.DF.nnz = m_problem->nb_variables();
         wsp.DG.nnz = m_problem->dg().nonZeros();
         wsp.HM.nnz = m_problem->hl().nonZeros();
@@ -199,9 +201,9 @@ public:     // methods
 
         if (wsp.DG.NeedStructure) {
             const Sparse dg = m_problem->dg();
-            
+
             int i = 0;
-            
+
             for (int k = 0; k < dg.outerSize(); ++k) {
                 for (Sparse::InnerIterator it(dg, k); it; ++it){
                     const int row = it.row() + 1;
