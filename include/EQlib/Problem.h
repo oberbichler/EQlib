@@ -73,6 +73,7 @@ private:    // variables
     Sparse m_dg;
     Sparse m_hl;
 
+    bool m_linear_solver_initialized;
     Eigen::PardisoLDLT<Sparse, Eigen::Lower> m_linear_solver;
 
 public:     // constructors
@@ -83,6 +84,7 @@ public:     // constructors
     : m_objectives(std::move(objectives))
     , m_constraints(std::move(constraints))
     , m_sigma(1.0)
+    , m_linear_solver_initialized(false)
     {
         Log::info(1, "==> Initialize problem...");
 
@@ -476,14 +478,17 @@ public:     // methods
                 }
             }
         }
-
-        m_linear_solver.analyzePattern(m_hl);
     }
 
     Vector hl_inv_v(Ref<const Vector> v)
     {
         if (nb_variables() == 0) {
             return Vector(0);
+        }
+
+        if (!m_linear_solver_initialized) {
+            m_linear_solver.analyzePattern(m_hl);
+            m_linear_solver_initialized = true;
         }
 
         m_linear_solver.factorize(m_hl);
