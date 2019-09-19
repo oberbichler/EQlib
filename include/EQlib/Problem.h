@@ -94,7 +94,7 @@ public:     // constructors
         const auto nb_elements_g = length(m_constraints);
 
         Log::info(2, "The objective consists of {} elements", nb_elements_f);
-        Log::info(2, "The constraints consists of {} elements", nb_elements_g);
+        Log::info(2, "The constraints consist of {} elements", nb_elements_g);
 
 
         Log::info(3, "Getting equations and variables...");
