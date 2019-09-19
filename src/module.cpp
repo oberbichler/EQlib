@@ -35,6 +35,7 @@
 #endif
 
 #include <EQlib/Elements/BoundaryConstraint.h>
+#include <EQlib/Elements/EqualityConstraint.h>
 #include <EQlib/Elements/EqualSubdivisionConstraint.h>
 #include <EQlib/Elements/LengthConstraint.h>
 #include <EQlib/Elements/NodalEquilibrium.h>
@@ -135,6 +136,9 @@ PYBIND11_MODULE(EQlib, m) {
 
     // BoundaryConstraint
     EQlib::BoundaryConstraint::register_python(m);
+
+    // EqualityConstraint
+    EQlib::EqualityConstraint::register_python(m);
 
     // EqualSubdivisionConstraint
     EQlib::EqualSubdivisionConstraint::register_python(m);
