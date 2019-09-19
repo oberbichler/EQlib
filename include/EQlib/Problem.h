@@ -370,7 +370,7 @@ public:     // constructors
 
             for (index col = 0; col < n; col++) {
                 for (const index row : m_pattern_hl[col]) {
-                    m_hl.insert(row, col);
+                    m_hl.insert(row, col) = 1;
                 }
             }
         }
