@@ -167,7 +167,7 @@ public:     // methods
         opt.n = m_problem->nb_variables();
         opt.m = m_problem->nb_equations();
 
-        const int nnz = (m_problem->hl().nonZeros() + n) / 2
+        const int nnz = (m_problem->hl().nonZeros() + opt.n) / 2;
 
         wsp.DF.nnz = m_problem->nb_variables();
         wsp.DG.nnz = m_problem->dg().nonZeros();
