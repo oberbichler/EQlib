@@ -377,13 +377,22 @@ public:     // constructors
     }
 
 public:     // methods
+    template <index TOrder>
     void compute()
     {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
         m_f = 0.0;
         m_g.setZero();
-        m_df.setZero();
-        dg_values().setZero();
-        hl_values().setZero();
+
+        if constexpr(TOrder > 0) {
+            m_df.setZero();
+            dg_values().setZero();
+        }
+
+        if constexpr(TOrder > 1) {
+            hl_values().setZero();
+        }
 
         for (index i = 0; i < length(m_objectives); i++) {
             const auto& variable_indices = m_element_f_variable_indices[i];
@@ -392,17 +401,33 @@ public:     // methods
 
             const auto n = m_element_f_nb_variables[i];
 
-            Vector g(n);
-            Matrix h(n, n);
+            Vector g;
+            Matrix h;
+
+            if constexpr(TOrder > 0) {
+                g = Vector(n);
+            }
+
+            if constexpr(TOrder > 1) {
+                h = Matrix(n, n);
+            }
 
             const double f = objective->compute(g, h);
 
             m_f += f;
 
+            if constexpr(TOrder < 1) {
+                continue;
+            }
+
             for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                 const auto col = variable_indices[col_i];
 
                 df(col.global) += g(col.local);
+
+                if constexpr(TOrder < 2) {
+                    continue;
+                }
 
                 for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
@@ -413,8 +438,14 @@ public:     // methods
         }
 
         m_f *= sigma();
-        m_df *= sigma();
-        hl_values() *= sigma();
+
+        if constexpr(TOrder > 0) {
+            m_df *= sigma();
+        }
+
+        if constexpr(TOrder > 0) {
+            hl_values() *= sigma();
+        }
 
         for (index i = 0; i < length(m_constraints); i++) {
             const auto& equation_indices = m_element_g_equation_indices[i];
@@ -425,7 +456,7 @@ public:     // methods
             const auto m = m_element_g_nb_equations[i];
             const auto n = m_element_g_nb_variables[i];
 
-            if (n == 0 || m == 0) {
+            if (n == 0 || m == 0) { // FIXME: check reduces counts
                 continue;
             }
 
@@ -452,6 +483,10 @@ public:     // methods
 
                 g(equation_index.global) += fs(equation_index.local);
 
+                if constexpr(TOrder < 1) {
+                    continue;
+                }
+
                 auto& local_g = gs[equation_index.local];
                 auto& local_h = hs[equation_index.local];
 
@@ -462,6 +497,10 @@ public:     // methods
 
                     dg(equation_index.global, col.global) += local_g(col.local);
 
+                    if constexpr(TOrder < 2) {
+                        continue;
+                    }
+
                     for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                         const auto row = variable_indices[row_i];
 
@@ -471,12 +510,29 @@ public:     // methods
             }
         }
 
-        if (m_general_hl) {
+        if (TOrder > 1 && m_general_hl) {
             for (index col = 0; col < nb_variables(); col++) {
                 for (index row = 0; row < col; row++) {
                     hl(row, col) = hl(col, row);
                 }
             }
+        }
+    }
+
+    void compute(const index order = 2)
+    {
+        switch (order) {
+        case 0:
+            compute<0>();
+            break;
+        case 1:
+            compute<1>();
+            break;
+        case 2:
+            compute<2>();
+            break;
+        default:
+            throw std::invalid_argument("order");
         }
     }
 
@@ -787,7 +843,7 @@ public:     // python
                 py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
             // .def("clone", &Type::clone)
-            .def("compute", &Type::compute)
+            .def("compute", &Type::compute, "order"_a=2)
             .def("hl_inv_v", &Type::hl_inv_v)
             .def("hl_v", &Type::hl_v)
         ;
