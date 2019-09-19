@@ -128,6 +128,10 @@ public:     // constructors
 
         for (const auto& equations : equations_g) {
             for (const auto& equation : equations) {
+                if (!equation->is_active()) {
+                    continue;
+                }
+
                 const auto find = equation_set.find(equation);
 
                 if (find != equation_set.end()) {
