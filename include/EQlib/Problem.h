@@ -86,7 +86,7 @@ public:     // constructors
     {
         Log::info(1, "==> Initialize problem...");
 
-        m_general_hl = get_or_default(linear_solver, "general_hl", true);
+        m_general_hl = get_or_default(linear_solver, "general_hl", false);
 
         const auto nb_elements_f = length(m_objectives);
         const auto nb_elements_g = length(m_constraints);
