@@ -1,74 +1,30 @@
 #pragma once
 
+#include "../Define.h"
+#include "../Settings.h"
 #include "../System.h"
-
-#include <unsupported/Eigen/LevenbergMarquardt>
-
-#include <memory>
 
 namespace EQlib {
 
-class LevenbergMarquardt
+class NewtonDescentSolver
 {
 private:    // members
     Pointer<System<true>> m_system;
 
-    struct Functor
-    {
-        typedef double Scalar;
-        typedef int Index;
-        typedef Vector InputType;
-        typedef Vector ValueType;
-        using JacobianType = Sparse;
-        typedef Eigen::SparseQR<JacobianType, Eigen::COLAMDOrdering<int>> QRSolver;
-
-        enum {
-            InputsAtCompileTime = Eigen::Dynamic,
-            ValuesAtCompileTime = Eigen::Dynamic
-        };
-
-        Pointer<System<true>> m_system;
-
-        Functor(Pointer<System<true>> system)
-        : m_system(std::move(system))
-        { }
-
-        int operator()(const Vector &x, Vector &fvec) const
-        {
-            m_system->set_x(x);
-            m_system->assemble<1>(true);
-            fvec = m_system->g();
-            Log::info(2, "The value is {}", m_system->f());
-            return 0;
-        }
-
-        int df(const Vector &x, Sparse &fjac) const
-        {
-            m_system->set_x(x);
-            m_system->assemble<2>(true);
-            fjac = m_system->h();
-            return 0;
-        }
-
-        int values() const { return m_system->nb_free_dofs(); }
-
-        int inputs() const { return m_system->nb_free_dofs(); }
-    };
-
 private:    // methods
-    double linesearch_armijo(Ref<const Vector> x, const Ref<Vector> search_dir,
-        const double alpha_init = 1.0)
+    double linesearch_armijo(Ref<const Vector> x,
+        Ref<const Vector> search_dir, const double alpha_init = 1.0)
     {
         const double c = 0.2;
         const double rho = 0.9;
         double alpha = alpha_init;
 
         m_system->set_x(x + alpha * search_dir);
-        m_system->assemble<0>(true);
+        m_system->assemble<0>(false);
         double f = m_system->f();
 
         m_system->set_x(x);
-        m_system->assemble<1>(true);
+        m_system->assemble<1>(false);
         const double f_in = m_system->f();
         const Vector grad = m_system->g();
 
@@ -78,7 +34,7 @@ private:    // methods
             alpha *= rho;
 
             m_system->set_x(x + alpha * search_dir);
-            m_system->assemble<0>(true);
+            m_system->assemble<0>(false);
             f = m_system->f();
         }
 
@@ -92,7 +48,7 @@ private:    // methods
         double ak = alpha_init;
 
         m_system->set_x(x);
-        m_system->assemble<1>(true);
+        m_system->assemble<1>(false);
         double fval = m_system->f();
         Vector g = m_system->g();
 
@@ -171,7 +127,7 @@ private:    // methods
             x = wa + stp * s;
 
             m_system->set_x(x);
-            m_system->assemble<1>(true);
+            m_system->assemble<1>(false);
             f = m_system->f();
             g = m_system->g();
             nfev++;
@@ -416,25 +372,130 @@ private:    // methods
     }
 
 public:     // constructor
-    LevenbergMarquardt(Pointer<System<true>> system)
+    NewtonDescentSolver(Pointer<System<true>> system)
     : m_system(std::move(system))
-    { }
+    {
+    }
 
 public:     // method
-    void minimize(const int maxiter, const double rtol, const double xtol)
+    void minimize(const int maxiter, const double rtol, const double xtol,
+        const Settings& line_search)
     {
         // setup
 
         Log::info(1, "==> Minimizing nonlinear system...");
-        Log::info(2, "Using LM minimizer");
+        Log::info(2, "Using Newton Descent minimizer");
+
+        const auto line_search_type =
+            get_or_default(line_search, "type", "armijo");
+
+        std::function<double (Ref<const Vector>, Ref<const Vector>,
+            const double&)> line_search_function;
+
+        if (line_search_type == "none") {
+            line_search_function = [&](Ref<const Vector> x,
+                Ref<const Vector> search_dir, const double& alpha_init)
+            {
+                return alpha_init;
+            };
+        } else if (line_search_type == "armijo") {
+            line_search_function = [&](Ref<const Vector> x,
+                Ref<const Vector> search_dir, const double& alpha_init)
+            {
+                return linesearch_armijo(x, search_dir, alpha_init);
+            };
+        } else if (line_search_type == "more_thuente") {
+            line_search_function = [&](Ref<const Vector> x,
+                Ref<const Vector> search_dir, const double& alpha_init)
+            {
+                return linesearch_morethuente(x, search_dir, alpha_init);
+            };
+        }
+
+        Log::info(2, "Using Newton Descent minimizer");
+        Log::info(2, "Line Search: {}", line_search_type);
 
         Timer timer;
 
-        Functor functor(m_system);
+        const int nb_dofs = m_system->nb_free_dofs();
 
+        Vector target(nb_dofs);
+
+        for (int i = 0; i < nb_dofs; i++) {
+            target[i] = m_system->dof(i)->target();
+        }
+
+        if (m_system->load_factor() != 1.0) {
+            target *= m_system->load_factor();
+        }
+
+        Vector residual(nb_dofs);
         Vector x = m_system->x();
-        Eigen::LevenbergMarquardt<Functor> lm(functor);
-        lm.minimize(x);
+        Vector delta_x(nb_dofs);
+
+        for (int iteration = 1; ; iteration++) {
+            // check max iterations
+
+            if (iteration >= maxiter) {
+                Log::info(2, "Stopped because iteration >= {}", maxiter);
+                Log::warn("The maximum number of iterations has been reached");
+                break;
+            }
+
+            Log::info(2, "Iteration {}", iteration + 1);
+
+            m_system->assemble<2>(false);
+
+            Log::info(2, "The current value is {}", m_system->f());
+
+            // compute rnorm
+
+            residual = target - m_system->g();
+
+            const double rnorm = residual.norm();
+
+            Log::info(2, "The norm of the residual is {}", rnorm);
+
+            // check residual norm
+
+            if (rnorm < rtol) {
+                Log::info(2, "Stopped because rnorm < {}", rtol);
+                break;
+            }
+
+            // linear solve
+
+            m_system->add_diagonal(1e-5);
+
+            delta_x = m_system->h_inv_v(residual);
+
+            // linesearch
+
+            const double rate = line_search_function(x, delta_x, 1.0);
+
+            Log::info(2, "Linesearch rate = {}", rate);
+
+            if (rate != 1.0) {
+                delta_x *= rate;
+            }
+
+            x += delta_x;
+
+            m_system->set_x(x);
+
+            // compute xnorm
+
+            const double xnorm = delta_x.norm();
+
+            // check xnorm
+
+            Log::info(2, "The norm of the step is {}", xnorm);
+
+            if (xnorm < xtol) {
+                Log::info(2, "Stopped because xnorm < {}", xtol);
+                break;
+            }
+        }
 
         Log::info(1, "System minimized in {:.3f} sec", timer.ellapsed());
     }
@@ -446,12 +507,12 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::LevenbergMarquardt;
+        using Type = EQlib::NewtonDescentSolver;
 
-        py::class_<Type>(m, "LevenbergMarquardt")
+        py::class_<Type>(m, "NewtonDescentSolver")
             .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
-                "xtol"_a=1e-6)
+                "xtol"_a=1e-6, "line_search"_a=Settings())
         ;
     }
 };

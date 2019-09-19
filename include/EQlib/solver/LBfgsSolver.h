@@ -7,7 +7,7 @@
 
 namespace EQlib {
 
-class LBfgs
+class LBfgsSolver
 {
 private:    // members
     Pointer<System<true>> m_system;
@@ -344,7 +344,7 @@ protected:
     }
 
 public:     // constructor
-    LBfgs(Pointer<System<true>> system)
+    LBfgsSolver(Pointer<System<true>> system)
     : m_system(std::move(system))
     {
     }
@@ -462,9 +462,9 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::LBfgs;
+        using Type = EQlib::LBfgsSolver;
 
-        py::class_<Type>(m, "LBfgs")
+        py::class_<Type>(m, "LBfgsSolver")
             .def(py::init<Pointer<EQlib::System<true>>>(), "system"_a)
             .def("minimize", &Type::minimize, "maxiter"_a=100, "rtol"_a=1e-6,
                 "xtol"_a=1e-6)
