@@ -46,6 +46,7 @@ private:    // variables
     double m_sigma;
 
     bool m_parallel;
+    bool m_general_hl;
 
     Objectives m_objectives;
     Constraints m_constraints;
@@ -84,6 +85,8 @@ public:     // constructors
     , m_sigma(1.0)
     {
         Log::info(1, "==> Initialize problem...");
+
+        m_general_hl = get_or_default(linear_solver, "general_hl", true);
 
         const auto nb_elements_f = length(m_objectives);
         const auto nb_elements_g = length(m_constraints);
@@ -304,7 +307,7 @@ public:     // constructors
             for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                 const auto col = variable_indices[col_i];
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                for (index row_i = m_general_hl ? 0 : col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
                     m_pattern_hl[col.global].insert(row.global);
@@ -325,7 +328,7 @@ public:     // constructors
             for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                 const auto col = variable_indices[col_i];
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                for (index row_i = m_general_hl ? 0 : col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
                     m_pattern_hl[col.global].insert(row.global);
@@ -462,6 +465,14 @@ public:     // methods
 
                         hl(row.global, col.global) += local_h(row.local, col.local);
                     }
+                }
+            }
+        }
+
+        if (m_general_hl) {
+            for (index col = 0; col < nb_variables(); col++) {
+                for (index row = 0; row < col; row++) {
+                    hl(row, col) = hl(col, row);
                 }
             }
         }
