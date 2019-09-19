@@ -19,18 +19,18 @@
 #include <EQlib/Variable.h>
 
 #include <EQlib/optimizer/GradientDescent.h>
-#ifdef USE_IPOPT
+#ifdef EQLIB_USE_IPOPT
 #include <EQlib/optimizer/IPOpt.h>
 #endif
 #include <EQlib/optimizer/NewtonRaphson.h>
-#ifdef USE_WORHP
+#ifdef EQLIB_USE_WORHP
 #include <EQlib/optimizer/Worhp.h>
 #endif
 
 #include <EQlib/solver/LBfgsSolver.h>
 #include <EQlib/solver/LevenbergMarquardtSolver.h>
 #include <EQlib/solver/NewtonDescentSolver.h>
-#ifdef USE_WORHP
+#ifdef EQLIB_USE_WORHP
 #include <EQlib/solver/WorhpSolver.h>
 #endif
 
@@ -118,7 +118,7 @@ PYBIND11_MODULE(EQlib, m) {
     EQlib::GradientDescent::register_python(optimizer);
 
     // IPOpt
-    #ifdef USE_IPOPT
+    #ifdef EQLIB_USE_IPOPT
     EQlib::IPOpt::register_python(optimizer);
     #endif
 
@@ -126,7 +126,7 @@ PYBIND11_MODULE(EQlib, m) {
     EQlib::NewtonRaphson::register_python(optimizer);
 
     // Worhp
-    #ifdef USE_WORHP
+    #ifdef EQLIB_USE_WORHP
     EQlib::Worhp::register_python(optimizer);
     #endif
 
