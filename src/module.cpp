@@ -27,9 +27,9 @@
 #include <EQlib/optimizer/Worhp.h>
 #endif
 
-#include <EQlib/solver/LBfgs.h>
-#include <EQlib/solver/LevenbergMarquardt.h>
-#include <EQlib/solver/NewtonDescent.h>
+#include <EQlib/solver/LBfgsSolver.h>
+#include <EQlib/solver/LevenbergMarquardtSolver.h>
+#include <EQlib/solver/NewtonDescentSolver.h>
 #ifdef USE_WORHP
 #include <EQlib/solver/WorhpSolver.h>
 #endif
@@ -97,14 +97,14 @@ PYBIND11_MODULE(EQlib, m) {
 
     auto solver = m.def_submodule("solver");
 
-    // LBfgs
-    EQlib::LBfgs::register_python(solver);
+    // LBfgsSolver
+    EQlib::LBfgsSolver::register_python(solver);
 
-    // LevenbergMarquardt
-    EQlib::LevenbergMarquardt::register_python(solver);
+    // LevenbergMarquardtSolver
+    EQlib::LevenbergMarquardtSolver::register_python(solver);
 
-    // NewtonDescent
-    EQlib::NewtonDescent::register_python(solver);
+    // NewtonDescentSolver
+    EQlib::NewtonDescentSolver::register_python(solver);
 
     // Worhp
     EQlib::WorhpSolver::register_python(solver);
