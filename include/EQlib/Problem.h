@@ -363,14 +363,11 @@ public:     // constructors
             m_hl = Sparse(n, n);
             m_hl.reserve(sparse_size_hl);
 
-            index i = 0;
-
             for (index col = 0; col < n; col++) {
                 for (const index row : m_pattern_hl[col]) {
-                    m_hl.insert(row, col) = 1;
+                    m_hl.insert(row, col);
                 }
             }
-
         }
     }
 
