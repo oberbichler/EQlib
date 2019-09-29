@@ -9,6 +9,8 @@
 
 #include <sparsehash/dense_hash_map>
 
+#include <tbb/tbb.h>
+
 #include <tsl/robin_set.h>
 
 #include <tuple>
@@ -20,11 +22,137 @@ namespace EQlib {
 class Problem
 {
 private:    // types
-    using Objectives = std::vector<Pointer<Objective>>;
-    using Constraints = std::vector<Pointer<Constraint>>;
+    using ElementsF = std::vector<Pointer<Objective>>;
+    using ElementsG = std::vector<Pointer<Constraint>>;
 
     using Equations = std::vector<Pointer<Equation>>;
     using Variables = std::vector<Pointer<Variable>>;
+
+    class Data
+    {
+    private:    // variables
+        Vector m_data;
+        index m_n;
+        index m_m;
+        index m_nnz_dg;
+        index m_nnz_hl;
+
+    public:     // methods
+        void set_zero()
+        {
+            m_data.setZero();
+        }
+
+        void set_zero(const index n, const index m, const index nnz_dg, const index nnz_hl)
+        {
+            m_n = n;
+            m_m = m;
+            m_nnz_dg = nnz_dg;
+            m_nnz_hl = nnz_hl;
+
+            const index nb_entries = 1 + m + n + nnz_dg + nnz_hl;
+
+            m_data.resize(nb_entries);
+
+            m_data.setZero();
+        }
+
+        double& f() noexcept
+        {
+            return m_data[0];
+        }
+
+        double f() const noexcept
+        {
+            return m_data[0];
+        }
+
+        double& g(const index i) noexcept
+        {
+            return m_data[1 + i];
+        }
+
+        double g(const index i) const noexcept
+        {
+            return m_data[1 + i];
+        }
+
+        Map<Vector> g() noexcept
+        {
+            return Map<Vector>(m_data.data() + 1, m_m);
+        }
+
+        Map<const Vector> g() const noexcept
+        {
+            return Map<const Vector>(m_data.data() + 1, m_m);
+        }
+
+        double& df(const index i) noexcept
+        {
+            return m_data[1 + m_m + i];
+        }
+
+        double df(const index i) const noexcept
+        {
+            return m_data[1 + m_m + i];
+        }
+
+        Map<Vector> df() noexcept
+        {
+            return Map<Vector>(m_data.data() + 1 + m_m, m_n);
+        }
+
+        Map<const Vector> df() const noexcept
+        {
+            return Map<const Vector>(m_data.data() + 1 + m_m, m_n);
+        }
+
+        double& dg(const index i) noexcept
+        {
+            return m_data[1 + m_m + m_n + i];
+        }
+
+        double dg(const index i) const noexcept
+        {
+            return m_data[1 + m_m + m_n + i];
+        }
+
+        Map<Vector> dg() noexcept
+        {
+            return Map<Vector>(m_data.data() + 1 + m_m + m_n, m_nnz_dg);
+        }
+
+        Map<const Vector> dg() const noexcept
+        {
+            return Map<const Vector>(m_data.data() + 1 + m_m + m_n, m_nnz_dg);
+        }
+
+        double& hl(const index i) noexcept
+        {
+            return m_data[1 + m_m + m_n + m_nnz_dg + i];
+        }
+
+        double hl(const index i) const noexcept
+        {
+            return m_data[1 + m_m + m_n + m_nnz_dg + i];
+        }
+
+        Map<Vector> hl() noexcept
+        {
+            return Map<Vector>(m_data.data() + 1 + m_m + m_n + m_nnz_dg, m_nnz_hl);
+        }
+
+        Map<const Vector> hl() const noexcept
+        {
+            return Map<const Vector>(m_data.data() + 1 + m_m + m_n + m_nnz_dg, m_nnz_hl);
+        }
+
+        Data& operator+=(const Data& rhs)
+        {
+            m_data += rhs.m_data;
+            return *this;
+        }
+    };
 
     struct Index
     {
@@ -48,8 +176,8 @@ private:    // variables
     bool m_parallel;
     bool m_general_hl;
 
-    Objectives m_objectives;
-    Constraints m_constraints;
+    ElementsF m_elements_f;
+    ElementsG m_elements_g;
 
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
@@ -67,9 +195,9 @@ private:    // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
-    double m_f;
-    Vector m_g;
-    Vector m_df;
+    Data m_data;
+    tbb::combinable<Data> m_local_data;
+
     Sparse m_dg;
     Sparse m_hl;
 
@@ -78,20 +206,21 @@ private:    // variables
 
 public:     // constructors
     Problem(
-        Objectives objectives,
-        Constraints constraints,
+        ElementsF elements_f,
+        ElementsG elements_g,
         Settings linear_solver)
-    : m_objectives(std::move(objectives))
-    , m_constraints(std::move(constraints))
+    : m_elements_f(std::move(elements_f))
+    , m_elements_g(std::move(elements_g))
     , m_sigma(1.0)
     , m_linear_solver_initialized(false)
+    , m_parallel(false)
     {
         Log::info(1, "==> Initialize problem...");
 
         m_general_hl = get_or_default(linear_solver, "general_hl", false);
 
-        const auto nb_elements_f = length(m_objectives);
-        const auto nb_elements_g = length(m_constraints);
+        const auto nb_elements_f = length(m_elements_f);
+        const auto nb_elements_g = length(m_elements_g);
 
         Log::info(2, "The objective consists of {} elements", nb_elements_f);
         Log::info(2, "The constraints consist of {} elements", nb_elements_g);
@@ -109,7 +238,7 @@ public:     // constructors
         std::vector<Variables> variables_g(nb_elements_g);
 
         for (index i = 0; i < nb_elements_f; i++) {
-            const auto& element = *m_objectives[i];
+            const auto& element = *m_elements_f[i];
 
             variables_f[i] = element.variables();
 
@@ -117,7 +246,7 @@ public:     // constructors
         }
 
         for (index i = 0; i < nb_elements_g; i++) {
-            const auto& element = *m_constraints[i];
+            const auto& element = *m_elements_g[i];
 
             equations_g[i] = element.equations();
             variables_g[i] = element.variables();
@@ -303,7 +432,7 @@ public:     // constructors
         std::vector<tsl::robin_set<index>> m_pattern_dg(n);
         std::vector<tsl::robin_set<index>> m_pattern_hl(n);
 
-        for (index i = 0; i < length(m_objectives); i++) {
+        for (index i = 0; i < length(m_elements_f); i++) {
             const auto& variable_indices = m_element_f_variable_indices[i];
 
             for (index col_i = 0; col_i < length(variable_indices); col_i++) {
@@ -317,7 +446,7 @@ public:     // constructors
             }
         }
 
-        for (index i = 0; i < length(m_constraints); i++) {
+        for (index i = 0; i < length(m_elements_g); i++) {
             const auto& equation_indices = m_element_g_equation_indices[i];
             const auto& variable_indices = m_element_g_variable_indices[i];
 
@@ -349,55 +478,19 @@ public:     // constructors
 
         Log::info(3, "Allocate memory...");
 
-        m_g = Vector(m);
-
-        m_df = Vector(n);
-
-        if (m > 0 && n > 0) {
-            m_dg = Sparse(m, n);
-            m_dg.reserve(sparse_size_dg);
-
-            for (index col = 0; col < n; col++) {
-                for (const index row : m_pattern_dg[col]) {
-                    m_dg.insert(row, col) = 1;
-                }
-            }
-        }
-
-        if (n > 0) {
-            m_hl = Sparse(n, n);
-            m_hl.reserve(sparse_size_hl);
-
-            for (index col = 0; col < n; col++) {
-                for (const index row : m_pattern_hl[col]) {
-                    m_hl.insert(row, col) = 1;
-                }
-            }
-        }
+        m_data.set_zero(n, m, 0, 0);
     }
 
-public:     // methods
-    template <index TOrder>
-    void compute()
+private:    // methods: computation
+    template <index TOrder, typename TBegin, typename TEnd>
+    void compute_elements_f(Data& data, const TBegin& begin, const TEnd& end)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        m_f = 0.0;
-        m_g.setZero();
-
-        if constexpr(TOrder > 0) {
-            m_df.setZero();
-            dg_values().setZero();
-        }
-
-        if constexpr(TOrder > 1) {
-            hl_values().setZero();
-        }
-
-        for (index i = 0; i < length(m_objectives); i++) {
+        for (index i = begin; i != end; ++i) {
             const auto& variable_indices = m_element_f_variable_indices[i];
 
-            const auto& objective = m_objectives[i];
+            const auto& objective = m_elements_f[i];
 
             const auto n = m_element_f_nb_variables[i];
 
@@ -414,16 +507,16 @@ public:     // methods
 
             const double f = objective->compute(g, h);
 
-            m_f += f;
+            data.f() += f;
 
             if constexpr(TOrder < 1) {
                 continue;
             }
 
-            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
+            for (index col_i = 0; col_i != length(variable_indices); ++col_i) {
                 const auto col = variable_indices[col_i];
 
-                df(col.global) += g(col.local);
+                data.df(col.global) += g(col.local);
 
                 if constexpr(TOrder < 2) {
                     continue;
@@ -432,26 +525,22 @@ public:     // methods
                 for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    hl(row.global, col.global) += h(row.local, col.local);
+                    // hl(row.global, col.global) += h(row.local, col.local);
                 }
             }
         }
+    }
 
-        m_f *= sigma();
+    template <index TOrder, typename TBegin, typename TEnd>
+    void compute_elements_g(Data& data, const TBegin& begin, const TEnd& end)
+    {
+        static_assert(0 <= TOrder && TOrder <= 2);
 
-        if constexpr(TOrder > 0) {
-            m_df *= sigma();
-        }
-
-        if constexpr(TOrder > 0) {
-            hl_values() *= sigma();
-        }
-
-        for (index i = 0; i < length(m_constraints); i++) {
+        for (index i = begin; i != end; ++i) {
             const auto& equation_indices = m_element_g_equation_indices[i];
             const auto& variable_indices = m_element_g_variable_indices[i];
 
-            const auto& constraint = m_constraints[i];
+            const auto& constraint = m_elements_g[i];
 
             const auto m = m_element_g_nb_equations[i];
             const auto n = m_element_g_nb_variables[i];
@@ -481,7 +570,7 @@ public:     // methods
             for (const auto& equation_index : equation_indices) {
                 const auto& equation = m_equations[equation_index.global];
 
-                g(equation_index.global) += fs(equation_index.local);
+                data.g(equation_index.global) += fs(equation_index.local);
 
                 if constexpr(TOrder < 1) {
                     continue;
@@ -495,47 +584,82 @@ public:     // methods
                 for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    dg(equation_index.global, col.global) += local_g(col.local);
+                    // dg(equation_index.global, col.global) += local_g(col.local);
 
-                    if constexpr(TOrder < 2) {
-                        continue;
-                    }
+                    // if constexpr(TOrder < 2) {
+                    //     continue;
+                    // }
 
-                    for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                        const auto row = variable_indices[row_i];
+                    // for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                    //     const auto row = variable_indices[row_i];
 
-                        hl(row.global, col.global) += local_h(row.local, col.local);
-                    }
-                }
-            }
-        }
-
-        if (TOrder > 1 && m_general_hl) {
-            for (index col = 0; col < nb_variables(); col++) {
-                for (index row = 0; row < col; row++) {
-                    hl(row, col) = hl(col, row);
+                    //     hl(row.global, col.global) += local_h(row.local, col.local);
+                    // }
                 }
             }
         }
     }
 
+public:     // methods: computation
     void compute(const index order = 2)
     {
-        switch (order) {
-        case 0:
-            compute<0>();
-            break;
-        case 1:
-            compute<1>();
-            break;
-        case 2:
-            compute<2>();
-            break;
-        default:
-            throw std::invalid_argument("order");
+        m_data.set_zero();
+
+        if (!m_parallel) {    
+            switch (order) {
+            case 0:
+                compute_elements_f<0>(m_data, 0, nb_elements_f());
+                compute_elements_g<0>(m_data, 0, nb_elements_g());
+                break;
+            case 1:
+                compute_elements_f<1>(m_data, 0, nb_elements_f());
+                compute_elements_g<1>(m_data, 0, nb_elements_g());
+                break;
+            case 2:
+                compute_elements_f<2>(m_data, 0, nb_elements_f());
+                compute_elements_g<2>(m_data, 0, nb_elements_g());
+                break;
+            default:
+                throw std::invalid_argument("order");
+            }
+        } else {
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 1000),
+                [&](const tbb::blocked_range<index>& range) {
+                    Log::info(5, "Launch kernel with {} elements", range.size());
+                    auto& local_data = m_local_data.local();
+                    local_data.set_zero(nb_variables(), nb_equations(), 0, 0);
+                    compute_elements_f<2>(local_data, range.begin(), range.end());
+                }
+            );
+        
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 1000),
+                [&](const tbb::blocked_range<index>& range) {
+                    Log::info(5, "Launch kernel with {} elements", range.size());
+                    auto& local_data = m_local_data.local();
+                    local_data.set_zero(nb_variables(), nb_equations(), 0, 0);
+                    compute_elements_g<2>(local_data, range.begin(), range.end());
+                }
+            );
+
+            Log::info(5, "Combine results...");
+
+            m_local_data.combine_each([&](const Data& local) {
+                m_data += local;
+            });
+        }
+
+        m_data.f() *= sigma();
+
+        if (order > 0) {
+            m_data.df() *= sigma();
+        }
+
+        if (order > 1) {
+            m_data.hl() *= sigma();
         }
     }
 
+public:     // methods
     Vector hl_inv_v(Ref<const Vector> v)
     {
         if (nb_variables() == 0) {
@@ -574,6 +698,7 @@ public:     // methods
     //     return new_<Problem>(*this);
     // }
 
+public:     // methods: model properties
     bool parallel() const noexcept
     {
         return m_parallel;
@@ -589,6 +714,47 @@ public:     // methods
         return !m_equations.empty();
     }
 
+    index nb_elements_f() const noexcept
+    {
+        return length(m_elements_f);
+    }
+
+    index nb_elements_g() const noexcept
+    {
+        return length(m_elements_g);
+    }
+
+    const std::vector<Pointer<Equation>>& equations() const noexcept
+    {
+        return m_equations;
+    }
+
+    const std::vector<Pointer<Variable>>& variables() const noexcept
+    {
+        return m_variables;
+    }
+
+    index nb_equations() const noexcept
+    {
+        return length(m_equations);
+    }
+
+    index nb_variables() const noexcept
+    {
+        return length(m_variables);
+    }
+
+    const Pointer<Variable>& variable(const index index) const
+    {
+        return m_variables.at(index);
+    }
+
+    const Pointer<Equation>& equation(const index index) const
+    {
+        return m_equations.at(index);
+    }
+
+public:     // methods: input
     Vector delta() const
     {
         Vector result(nb_variables());
@@ -707,102 +873,102 @@ public:     // methods
         m_sigma = value;
     }
 
-    const std::vector<Pointer<Equation>>& equations() const noexcept
-    {
-        return m_equations;
-    }
-
-    const std::vector<Pointer<Variable>>& variables() const noexcept
-    {
-        return m_variables;
-    }
-
-    index nb_equations() const noexcept
-    {
-        return length(m_equations);
-    }
-
-    index nb_variables() const noexcept
-    {
-        return length(m_variables);
-    }
-
-    const Pointer<Variable>& variable(const index index) const
-    {
-        return m_variables.at(index);
-    }
-
-    const Pointer<Equation>& equation(const index index) const
-    {
-        return m_equations.at(index);
-    }
-
+public:     // methods: output
     double f() const noexcept
     {
-        return m_f;
+        return m_data.f();
     }
 
-    const Vector& g() const noexcept
+    void set_f(const double value) noexcept
     {
-        return m_g;
+        m_data.f() = value;
+    }
+
+    Ref<Vector> g() noexcept
+    {
+        return m_data.g();
+    }
+
+    Ref<const Vector> g() const noexcept
+    {
+        return m_data.g();
     }
 
     double& g(const index index)
     {
-        return m_g(index);
+        return m_data.g(index);
     }
 
-    const Vector& df() const noexcept
+    Ref<Vector> df() noexcept
     {
-        return m_df;
+        return m_data.df();
+    }
+
+    Ref<const Vector> df() const noexcept
+    {
+        return m_data.df();
     }
 
     double& df(const index index)
     {
-        return m_df(index);
+        return m_data.df(index);
     }
 
-    const Sparse& dg() const noexcept
-    {
-        return m_dg;
-    }
+    // const Sparse& dg() const noexcept
+    // {
+    //     // FIXME: use m_data
+    //     return m_dg;
+    // }
 
     Ref<Vector> dg_values() noexcept
     {
-        return Map<Vector>(m_dg.valuePtr(), m_dg.nonZeros());
+        return m_data.dg();
+    }
+
+    Ref<const Vector> dg_values() const noexcept
+    {
+        return m_data.dg();
     }
 
     double& dg(const index index)
     {
-        return *(m_dg.valuePtr() + index);
+        return m_data.dg(index);
     }
 
-    double& dg(const index row, const index col)
-    {
-        return m_dg.coeffRef(row, col);
-    }
+    // double& dg(const index row, const index col)
+    // {
+    //     // FIXME: use m_data
+    //     return m_dg.coeffRef(row, col);
+    // }
 
-    const Sparse& hl() const noexcept
-    {
-        return m_hl;
-    }
+    // const Sparse& hl() const noexcept
+    // {
+    //     // FIXME: use m_data
+    //     return m_hl;
+    // }
 
     Ref<Vector> hl_values() noexcept
     {
-        return Map<Vector>(m_hl.valuePtr(), m_hl.nonZeros());
+        return m_data.hl();
+    }
+
+    Ref<const Vector> hl_values() const noexcept
+    {
+        return m_data.hl();
     }
 
     double& hl(const index index)
     {
-        return *(m_hl.valuePtr() + index);
+        return m_data.dg(index);
     }
 
-    double& hl(const index row, const index col)
-    {
-        return m_hl.coeffRef(row, col);
-    }
+    // double& hl(const index row, const index col)
+    // {
+    //     // FIXME: use m_data
+    //     return m_hl.coeffRef(row, col);
+    // }
 
-public:     // python
+public:     // methods: python
     template <typename TModule>
     static void register_python(TModule& m)
     {
@@ -816,21 +982,21 @@ public:     // python
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<Objectives, Constraints, Settings>(),
+            .def(py::init<ElementsF, ElementsG, Settings>(),
                 "objective"_a, "constraints"_a=py::list(),
                 "linear_solver"_a=Settings())
             // read-only properties
             .def_property_readonly("is_constrained", &Type::is_constrained)
             .def_property_readonly("equations", &Type::equations)
             .def_property_readonly("variables", &Type::variables)
-            .def_property_readonly("f", &Type::f)
-            .def_property_readonly("g", py::overload_cast<>(&Type::g, py::const_))
-            .def_property_readonly("df", py::overload_cast<>(&Type::df, py::const_))
-            .def_property_readonly("dg", py::overload_cast<>(&Type::dg, py::const_))
-            .def_property_readonly("hl", py::overload_cast<>(&Type::hl, py::const_))
+            .def_property_readonly("g", py::overload_cast<>(&Type::g))
+            .def_property_readonly("df", py::overload_cast<>(&Type::df))
+            .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
+            .def_property_readonly("hl_values", py::overload_cast<>(&Type::hl_values))
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
+            .def_property("f", &Type::f, &Type::set_f)
             .def_property("parallel", &Type::parallel, &Type::set_parallel)
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
             .def_property("delta",py::overload_cast<>(&Type::delta, py::const_),
@@ -842,8 +1008,8 @@ public:     // python
             .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
-            // .def("clone", &Type::clone)
-            .def("compute", &Type::compute, "order"_a=2)
+            // // .def("clone", &Type::clone)
+            .def("compute", &Type::compute, "order"_a=2, py::call_guard<py::gil_scoped_release>())
             .def("hl_inv_v", &Type::hl_inv_v)
             .def("hl_v", &Type::hl_v)
         ;
