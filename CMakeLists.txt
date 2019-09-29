@@ -96,6 +96,10 @@ else()
 endif()
 
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    target_compile_options(EQlib PUBLIC -fsized-deallocation)
+    target_compile_options(IGAlib PUBLIC -fsized-deallocation)
+endif()
 
 
 install(TARGETS EQlib IGAlib DESTINATION bin)
