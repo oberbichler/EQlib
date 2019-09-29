@@ -925,7 +925,7 @@ public:     // python
             .def_property_readonly("elements", &Type::elements)
             .def_property_readonly("f", &Type::f)
             .def_property_readonly("g",
-                py::overload_cast<void>(&Type::g, py::const_))
+                py::overload_cast<>(&Type::g, py::const_))
             .def_property_readonly("h",
                 py::overload_cast<>(&Type::h, py::const_))
             .def_property_readonly("message", &Type::message)
