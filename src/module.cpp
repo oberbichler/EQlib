@@ -108,7 +108,9 @@ PYBIND11_MODULE(EQlib, m) {
     EQlib::NewtonDescentSolver::register_python(solver);
 
     // Worhp
+    #ifdef EQLIB_USE_WORHP
     EQlib::WorhpSolver::register_python(solver);
+    #endif
 
 
     // --- optimizer
