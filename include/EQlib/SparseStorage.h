@@ -162,7 +162,7 @@ public:     // methods
 
         TIndex cumsum = 0;
 
-        for(TIndex j = 0; j < m; j++) {
+        for (TIndex j = 0; j < m; j++) {
             const auto temp  = m_ia[j];
             m_ia[j] = cumsum;
             cumsum += temp;
@@ -172,7 +172,7 @@ public:     // methods
 
         std::vector<TScalar> a_values {values};
 
-        for(TIndex i = 0; i < n; i++){
+        for (TIndex i = 0; i < n; i++){
             for(TIndex k = other.ia(i); k < other.ia(i + 1); k++){
                 const auto j = other.ja(k);
                 const auto dest = m_ia[j];
@@ -186,7 +186,7 @@ public:     // methods
 
         TIndex last = 0;
 
-        for(TIndex j = 0; j <= m; j++){
+        for (TIndex j = 0; j <= m; j++){
             const auto temp = m_ia[j];
             m_ia[j] = last;
             last = temp;
