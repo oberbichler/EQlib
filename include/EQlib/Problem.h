@@ -501,9 +501,13 @@ private:    // methods: computation
         static_assert(0 <= TOrder && TOrder <= 2);
 
         for (index i = begin; i != end; ++i) {
-            const auto& variable_indices = m_element_f_variable_indices[i];
+            const auto& element_f = m_elements_f[i];
 
-            const auto& objective = m_elements_f[i];
+            if (!element_f->is_active()) {
+                continue;
+            }
+
+            const auto& variable_indices = m_element_f_variable_indices[i];
 
             const auto n = m_element_f_nb_variables[i];
 
@@ -518,7 +522,7 @@ private:    // methods: computation
                 h = Matrix(n, n);
             }
 
-            const double f = objective->compute(g, h);
+            const double f = element_f->compute(g, h);
 
             data.f() += f;
 
@@ -550,10 +554,14 @@ private:    // methods: computation
         static_assert(0 <= TOrder && TOrder <= 2);
 
         for (index i = begin; i != end; ++i) {
+            const auto& element_g = m_elements_g[i];
+
+            if (!element_g->is_active()) {
+                continue;
+            }
+
             const auto& equation_indices = m_element_g_equation_indices[i];
             const auto& variable_indices = m_element_g_variable_indices[i];
-
-            const auto& constraint = m_elements_g[i];
 
             const auto m = m_element_g_nb_equations[i];
             const auto n = m_element_g_nb_variables[i];
@@ -578,7 +586,7 @@ private:    // methods: computation
                 hs.push_back(h);
             }
 
-            constraint->compute(fs, gs, hs);
+            element_g->compute(fs, gs, hs);
 
             for (const auto& equation_index : equation_indices) {
                 const auto& equation = m_equations[equation_index.global];
