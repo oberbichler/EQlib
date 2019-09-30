@@ -104,7 +104,7 @@ public:     // methods
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
             for (const auto j : pattern[i]) {
-                assert(j < TRowMajor ? m_cols : m_rows);
+                assert(j < (TRowMajor ? m_cols : m_rows));
                 *ja_it++ = static_cast<TIndex>(j);
             }
             
