@@ -1037,6 +1037,9 @@ public:     // methods: python
         using Holder = Pointer<Type>;
 
         const std::string name = "Problem";
+        
+        py::object scipy_sparse = py::module::import("scipy.sparse");
+        py::object csc_matrix = scipy_sparse.attr("csc_matrix");
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
@@ -1049,11 +1052,21 @@ public:     // methods: python
             .def_property_readonly("variables", &Type::variables)
             .def_property_readonly("g", py::overload_cast<>(&Type::g))
             .def_property_readonly("df", py::overload_cast<>(&Type::df))
-            // .def_property_readonly("dg", py::overload_cast<>(&Type::dg, py::const_))
+            .def_property_readonly("dg", [=](Type& self) {
+                return csc_matrix(
+                    std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
+                    std::make_pair(self.nb_equations(), self.nb_variables())
+                ).release();
+            })
             .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
             .def_property_readonly("dg_indptr", &Type::dg_indptr)
             .def_property_readonly("dg_indices", &Type::dg_indices)
-            // .def_property_readonly("hl", py::overload_cast<>(&Type::hl, py::const_))
+            .def_property_readonly("hl", [=](Type& self) {
+                return csc_matrix(
+                    std::make_tuple(self.hl_values(), self.hl_indices(), self.hl_indptr()),
+                    std::make_pair(self.nb_variables(), self.nb_variables())
+                ).release();
+            })
             .def_property_readonly("hl_values", py::overload_cast<>(&Type::hl_values))
             .def_property_readonly("hl_indptr", &Type::hl_indptr)
             .def_property_readonly("hl_indices", &Type::hl_indices)
