@@ -9,12 +9,25 @@ namespace EQlib {
 
 class Objective
 {
+private:    // variables
+    bool m_is_active;
+
 public:     // methods
-    Objective() { }
+    Objective() : m_is_active(true) { }
 
     virtual std::vector<Pointer<Variable>> variables() const = 0;
 
     virtual double compute(Ref<Vector> g, Ref<Matrix> h) const = 0;
+
+    bool is_active() const noexcept
+    {
+        return m_is_active;
+    }
+
+    void set_is_active(const bool value) noexcept
+    {
+        m_is_active = value;
+    }
 
 public:     // python
     template <typename T>
@@ -53,6 +66,7 @@ public:     // python
             .def(py::init<>())
             .def("variables", &Type::variables)
             .def("compute", &Type::compute, "g"_a, "h"_a)
+            .def_property("is_active", &Type::is_active, &Type::set_is_active)
         ;
     }
 };

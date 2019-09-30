@@ -10,8 +10,11 @@ namespace EQlib {
 
 class Constraint
 {
+private:    // variables
+    bool m_is_active;
+
 public:     // methods
-    Constraint() { }
+    Constraint() : m_is_active(true) { }
 
     virtual std::vector<Pointer<Equation>> equations() const = 0;
 
@@ -19,6 +22,16 @@ public:     // methods
 
     virtual void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs,
         const std::vector<Ref<Matrix>>& hs) const = 0;
+
+    bool is_active() const noexcept
+    {
+        return m_is_active;
+    }
+
+    void set_is_active(const bool value) noexcept
+    {
+        m_is_active = value;
+    }
 
 public:     // python
     template <typename T>
@@ -66,6 +79,7 @@ public:     // python
             .def("equations", &Type::equations)
             .def("variables", &Type::variables)
             .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
+            .def_property("is_active", &Type::is_active, &Type::set_is_active)
         ;
     }
 };
