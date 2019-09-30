@@ -501,9 +501,9 @@ private:    // methods: computation
         static_assert(0 <= TOrder && TOrder <= 2);
 
         for (index i = begin; i != end; ++i) {
-            const auto& element_f = m_elements_f[i];
+            const auto& element_f = *m_elements_f[i];
 
-            if (!element_f->is_active()) {
+            if (!element_f.is_active()) {
                 continue;
             }
 
@@ -522,7 +522,7 @@ private:    // methods: computation
                 h = Matrix(n, n);
             }
 
-            const double f = element_f->compute(g, h);
+            const double f = element_f.compute(g, h);
 
             data.f() += f;
 
@@ -554,9 +554,9 @@ private:    // methods: computation
         static_assert(0 <= TOrder && TOrder <= 2);
 
         for (index i = begin; i != end; ++i) {
-            const auto& element_g = m_elements_g[i];
+            const auto& element_g = *m_elements_g[i];
 
-            if (!element_g->is_active()) {
+            if (!element_g.is_active()) {
                 continue;
             }
 
@@ -586,7 +586,7 @@ private:    // methods: computation
                 hs.push_back(h);
             }
 
-            element_g->compute(fs, gs, hs);
+            element_g.compute(fs, gs, hs);
 
             for (const auto& equation_index : equation_indices) {
                 const auto& equation = m_equations[equation_index.global];
