@@ -294,7 +294,7 @@ public:     // constructors
 
         for (const auto& variables : variables_f) {
             for (const auto& variable : variables) {
-                if (variable->is_fixed()) {
+                if (!variable->is_active()) {
                     continue;
                 }
 
@@ -311,7 +311,7 @@ public:     // constructors
 
         for (const auto& variables : variables_g) {
             for (const auto& variable : variables) {
-                if (variable->is_fixed()) {
+                if (!variable->is_active()) {
                     continue;
                 }
 
@@ -367,7 +367,7 @@ public:     // constructors
             for (index local = 0; local < length(variables); local++) {
                 const auto& variable = variables[local];
 
-                if (variable->is_fixed()) {
+                if (!variable->is_active()) {
                     continue;
                 }
 
@@ -419,7 +419,7 @@ public:     // constructors
             for (index local = 0; local < length(variables); local++) {
                 const auto& variable = variables[local];
 
-                if (variable->is_fixed()) {
+                if (!variable->is_active()) {
                     continue;
                 }
 
