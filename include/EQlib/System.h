@@ -65,7 +65,7 @@ private:    // variables
 
     int m_stopping_reason;
 
-    Unique<LinearSolver> m_solver;
+    Unique<LinearSolverOld> m_solver;
 
     double m_load_factor;
 

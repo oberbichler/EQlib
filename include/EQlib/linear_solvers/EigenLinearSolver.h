@@ -25,7 +25,7 @@ struct EigenLinearSolverSetup<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>
 };
 
 template <typename TSolver>
-struct EigenLinearSolver : LinearSolver
+struct EigenLinearSolver : LinearSolverOld
 {
 private:    // variables
     TSolver m_solver;

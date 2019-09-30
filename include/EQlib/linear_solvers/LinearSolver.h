@@ -4,7 +4,7 @@
 
 namespace EQlib {
 
-struct LinearSolver
+struct LinearSolverOld
 {
     virtual void analyze(Ref<const Sparse> a) = 0;
 

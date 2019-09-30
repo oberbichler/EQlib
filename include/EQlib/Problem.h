@@ -2,11 +2,10 @@
 
 #include "Define.h"
 #include "Constraint.h"
+#include "LinearSolver.h"
 #include "Objective.h"
 #include "Settings.h"
 #include "SparseStorage.h"
-
-#include <Eigen/PardisoSupport>
 
 #include <sparsehash/dense_hash_map>
 
@@ -211,8 +210,7 @@ private:    // variables
     Data m_data;
     tbb::combinable<Data> m_local_data;
 
-    bool m_linear_solver_initialized;
-    Eigen::PardisoLDLT<Sparse, Eigen::Lower> m_linear_solver;
+    LinearSolver m_linear_solver;
 
 public:     // constructors
     Problem(
@@ -222,7 +220,6 @@ public:     // constructors
     : m_elements_f(std::move(elements_f))
     , m_elements_g(std::move(elements_g))
     , m_sigma(1.0)
-    , m_linear_solver_initialized(false)
     , m_parallel(false)
     {
         Log::info(1, "==> Initialize problem...");
@@ -712,22 +709,13 @@ public:     // methods
             return Vector(0);
         }
 
-        if (!m_linear_solver_initialized) {
-            m_linear_solver.analyzePattern(hl());
-            m_linear_solver_initialized = true;
-        }
-
-        m_linear_solver.factorize(hl());
-
-        if (m_linear_solver.info() != Eigen::Success) {
+        if (m_linear_solver.factorize(hl())) {
             throw std::runtime_error("Factorization failed");
         }
 
         Vector x(nb_variables());
 
-        x = m_linear_solver.solve(v);
-
-        if (m_linear_solver.info() != Eigen::Success) {
+        if (m_linear_solver.solve(v, x)) {
             throw std::runtime_error("Solve failed");
         }
 
