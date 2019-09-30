@@ -907,7 +907,7 @@ public:     // methods: input
         m_sigma = value;
     }
 
-public:     // methods: output
+public:     // methods: output f
     double f() const noexcept
     {
         return m_data.f();
@@ -918,6 +918,7 @@ public:     // methods: output
         m_data.f() = value;
     }
 
+public:     // methods: output g
     Ref<Vector> g() noexcept
     {
         return m_data.g();
@@ -933,6 +934,12 @@ public:     // methods: output
         return m_data.g(index);
     }
 
+    double g(const index index) const
+    {
+        return m_data.g(index);
+    }
+
+public:     // methods: output df
     Ref<Vector> df() noexcept
     {
         return m_data.df();
@@ -948,9 +955,14 @@ public:     // methods: output
         return m_data.df(index);
     }
 
+    double df(const index index) const
+    {
+        return m_data.df(index);
+    }
+
+public:     // methods: output dg
     Map<const Sparse> dg() const noexcept
     {
-        // FIXME: use m_data
         return Map<const Sparse>(nb_equations(), nb_variables(), 0, nullptr, nullptr, nullptr);
     }
 
@@ -979,19 +991,35 @@ public:     // methods: output
         return m_data.dg(index);
     }
 
-    // double& dg(const index row, const index col)
-    // {
-    //     // FIXME: use m_data
-    //     return m_dg.coeffRef(row, col);
-    // }
-
-    const Sparse& hl() const noexcept
+    double dg(const index index) const
     {
-        // FIXME: use m_data
+        return m_data.dg(index);
+    }
+
+    double& dg(const index row, const index col)
+    {
+        const auto index = m_dg_structure.coeff(m_data.dg(), row, col);
+        return m_data.dg(index);
+    }
+
+    double dg(const index row, const index col) const
+    {
+        const auto index = m_dg_structure.coeff(m_data.dg(), row, col);
+        return m_data.dg(index);
+    }
+
+public:     // methods: output hl
+    Map<const Sparse> hl() const noexcept
+    {
         return Map<const Sparse>(m_hl_structure.rows(), m_hl_structure.cols(), m_hl_structure.nnz(), m_hl_structure.ia().data(), m_hl_structure.ja().data(), m_data.hl_ptr());
     }
 
     Ref<Vector> hl_values() noexcept
+    {
+        return m_data.hl();
+    }
+
+    Ref<const Vector> hl_values() const noexcept
     {
         return m_data.hl();
     }
@@ -1006,21 +1034,27 @@ public:     // methods: output
         return m_hl_structure.ja();
     }
 
-    Ref<const Vector> hl_values() const noexcept
-    {
-        return m_data.hl();
-    }
-
     double& hl(const index index)
     {
-        return m_data.dg(index);
+        return m_data.hl(index);
     }
 
-    // double& hl(const index row, const index col)
-    // {
-    //     // FIXME: use m_data
-    //     return m_hl.coeffRef(row, col);
-    // }
+    double hl(const index index) const
+    {
+        return m_data.hl(index);
+    }
+
+    double& hl(const index row, const index col)
+    {
+        const auto index = m_hl_structure.coeff(m_data.hl(), row, col);
+        return m_data.hl(index);
+    }
+
+    double hl(const index row, const index col) const
+    {
+        const auto index = m_hl_structure.coeff(m_data.hl(), row, col);
+        return m_data.hl(index);
+    }
 
 public:     // methods: python
     template <typename TModule>
