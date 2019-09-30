@@ -78,6 +78,32 @@ public:     // methods
         return values[index];
     }
 
+    template <typename TContainer>
+    TScalar coeff(TContainer& values, const index row, const index col) const noexcept
+    {
+        assert(length(values) == nnz());
+        assert(row < rows());
+        assert(col < cols());
+
+        static TScalar dummy;
+
+        TIndex i = static_cast<TIndex>(TRowMajor ? row : col);
+        TIndex j = static_cast<TIndex>(TRowMajor ? col : row);
+
+        const auto lower = m_ja.begin() + m_ia[i];
+        const auto upper = m_ja.begin() + m_ia[i + 1];
+
+        const auto it = std::lower_bound(lower, upper, j);
+
+        if (*it != j || it == upper) {
+            return 0;
+        }
+
+        const auto index = std::distance(m_ja.begin(), it);
+
+        return values[index];
+    }
+
     template <typename TPattern>
     void set(const index rows, const index cols, const TPattern& pattern) noexcept
     {
