@@ -7,8 +7,7 @@
 #include "Settings.h"
 #include "Timer.h"
 
-#include "linear_solvers/EigenLinearSolver.h"
-#include "linear_solvers/LinearSolver.h"
+#include <Eigen/PardisoSupport>
 
 #include <sparsehash/dense_hash_map>
 
@@ -21,6 +20,89 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
+
+namespace EQlib {
+
+struct LinearSolverOld
+{
+    virtual void analyze(Ref<const Sparse> a) = 0;
+
+    virtual void factorize(Ref<const Sparse> a) = 0;
+
+    virtual void solve(Ref<const Vector> b, Ref<Vector> x) = 0;
+
+    virtual Eigen::ComputationInfo info() const = 0;
+};
+
+template <typename TSolver>
+struct EigenLinearSolverSetup
+{
+    static void apply(TSolver& solver)
+    {
+    }
+};
+
+template <>
+struct EigenLinearSolverSetup<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>
+{
+    static void apply(Eigen::PardisoLDLT<Sparse, Eigen::Upper>& solver)
+    {
+        solver.pardisoParameterArray()[1] = 3;
+    }
+};
+
+template <typename TSolver>
+struct EigenLinearSolver : LinearSolverOld
+{
+private:    // variables
+    TSolver m_solver;
+    bool is_analyzed;
+
+public:     // constructors
+    EigenLinearSolver() : is_analyzed(false)
+    {
+        EigenLinearSolverSetup<TSolver>::apply(m_solver);
+    }
+
+public:     // methods
+    void analyze(Ref<const Sparse> a)
+    {
+        if (is_analyzed) {
+            return;
+        }
+
+        m_solver.analyzePattern(a);
+
+        is_analyzed = true;
+    }
+
+    void factorize(Ref<const Sparse> a)
+    {
+        analyze(a);
+        m_solver.factorize(a);
+    }
+
+    void solve(Ref<const Vector> b, Ref<Vector> x)
+    {
+        x = m_solver.solve(b);
+    }
+
+    Eigen::ComputationInfo info() const
+    {
+        return m_solver.info();
+    }
+};
+
+using SparseLU = EigenLinearSolver<Eigen::SparseLU<Sparse>>;
+using SymmetricConjugateGradient = EigenLinearSolver<
+    Eigen::ConjugateGradient<Sparse, Eigen::Upper>>;
+using ConjugateGradient = EigenLinearSolver<Eigen::ConjugateGradient<Sparse,
+    Eigen::Lower | Eigen::Upper>>;
+using PardisoLU = EigenLinearSolver<Eigen::PardisoLU<Sparse>>;
+using PardisoLLT = EigenLinearSolver<Eigen::PardisoLLT<Sparse, Eigen::Upper>>;
+using PardisoLDLT = EigenLinearSolver<Eigen::PardisoLDLT<Sparse, Eigen::Upper>>;
+
+} // namespace EQlib
 
 namespace EQlib {
 
