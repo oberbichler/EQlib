@@ -613,75 +613,79 @@ private:    // methods: computation
         }
     }
 
+    template <typename TBegin, typename TEnd>
+    void compute_elements_f(const index order, Data& data, const TBegin& begin, const TEnd& end)
+    {
+        switch (order) {
+        case 0:
+            compute_elements_f<0>(m_data, begin, end);
+            break;
+        case 1:
+            compute_elements_f<1>(m_data, begin, end);
+            break;
+        case 2:
+            compute_elements_f<2>(m_data, begin, end);
+            break;
+        }
+    }
+
+    template <typename TBegin, typename TEnd>
+    void compute_elements_g(const index order, Data& data, const TBegin& begin, const TEnd& end)
+    {
+        switch (order) {
+        case 0:
+            compute_elements_g<0>(m_data, begin, end);
+            break;
+        case 1:
+            compute_elements_g<1>(m_data, begin, end);
+            break;
+        case 2:
+            compute_elements_g<2>(m_data, begin, end);
+            break;
+        }
+    }
+
 public:     // methods: computation
     void compute(const index order = 2)
     {
+        if (order < 0 || 2 < order) {
+            throw std::invalid_argument("order");
+        }
+
         m_data.set_zero();
 
         if (!m_parallel) {
-            switch (order) {
-            case 0:
-                compute_elements_f<0>(m_data, 0, nb_elements_f());
-                break;
-            case 1:
-                compute_elements_f<1>(m_data, 0, nb_elements_f());
-                break;
-            case 2:
-                compute_elements_f<2>(m_data, 0, nb_elements_f());
-                break;
-            default:
-                throw std::invalid_argument("order");
-            }
-
-            m_data.f() *= sigma();
-
-            if (order > 0) {
-                m_data.df() *= sigma();
-            }
-
-            if (order > 1) {
-                m_data.hl() *= sigma();
-            }
-
-            switch (order) {
-            case 0:
-                compute_elements_g<0>(m_data, 0, nb_elements_g());
-                break;
-            case 1:
-                compute_elements_g<1>(m_data, 0, nb_elements_g());
-                break;
-            case 2:
-                compute_elements_g<2>(m_data, 0, nb_elements_g());
-                break;
-            default:
-                throw std::invalid_argument("order");
-            }
+            compute_elements_f(order, m_data, 0, nb_elements_f());
         } else {
             tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 1000),
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
                     local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nnz(), m_hl_structure.nnz());
-                    compute_elements_f<2>(local_data, range.begin(), range.end());
+                    compute_elements_f(order, local_data, range.begin(), range.end());
                 }
             );
+        }
 
-            m_data.f() *= sigma();
+        m_data.f() *= sigma();
 
-            if (order > 0) {
-                m_data.df() *= sigma();
-            }
+        if (order > 0) {
+            m_data.df() *= sigma();
+        }
 
-            if (order > 1) {
-                m_data.hl() *= sigma();
-            }
+        if (order > 1) {
+            m_data.hl() *= sigma();
+        }
 
+        if (!m_parallel) {
+            compute_elements_g(order, m_data, 0, nb_elements_g());
+        } else {
             tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 1000),
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
                     local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nnz(), m_hl_structure.nnz());
-                    compute_elements_g<2>(local_data, range.begin(), range.end());
+                    compute_elements_g(order, local_data, range.begin(), range.end());
                 }
             );
 
