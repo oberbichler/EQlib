@@ -52,7 +52,8 @@ public:     // methods
     }
 
 
-    TScalar& coeff(std::vector<TScalar>& values, const index row, const index col) noexcept
+    template <typename TContainer>
+    TScalar& coeff(TContainer& values, const index row, const index col) noexcept
     {
         assert(length(values) == nnz());
         assert(row < rows());

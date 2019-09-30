@@ -4,6 +4,7 @@
 #include "Constraint.h"
 #include "Objective.h"
 #include "Settings.h"
+#include "SparseStorage.h"
 
 #include <Eigen/PardisoSupport>
 
@@ -127,6 +128,11 @@ private:    // types
             return Map<const Vector>(m_data.data() + 1 + m_m + m_n, m_nnz_dg);
         }
 
+        const double* dg_ptr() const noexcept
+        {
+            return m_data.data() + 1 + m_m + m_n;
+        }
+
         double& hl(const index i) noexcept
         {
             return m_data[1 + m_m + m_n + m_nnz_dg + i];
@@ -135,6 +141,11 @@ private:    // types
         double hl(const index i) const noexcept
         {
             return m_data[1 + m_m + m_n + m_nnz_dg + i];
+        }
+
+        const double* const hl_ptr() const noexcept
+        {
+            return m_data.data() + 1 + m_m + m_n + m_nnz_dg;
         }
 
         Map<Vector> hl() noexcept
@@ -195,11 +206,10 @@ private:    // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
+    SparseStorage<double, int, false> m_dg_structure;
+    SparseStorage<double, int, false> m_hl_structure;
     Data m_data;
     tbb::combinable<Data> m_local_data;
-
-    Sparse m_dg;
-    Sparse m_hl;
 
     bool m_linear_solver_initialized;
     Eigen::PardisoLDLT<Sparse, Eigen::Lower> m_linear_solver;
@@ -478,7 +488,10 @@ public:     // constructors
 
         Log::info(3, "Allocate memory...");
 
-        m_data.set_zero(n, m, 0, 0);
+        m_dg_structure.set(m, n, m_pattern_dg);
+        m_hl_structure.set(n, n, m_pattern_hl);
+
+        m_data.set_zero(n, m, m_dg_structure.nnz(), m_hl_structure.nnz());
     }
 
 private:    // methods: computation
@@ -525,7 +538,7 @@ private:    // methods: computation
                 for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    // hl(row.global, col.global) += h(row.local, col.local);
+                    m_hl_structure.coeff(data.hl(), row.global, col.global) += h(row.local, col.local);
                 }
             }
         }
@@ -584,17 +597,17 @@ private:    // methods: computation
                 for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    // dg(equation_index.global, col.global) += local_g(col.local);
+                    m_dg_structure.coeff(data.dg(), equation_index.global, col.global) += local_g(col.local);
 
-                    // if constexpr(TOrder < 2) {
-                    //     continue;
-                    // }
+                    if constexpr(TOrder < 2) {
+                        continue;
+                    }
 
-                    // for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                    //     const auto row = variable_indices[row_i];
+                    for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                        const auto row = variable_indices[row_i];
 
-                    //     hl(row.global, col.global) += local_h(row.local, col.local);
-                    // }
+                        m_hl_structure.coeff(data.hl(), row.global, col.global) += local_h(row.local, col.local);
+                    }
                 }
             }
         }
@@ -605,18 +618,39 @@ public:     // methods: computation
     {
         m_data.set_zero();
 
-        if (!m_parallel) {    
+        if (!m_parallel) {
             switch (order) {
             case 0:
                 compute_elements_f<0>(m_data, 0, nb_elements_f());
-                compute_elements_g<0>(m_data, 0, nb_elements_g());
                 break;
             case 1:
                 compute_elements_f<1>(m_data, 0, nb_elements_f());
-                compute_elements_g<1>(m_data, 0, nb_elements_g());
                 break;
             case 2:
                 compute_elements_f<2>(m_data, 0, nb_elements_f());
+                break;
+            default:
+                throw std::invalid_argument("order");
+            }
+
+            m_data.f() *= sigma();
+
+            if (order > 0) {
+                m_data.df() *= sigma();
+            }
+
+            if (order > 1) {
+                m_data.hl() *= sigma();
+            }
+
+            switch (order) {
+            case 0:
+                compute_elements_g<0>(m_data, 0, nb_elements_g());
+                break;
+            case 1:
+                compute_elements_g<1>(m_data, 0, nb_elements_g());
+                break;
+            case 2:
                 compute_elements_g<2>(m_data, 0, nb_elements_g());
                 break;
             default:
@@ -627,16 +661,26 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.set_zero(nb_variables(), nb_equations(), 0, 0);
+                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nnz(), m_hl_structure.nnz());
                     compute_elements_f<2>(local_data, range.begin(), range.end());
                 }
             );
-        
+
+            m_data.f() *= sigma();
+
+            if (order > 0) {
+                m_data.df() *= sigma();
+            }
+
+            if (order > 1) {
+                m_data.hl() *= sigma();
+            }
+
             tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 1000),
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.set_zero(nb_variables(), nb_equations(), 0, 0);
+                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nnz(), m_hl_structure.nnz());
                     compute_elements_g<2>(local_data, range.begin(), range.end());
                 }
             );
@@ -646,16 +690,6 @@ public:     // methods: computation
             m_local_data.combine_each([&](const Data& local) {
                 m_data += local;
             });
-        }
-
-        m_data.f() *= sigma();
-
-        if (order > 0) {
-            m_data.df() *= sigma();
-        }
-
-        if (order > 1) {
-            m_data.hl() *= sigma();
         }
     }
 
@@ -667,11 +701,11 @@ public:     // methods
         }
 
         if (!m_linear_solver_initialized) {
-            m_linear_solver.analyzePattern(m_hl);
+            m_linear_solver.analyzePattern(hl());
             m_linear_solver_initialized = true;
         }
 
-        m_linear_solver.factorize(m_hl);
+        m_linear_solver.factorize(hl());
 
         if (m_linear_solver.info() != Eigen::Success) {
             throw std::runtime_error("Factorization failed");
@@ -690,7 +724,7 @@ public:     // methods
 
     Vector hl_v(Ref<const Vector> v) const
     {
-        return m_hl.selfadjointView<Eigen::Lower>() * v;
+        return hl().selfadjointView<Eigen::Lower>() * v;
     }
 
     // Pointer<Problem> clone() const
@@ -914,11 +948,11 @@ public:     // methods: output
         return m_data.df(index);
     }
 
-    // const Sparse& dg() const noexcept
-    // {
-    //     // FIXME: use m_data
-    //     return m_dg;
-    // }
+    Map<const Sparse> dg() const noexcept
+    {
+        // FIXME: use m_data
+        return Map<const Sparse>(nb_equations(), nb_variables(), 0, nullptr, nullptr, nullptr);
+    }
 
     Ref<Vector> dg_values() noexcept
     {
@@ -928,6 +962,16 @@ public:     // methods: output
     Ref<const Vector> dg_values() const noexcept
     {
         return m_data.dg();
+    }
+
+    const std::vector<int>& dg_indptr() const noexcept
+    {
+        return m_dg_structure.ia();
+    }
+
+    const std::vector<int>& dg_indices() const noexcept
+    {
+        return m_dg_structure.ja();
     }
 
     double& dg(const index index)
@@ -941,15 +985,25 @@ public:     // methods: output
     //     return m_dg.coeffRef(row, col);
     // }
 
-    // const Sparse& hl() const noexcept
-    // {
-    //     // FIXME: use m_data
-    //     return m_hl;
-    // }
+    const Sparse& hl() const noexcept
+    {
+        // FIXME: use m_data
+        return Map<const Sparse>(m_hl_structure.rows(), m_hl_structure.cols(), m_hl_structure.nnz(), m_hl_structure.ia().data(), m_hl_structure.ja().data(), m_data.hl_ptr());
+    }
 
     Ref<Vector> hl_values() noexcept
     {
         return m_data.hl();
+    }
+
+    const std::vector<int>& hl_indptr() const noexcept
+    {
+        return m_hl_structure.ia();
+    }
+
+    const std::vector<int>& hl_indices() const noexcept
+    {
+        return m_hl_structure.ja();
     }
 
     Ref<const Vector> hl_values() const noexcept
@@ -991,8 +1045,14 @@ public:     // methods: python
             .def_property_readonly("variables", &Type::variables)
             .def_property_readonly("g", py::overload_cast<>(&Type::g))
             .def_property_readonly("df", py::overload_cast<>(&Type::df))
+            // .def_property_readonly("dg", py::overload_cast<>(&Type::dg, py::const_))
             .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
+            .def_property_readonly("dg_indptr", &Type::dg_indptr)
+            .def_property_readonly("dg_indices", &Type::dg_indices)
+            // .def_property_readonly("hl", py::overload_cast<>(&Type::hl, py::const_))
             .def_property_readonly("hl_values", py::overload_cast<>(&Type::hl_values))
+            .def_property_readonly("hl_indptr", &Type::hl_indptr)
+            .def_property_readonly("hl_indices", &Type::hl_indices)
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
