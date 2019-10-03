@@ -134,7 +134,7 @@ public:     // getters and setters
         return m_is_fixed;
     }
 
-    void set_is_fixed(const bool value) noexcept
+    void set_fixed(const bool value) noexcept
     {
         m_is_fixed = value;
     }
@@ -209,7 +209,7 @@ public:     // python
             .def_property("target", &Type::target, &Type::set_target)
             .def_property("result", &Type::result, &Type::set_result)
             .def_property("residual", &Type::residual, &Type::set_residual)
-            .def_property("is_fixed", &Type::is_fixed, &Type::set_is_fixed)
+            .def_property("is_fixed", &Type::is_fixed, &Type::set_fixed)
             .def_property("name", &Type::name, &Type::set_name)
             .def(py::pickle([](const Type& self) {
                     return py::make_tuple(
