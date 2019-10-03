@@ -42,7 +42,7 @@ public:     // getters and setters
         return m_is_active;
     }
 
-    void set_is_active(const bool value) noexcept
+    void set_active(const bool value) noexcept
     {
         m_is_active = value;
     }
@@ -129,7 +129,7 @@ public:     // python
                 "lower_bound"_a=-infinity, "upper_bound"_a=infinity,
                 "multiplier"_a=0.0, "name"_a="")
             .def(py::init<>())
-            .def_property("is_active", &Type::is_active, &Type::set_is_active)
+            .def_property("is_active", &Type::is_active, &Type::set_active)
             .def_property("lower_bound", &Type::lower_bound,
                 &Type::set_lower_bound)
             .def_property("upper_bound", &Type::upper_bound,

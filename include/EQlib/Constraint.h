@@ -36,7 +36,7 @@ public:     // methods
         return m_is_active;
     }
 
-    void set_is_active(const bool value) noexcept
+    void set_active(const bool value) noexcept
     {
         m_is_active = value;
     }
@@ -83,7 +83,7 @@ public:     // python
             .def_property("equations", &Type::equations, &Type::set_equations)
             .def_property("variables", &Type::variables, &Type::set_variables)
             .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
-            .def_property("is_active", &Type::is_active, &Type::set_is_active)
+            .def_property("is_active", &Type::is_active, &Type::set_active)
         ;
     }
 };

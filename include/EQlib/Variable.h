@@ -113,7 +113,7 @@ public:     // getters and setters
         return m_is_active;
     }
 
-    void set_is_active(const bool value) noexcept
+    void set_active(const bool value) noexcept
     {
         m_is_active = value;
     }
@@ -197,7 +197,7 @@ public:     // python
             .def_property("upper_bound", &Type::upper_bound,
                 &Type::set_upper_bound)
             .def_property("delta", &Type::delta, &Type::set_delta)
-            .def_property("is_active", &Type::is_active, &Type::set_is_active)
+            .def_property("is_active", &Type::is_active, &Type::set_active)
             .def_property("multiplier", &Type::multiplier,
                 &Type::set_multiplier)
             .def_property("name", &Type::name, &Type::set_name)
