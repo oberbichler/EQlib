@@ -963,7 +963,7 @@ public:     // methods: output df
 public:     // methods: output dg
     Map<const Sparse> dg() const noexcept
     {
-        return Map<const Sparse>(nb_equations(), nb_variables(), 0, nullptr, nullptr, nullptr);
+        return Map<const Sparse>(nb_equations(), nb_variables(), m_dg_structure.nnz(), m_dg_structure.ia().data(), m_dg_structure.ja().data(), m_data.dg_ptr());
     }
 
     Ref<Vector> dg_values() noexcept
@@ -1067,7 +1067,7 @@ public:     // methods: python
         using Holder = Pointer<Type>;
 
         const std::string name = "Problem";
-        
+
         py::object scipy_sparse = py::module::import("scipy.sparse");
         py::object csc_matrix = scipy_sparse.attr("csc_matrix");
 
