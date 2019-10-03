@@ -57,7 +57,7 @@ public:     // constructors
     : Variable(value, value, -infinity, infinity, true, 1.0, "")
     { }
 
-public:     // getters and setters
+public:     // methods
     double ref_value() const noexcept
     {
         return m_ref_value;
@@ -138,7 +138,6 @@ public:     // getters and setters
         m_name = value;
     }
 
-public:     // methods
     std::string to_string() const noexcept
     {
         if (m_name.empty()) {
