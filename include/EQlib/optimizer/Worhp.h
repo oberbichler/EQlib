@@ -157,12 +157,16 @@ public:     // methods
 
         par.NLPprint = 0;
 
+        Log::info(2, "Read settings from XML...");
+
         ReadParamsNoInit(&status, "worhp.xml", &par);
 
         if (status == DataError || status == InitError) {
             Log::error("Could not read settings from XML");
             return;;
         }
+
+        Log::info(2, "Setup optimization problem...");
 
         opt.n = m_problem->nb_variables();
         opt.m = m_problem->nb_equations();
@@ -173,12 +177,16 @@ public:     // methods
         wsp.DG.nnz = m_problem->dg().nonZeros();
         wsp.HM.nnz = m_problem->hl().nonZeros();
 
+        Log::info(2, "Initialize Worhp...");
+
         WorhpInit(&opt, &wsp, &par, &cnt);
 
         if (cnt.status != FirstCall) {
             Log::error("Initialisation failed");
             return;
         }
+
+        Log::info(2, "Apply variable data...");
 
         for (int i = 0; i < m_problem->nb_variables(); i++) {
             opt.X[i] = m_problem->variable(i)->delta();
@@ -187,6 +195,8 @@ public:     // methods
             opt.Lambda[i] = m_problem->variable(i)->multiplier();
         }
 
+        Log::info(2, "Apply equation data...");
+
         for (int i = 0; i < m_problem->nb_equations(); i++) {
             opt.GL[i] = m_problem->equation(i)->lower_bound();
             opt.GU[i] = m_problem->equation(i)->upper_bound();
@@ -194,12 +204,16 @@ public:     // methods
         }
 
         if (wsp.DF.NeedStructure) {
+            Log::info(2, "Read structure of df...");
+
             for (int i = 0; i < m_problem->nb_variables(); i++) {
                 wsp.DF.row[i] = i + 1;
             }
         }
 
         if (wsp.DG.NeedStructure) {
+            Log::info(2, "Read structure of dg...");
+
             const Sparse dg = m_problem->dg();
 
             int i = 0;
@@ -218,6 +232,8 @@ public:     // methods
         }
 
         if (wsp.HM.NeedStructure) {
+            Log::info(2, "Read structure of hl...");
+
             int i = 0;
             int j = m_problem->hl().nonZeros() - m_problem->nb_variables();
 
