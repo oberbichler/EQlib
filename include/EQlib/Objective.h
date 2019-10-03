@@ -11,11 +11,15 @@ class Objective
 {
 private:    // variables
     bool m_is_active;
+    std::vector<Pointer<Variable>> m_variables;
 
 public:     // methods
     Objective() : m_is_active(true) { }
 
-    virtual std::vector<Pointer<Variable>> variables() const = 0;
+    const std::vector<Pointer<Variable>>& variables() const
+    {
+        return m_variables;
+    }
 
     virtual double compute(Ref<Vector> g, Ref<Matrix> h) const = 0;
 
@@ -29,20 +33,18 @@ public:     // methods
         m_is_active = value;
     }
 
+protected:  // methods
+    void set_variables(const std::vector<Pointer<Variable>>& value)
+    {
+        m_variables = value;
+    }
+
 public:     // python
     template <typename T>
     class PyObjective : public T
     {
     public:     // constructor
         using T::T;
-
-    public:     // getters and setters
-        std::vector<Pointer<Variable>> variables() const override
-        {
-            using ReturnType = std::vector<Pointer<Variable>>;
-            pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(ReturnType, T, variables);
-        }
 
     public:     // methods
         double compute(Ref<Vector> g, Ref<Matrix> h) const override
@@ -64,7 +66,7 @@ public:     // python
 
         py::class_<Type, Trampoline, Holder>(m, "Objective")
             .def(py::init<>())
-            .def("variables", &Type::variables)
+            .def_property("variables", &Type::variables, &Type::set_variables)
             .def("compute", &Type::compute, "g"_a, "h"_a)
             .def_property("is_active", &Type::is_active, &Type::set_is_active)
         ;
