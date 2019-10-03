@@ -5,6 +5,7 @@
 #include "LinearSolver.h"
 #include "Objective.h"
 #include "Settings.h"
+#include "Timer.h"
 #include "SparseStorage.h"
 
 #include <sparsehash/dense_hash_map>
@@ -223,6 +224,8 @@ public:     // constructors
     , m_parallel(false)
     {
         Log::info(1, "==> Initialize problem...");
+
+        Timer timer;
 
         m_general_hl = get_or_default(linear_solver, "general_hl", false);
 
@@ -489,6 +492,9 @@ public:     // constructors
         m_hl_structure.set(n, n, m_pattern_hl);
 
         m_data.set_zero(n, m, m_dg_structure.nnz(), m_hl_structure.nnz());
+
+
+        Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
     }
 
 private:    // methods: computation
