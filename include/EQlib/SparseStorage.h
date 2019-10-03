@@ -192,6 +192,16 @@ public:     // methods
             last = temp;
         }
     }
+
+    void for_each(std::function<void(TIndex, TIndex)> action) const
+    {
+        for (TIndex col = 0; col < m_cols; col++) {
+            for (TIndex i = m_ia[col]; i < m_ia[col + 1]; i++) {
+                const TIndex row = m_aj[i];
+                action(row, col);
+            }
+        }
+    }
 };
 
 } // namespace EQlib
