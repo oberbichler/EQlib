@@ -53,7 +53,7 @@ public:     // methods
 
 
     template <typename TContainer>
-    TScalar& coeff(TContainer& values, const index row, const index col) noexcept
+    TScalar& coeff_ref(TContainer& values, const index row, const index col) noexcept
     {
         assert(length(values) == nnz());
         assert(row < rows());
@@ -79,13 +79,11 @@ public:     // methods
     }
 
     template <typename TContainer>
-    TScalar coeff(TContainer& values, const index row, const index col) const noexcept
+    TScalar coeff(const TContainer& values, const index row, const index col) const noexcept
     {
         assert(length(values) == nnz());
         assert(row < rows());
         assert(col < cols());
-
-        static TScalar dummy;
 
         TIndex i = static_cast<TIndex>(TRowMajor ? row : col);
         TIndex j = static_cast<TIndex>(TRowMajor ? col : row);
