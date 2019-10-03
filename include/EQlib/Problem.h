@@ -539,7 +539,9 @@ private:    // methods: computation
                 for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    m_hl_structure.coeff(data.hl(), row.global, col.global) += h(row.local, col.local);
+                    auto hl_values = data.hl();
+
+                    m_hl_structure.coeff_ref(hl_values, row.global, col.global) += h(row.local, col.local);
                 }
             }
         }
@@ -602,7 +604,9 @@ private:    // methods: computation
                 for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    m_dg_structure.coeff(data.dg(), equation_index.global, col.global) += local_g(col.local);
+                    auto dg_values = data.dg();
+
+                    m_dg_structure.coeff_ref(dg_values, equation_index.global, col.global) += local_g(col.local);
 
                     if constexpr(TOrder < 2) {
                         continue;
@@ -611,7 +615,9 @@ private:    // methods: computation
                     for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                         const auto row = variable_indices[row_i];
 
-                        m_hl_structure.coeff(data.hl(), row.global, col.global) += local_h(row.local, col.local);
+                        auto hl_values = data.hl();
+
+                        m_hl_structure.coeff_ref(hl_values, row.global, col.global) += local_h(row.local, col.local);
                     }
                 }
             }
