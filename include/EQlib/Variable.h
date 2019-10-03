@@ -200,6 +200,7 @@ public:     // python
             .def_property("multiplier", &Type::multiplier,
                 &Type::set_multiplier)
             .def_property("name", &Type::name, &Type::set_name)
+            .def("__float__", &Type::operator double)
         ;
     }
 };
