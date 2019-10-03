@@ -101,7 +101,7 @@ public:     // methods
 
         m_problem->compute();
 
-        const Sparse& hl = m_problem->hl();
+        const Sparse hl = m_problem->hl();
 
         int i = 0;
         int j = hl.nonZeros() - m_problem->nb_variables();
