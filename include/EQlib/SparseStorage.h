@@ -61,8 +61,8 @@ public:     // methods
 
         static TScalar dummy;
 
-        TIndex i = static_cast<TIndex>(TRowMajor ? row : col);
-        TIndex j = static_cast<TIndex>(TRowMajor ? col : row);
+        const auto i = static_cast<TIndex>(TRowMajor ? row : col);
+        const auto j = static_cast<TIndex>(TRowMajor ? col : row);
 
         const auto lower = m_ja.begin() + m_ia[i];
         const auto upper = m_ja.begin() + m_ia[i + 1];
@@ -87,8 +87,8 @@ public:     // methods
 
         static TScalar dummy;
 
-        TIndex i = static_cast<TIndex>(TRowMajor ? row : col);
-        TIndex j = static_cast<TIndex>(TRowMajor ? col : row);
+        const TIndex i = static_cast<TIndex>(TRowMajor ? row : col);
+        const TIndex j = static_cast<TIndex>(TRowMajor ? col : row);
 
         const auto lower = m_ja.begin() + m_ia[i];
         const auto upper = m_ja.begin() + m_ia[i + 1];
@@ -133,7 +133,7 @@ public:     // methods
                 assert(j < (TRowMajor ? m_cols : m_rows));
                 *ja_it++ = static_cast<TIndex>(j);
             }
-            
+
             std::sort(ja_it - n, ja_it);
         }
     }
@@ -182,7 +182,7 @@ public:     // methods
 
                 m_ia[j]++;
             }
-        }  
+        }
 
         TIndex last = 0;
 
