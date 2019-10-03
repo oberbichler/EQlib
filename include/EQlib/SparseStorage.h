@@ -107,7 +107,7 @@ public:     // methods
     template <typename TPattern>
     void set(const index rows, const index cols, const TPattern& pattern) noexcept
     {
-        assert(length(pattern) == TRowMajor ? rows : cols);
+        assert(length(pattern) == (TRowMajor ? rows : cols));
 
         m_rows = static_cast<TIndex>(rows);
         m_cols = static_cast<TIndex>(cols);
