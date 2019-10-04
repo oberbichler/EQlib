@@ -340,7 +340,7 @@ public:     // constructors
         m_dg_structure.set(m, n, m_pattern_dg);
         m_hl_structure.set(n, n, m_pattern_hl);
 
-        m_data.set_zero(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
+        m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
 
 
         Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
@@ -527,7 +527,7 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
+                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
                     compute_elements_f(order, local_data, range.begin(), range.end());
                 }
             );
@@ -550,7 +550,7 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
+                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
                     compute_elements_g(order, local_data, range.begin(), range.end());
                 }
             );

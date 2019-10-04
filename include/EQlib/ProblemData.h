@@ -7,30 +7,30 @@ namespace EQlib {
 class ProblemData
 {
 private:    // variables
-    Vector m_data;
+    std::vector<double> m_data;
     index m_n;
     index m_m;
-    index m_nnz_dg;
-    index m_nnz_hl;
+    index m_nb_nonzeros_dg;
+    index m_nb_nonzeros_hl;
 
 public:     // methods
     void set_zero()
     {
-        m_data.setZero();
+        std::fill(m_data.begin(), m_data.end(), 0);
     }
 
-    void set_zero(const index n, const index m, const index nnz_dg, const index nnz_hl)
+    void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hl)
     {
         m_n = n;
         m_m = m;
-        m_nnz_dg = nnz_dg;
-        m_nnz_hl = nnz_hl;
+        m_nb_nonzeros_dg = nb_nonzeros_dg;
+        m_nb_nonzeros_hl = nb_nonzeros_hl;
 
-        const index nb_entries = 1 + m + n + nnz_dg + nnz_hl;
+        const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hl;
 
         m_data.resize(nb_entries);
 
-        m_data.setZero();
+        set_zero();
     }
 
     double& f() noexcept
@@ -95,12 +95,12 @@ public:     // methods
 
     Map<Vector> dg() noexcept
     {
-        return Map<Vector>(m_data.data() + 1 + m_m + m_n, m_nnz_dg);
+        return Map<Vector>(m_data.data() + 1 + m_m + m_n, m_nb_nonzeros_dg);
     }
 
     Map<const Vector> dg() const noexcept
     {
-        return Map<const Vector>(m_data.data() + 1 + m_m + m_n, m_nnz_dg);
+        return Map<const Vector>(m_data.data() + 1 + m_m + m_n, m_nb_nonzeros_dg);
     }
 
     const double* dg_ptr() const noexcept
@@ -110,32 +110,37 @@ public:     // methods
 
     double& hl(const index i) noexcept
     {
-        return m_data[1 + m_m + m_n + m_nnz_dg + i];
+        return m_data[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
     double hl(const index i) const noexcept
     {
-        return m_data[1 + m_m + m_n + m_nnz_dg + i];
+        return m_data[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
     const double* const hl_ptr() const noexcept
     {
-        return m_data.data() + 1 + m_m + m_n + m_nnz_dg;
+        return m_data.data() + 1 + m_m + m_n + m_nb_nonzeros_dg;
     }
 
     Map<Vector> hl() noexcept
     {
-        return Map<Vector>(m_data.data() + 1 + m_m + m_n + m_nnz_dg, m_nnz_hl);
+        return Map<Vector>(m_data.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hl);
     }
 
     Map<const Vector> hl() const noexcept
     {
-        return Map<const Vector>(m_data.data() + 1 + m_m + m_n + m_nnz_dg, m_nnz_hl);
+        return Map<const Vector>(m_data.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hl);
     }
 
     ProblemData& operator+=(const ProblemData& rhs)
     {
-        m_data += rhs.m_data;
+        assert(length(m_data) == length(rhs.m_data));
+
+        for (index i = 0; i < length(m_data); i++) {
+            m_data[i] += rhs.m_data[i];
+        }
+
         return *this;
     }
 };
