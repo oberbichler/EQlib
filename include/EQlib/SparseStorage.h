@@ -131,8 +131,6 @@ public:     // methods
                 assert(j < (TRowMajor ? m_cols : m_rows));
                 *ja_it++ = static_cast<TIndex>(j);
             }
-            
-            std::sort(ja_it - n, ja_it);
         }
     }
 

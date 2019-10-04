@@ -14,6 +14,7 @@
 
 #include <tsl/robin_set.h>
 
+#include <set>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -439,8 +440,8 @@ public:     // constructors
         const auto n = length(m_variables);
         const auto m = length(m_equations);
 
-        std::vector<tsl::robin_set<index>> m_pattern_dg(n);
-        std::vector<tsl::robin_set<index>> m_pattern_hl(n);
+        std::vector<std::set<index>> m_pattern_dg(n);
+        std::vector<std::set<index>> m_pattern_hl(n);
 
         for (index i = 0; i < length(m_elements_f); i++) {
             const auto& variable_indices = m_element_f_variable_indices[i];
