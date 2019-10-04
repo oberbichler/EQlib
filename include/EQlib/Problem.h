@@ -575,7 +575,7 @@ public:     // methods: computation
                     auto& local_data = m_local_data.local();
                     local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
                     compute_elements_f(order, local_data, range.begin(), range.end());
-                }
+                }, tbb::static_partitioner()
             );
         }
 
@@ -600,7 +600,7 @@ public:     // methods: computation
                     auto& local_data = m_local_data.local();
                     local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
                     compute_elements_g(order, local_data, range.begin(), range.end());
-                }
+                }, tbb::static_partitioner()
             );
 
             Log::info(5, "Combine results...");
