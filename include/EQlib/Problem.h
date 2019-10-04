@@ -277,14 +277,11 @@ public:     // constructors
                     continue;
                 }
 
-                const auto find = equation_set.find(equation);
+                const auto [_, is_new] = equation_set.insert(equation);
 
-                if (find != equation_set.end()) {
-                    continue;
+                if (is_new) {
+                    m_equations.push_back(equation);
                 }
-
-                equation_set.insert(equation);
-                m_equations.push_back(equation);
             }
         }
 
@@ -299,14 +296,11 @@ public:     // constructors
                     continue;
                 }
 
-                const auto find = variable_set.find(variable);
+                const auto [_, is_new] = variable_set.insert(variable);
 
-                if (find != variable_set.end()) {
-                    continue;
+                if (is_new) {
+                    m_variables.push_back(variable);
                 }
-
-                variable_set.insert(variable);
-                m_variables.push_back(variable);
             }
         }
 
@@ -316,14 +310,11 @@ public:     // constructors
                     continue;
                 }
 
-                const auto find = variable_set.find(variable);
+                const auto [_, is_new] = variable_set.insert(variable);
 
-                if (find != variable_set.end()) {
-                    continue;
+                if (is_new) {
+                    m_variables.push_back(variable);
                 }
-
-                variable_set.insert(variable);
-                m_variables.push_back(variable);
             }
         }
 
