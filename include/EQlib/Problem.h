@@ -340,7 +340,7 @@ public:     // constructors
         m_dg_structure.set(m, n, m_pattern_dg);
         m_hl_structure.set(n, n, m_pattern_hl);
 
-        m_data.set_zero(n, m, m_dg_structure.nnz(), m_hl_structure.nnz());
+        m_data.set_zero(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
 
 
         Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
@@ -527,7 +527,7 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nnz(), m_hl_structure.nnz());
+                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
                     compute_elements_f(order, local_data, range.begin(), range.end());
                 }
             );
@@ -550,14 +550,14 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nnz(), m_hl_structure.nnz());
+                    local_data.set_zero(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
                     compute_elements_g(order, local_data, range.begin(), range.end());
                 }
             );
 
             Log::info(5, "Combine results...");
 
-            m_local_data.combine_each([&](const Data& local) {
+            m_local_data.combine_each([&](const ProblemData& local) {
                 m_data += local;
             });
         }
@@ -824,7 +824,7 @@ public:     // methods: output df
 public:     // methods: output dg
     Map<const Sparse> dg() const noexcept
     {
-        return Map<const Sparse>(nb_equations(), nb_variables(), m_dg_structure.nnz(), m_dg_structure.ia().data(), m_dg_structure.ja().data(), m_data.dg_ptr());
+        return Map<const Sparse>(nb_equations(), nb_variables(), m_dg_structure.nb_nonzeros(), m_dg_structure.ia().data(), m_dg_structure.ja().data(), m_data.dg().data());
     }
 
     Ref<Vector> dg_values() noexcept
@@ -872,7 +872,7 @@ public:     // methods: output dg
 public:     // methods: output hl
     Map<const Sparse> hl() const noexcept
     {
-        return Map<const Sparse>(m_hl_structure.rows(), m_hl_structure.cols(), m_hl_structure.nnz(), m_hl_structure.ia().data(), m_hl_structure.ja().data(), m_data.hl_ptr());
+        return Map<const Sparse>(m_hl_structure.rows(), m_hl_structure.cols(), m_hl_structure.nb_nonzeros(), m_hl_structure.ia().data(), m_hl_structure.ja().data(), m_data.hl().data());
     }
 
     Ref<Vector> hl_values() noexcept
