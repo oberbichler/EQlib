@@ -12,13 +12,21 @@ class Constraint
 {
 private:    // variables
     bool m_is_active;
+    std::vector<Pointer<Equation>> m_equations;
+    std::vector<Pointer<Variable>> m_variables;
 
 public:     // methods
     Constraint() : m_is_active(true) { }
 
-    virtual std::vector<Pointer<Equation>> equations() const = 0;
+    const std::vector<Pointer<Equation>>& equations() const
+    {
+        return m_equations;
+    }
 
-    virtual std::vector<Pointer<Variable>> variables() const = 0;
+    const std::vector<Pointer<Variable>>& variables() const
+    {
+        return m_variables;
+    }
 
     virtual void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs,
         const std::vector<Ref<Matrix>>& hs) const = 0;
@@ -33,27 +41,23 @@ public:     // methods
         m_is_active = value;
     }
 
+protected:  // methods
+    void set_equations(const std::vector<Pointer<Equation>>& value)
+    {
+        m_equations = value;
+    }
+
+    void set_variables(const std::vector<Pointer<Variable>>& value)
+    {
+        m_variables = value;
+    }
+
 public:     // python
     template <typename T>
     class PyConstraint : public T
     {
     public:     // constructor
         using T::T;
-
-    public:     // getters and setters
-        std::vector<Pointer<Equation>> equations() const override
-        {
-            using ReturnType = std::vector<Pointer<Equation>>;
-            pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(ReturnType, T, equations);
-        }
-
-        std::vector<Pointer<Variable>> variables() const override
-        {
-            using ReturnType = std::vector<Pointer<Variable>>;
-            pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(ReturnType, T, variables);
-        }
 
     public:     // methods
         void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs,
@@ -76,8 +80,8 @@ public:     // python
 
         py::class_<Type, Trampoline, Holder>(m, "Constraint")
             .def(py::init<>())
-            .def("equations", &Type::equations)
-            .def("variables", &Type::variables)
+            .def_property("equations", &Type::equations, &Type::set_equations)
+            .def_property("variables", &Type::variables, &Type::set_variables)
             .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
             .def_property("is_active", &Type::is_active, &Type::set_active)
         ;

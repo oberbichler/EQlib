@@ -5,6 +5,7 @@
 #include "LinearSolver.h"
 #include "Objective.h"
 #include "Settings.h"
+#include "Timer.h"
 #include "SparseStorage.h"
 
 #include <sparsehash/dense_hash_map>
@@ -13,6 +14,7 @@
 
 #include <tsl/robin_set.h>
 
+#include <set>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -223,6 +225,8 @@ public:     // constructors
     , m_parallel(false)
     {
         Log::info(1, "==> Initialize problem...");
+
+        Timer timer;
 
         m_general_hl = get_or_default(linear_solver, "general_hl", false);
 
@@ -436,8 +440,8 @@ public:     // constructors
         const auto n = length(m_variables);
         const auto m = length(m_equations);
 
-        std::vector<tsl::robin_set<index>> m_pattern_dg(n);
-        std::vector<tsl::robin_set<index>> m_pattern_hl(n);
+        std::vector<std::set<index>> m_pattern_dg(n);
+        std::vector<std::set<index>> m_pattern_hl(n);
 
         for (index i = 0; i < length(m_elements_f); i++) {
             const auto& variable_indices = m_element_f_variable_indices[i];
@@ -474,14 +478,6 @@ public:     // constructors
             }
         }
 
-        Eigen::VectorXi sparse_size_dg(n);
-        Eigen::VectorXi sparse_size_hl(n);
-
-        for (index col = 0; col < n; col++) {
-            sparse_size_dg[col] = length(m_pattern_dg[col]);
-            sparse_size_hl[col] = length(m_pattern_hl[col]);
-        }
-
 
         Log::info(3, "Allocate memory...");
 
@@ -489,6 +485,9 @@ public:     // constructors
         m_hl_structure.set(n, n, m_pattern_hl);
 
         m_data.set_zero(n, m, m_dg_structure.nnz(), m_hl_structure.nnz());
+
+
+        Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
     }
 
 private:    // methods: computation
@@ -539,7 +538,9 @@ private:    // methods: computation
                 for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    m_hl_structure.coeff(data.hl(), row.global, col.global) += h(row.local, col.local);
+                    auto hl_values = data.hl();
+
+                    m_hl_structure.coeff_ref(hl_values, row.global, col.global) += h(row.local, col.local);
                 }
             }
         }
@@ -602,7 +603,9 @@ private:    // methods: computation
                 for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    m_dg_structure.coeff(data.dg(), equation_index.global, col.global) += local_g(col.local);
+                    auto dg_values = data.dg();
+
+                    m_dg_structure.coeff_ref(dg_values, equation_index.global, col.global) += local_g(col.local);
 
                     if constexpr(TOrder < 2) {
                         continue;
@@ -611,7 +614,9 @@ private:    // methods: computation
                     for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                         const auto row = variable_indices[row_i];
 
-                        m_hl_structure.coeff(data.hl(), row.global, col.global) += local_h(row.local, col.local);
+                        auto hl_values = data.hl();
+
+                        m_hl_structure.coeff_ref(hl_values, row.global, col.global) += local_h(row.local, col.local);
                     }
                 }
             }
