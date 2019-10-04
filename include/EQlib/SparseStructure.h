@@ -7,7 +7,7 @@
 namespace EQlib {
 
 template <typename TScalar = double, typename TIndex = int, bool TRowMajor = false>
-class SparseStorage
+class SparseStructure
 {
 private:    // variables
     TIndex m_rows;
@@ -26,7 +26,7 @@ public:     // methods
         return m_cols;
     }
 
-    TIndex nnz() const noexcept
+    TIndex nb_nonzeros() const noexcept
     {
         return m_ia.back();
     }
@@ -55,7 +55,7 @@ public:     // methods
     template <typename TContainer>
     TScalar& coeff_ref(TContainer& values, const index row, const index col) noexcept
     {
-        assert(length(values) == nnz());
+        assert(length(values) == nb_nonzeros());
         assert(row < rows());
         assert(col < cols());
 
@@ -81,7 +81,7 @@ public:     // methods
     template <typename TContainer>
     TScalar coeff(const TContainer& values, const index row, const index col) const noexcept
     {
-        assert(length(values) == nnz());
+        assert(length(values) == nb_nonzeros());
         assert(row < rows());
         assert(col < cols());
 
@@ -120,7 +120,7 @@ public:     // methods
             m_ia[i + 1] = m_ia[i] + n;
         }
 
-        m_ja.resize(nnz());
+        m_ja.resize(nb_nonzeros());
 
         auto ja_it = m_ja.begin();
 
@@ -137,9 +137,9 @@ public:     // methods
     /*
     * https://github.com/scipy/scipy/blob/3b36a574dc657d1ca116f6e230be694f3de31afc/scipy/sparse/sparsetools/csr.h#L380
     */
-    void convert_from(SparseStorage<TScalar, TIndex, !TRowMajor> other, std::vector<TScalar>& values)
+    void convert_from(SparseStructure<TScalar, TIndex, !TRowMajor> other, std::vector<TScalar>& values)
     {
-        const auto nnz = other.nnz();
+        const auto nnz = other.nb_nonzeros();
 
         const auto n = TRowMajor ? other.cols() : other.rows();
         const auto m = TRowMajor ? other.rows() : other.cols();

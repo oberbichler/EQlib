@@ -6,7 +6,7 @@
 #include "Objective.h"
 #include "Settings.h"
 #include "Timer.h"
-#include "SparseStorage.h"
+#include "SparseStructure.h"
 
 #include <sparsehash/dense_hash_map>
 
@@ -207,8 +207,8 @@ private:    // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
-    SparseStorage<double, int, false> m_dg_structure;
-    SparseStorage<double, int, false> m_hl_structure;
+    SparseStructure<double, int, false> m_dg_structure;
+    SparseStructure<double, int, false> m_hl_structure;
     Data m_data;
     tbb::combinable<Data> m_local_data;
 
