@@ -16,6 +16,11 @@ private:    // variables
 public:     // methods
     Objective() : m_is_active(true) { }
 
+    const Pointer<Variable>& variable(const index i) const
+    {
+        return m_variables[i];
+    }
+
     const std::vector<Pointer<Variable>>& variables() const
     {
         return m_variables;

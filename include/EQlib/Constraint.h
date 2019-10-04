@@ -18,6 +18,16 @@ private:    // variables
 public:     // methods
     Constraint() : m_is_active(true) { }
 
+    const Pointer<Equation>& equation(const index i) const
+    {
+        return m_equations[i];
+    }
+
+    const Pointer<Variable>& variable(const index i) const
+    {
+        return m_variables[i];
+    }
+
     const std::vector<Pointer<Equation>>& equations() const
     {
         return m_equations;
