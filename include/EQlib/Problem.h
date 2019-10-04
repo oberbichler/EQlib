@@ -352,6 +352,10 @@ private:    // methods: computation
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
+        double time_element_allocate;
+        double time_element_compute;
+        double time_element_assemble;
+
         for (index i = begin; i != end; ++i) {
             const auto& element_f = *m_elements_f[i];
 
@@ -362,6 +366,8 @@ private:    // methods: computation
             const auto& variable_indices = m_element_f_variable_indices[i];
 
             const auto n = m_element_f_nb_variables[i];
+
+            Timer timer_element_allocate;
 
             Vector g;
             Matrix h;
@@ -374,7 +380,15 @@ private:    // methods: computation
                 h = Matrix(n, n);
             }
 
+            time_element_allocate += timer_element_allocate.ellapsed();
+
+            Timer timer_element_compute;
+
             const double f = element_f.compute(g, h);
+
+            time_element_compute += timer_element_compute.ellapsed();
+
+            Timer timer_element_assemble;
 
             data.f() += f;
 
@@ -399,13 +413,23 @@ private:    // methods: computation
                     m_hl_structure.coeff_ref(hl_values, row.global, col.global) += h(row.local, col.local);
                 }
             }
+
+            time_element_assemble += timer_element_assemble.ellapsed();
         }
+
+        Log::info(2, "Elements allocated in {} sec", time_element_allocate);
+        Log::info(2, "Elements computed in {} sec", time_element_compute);
+        Log::info(2, "Elements assembled in {} sec", time_element_assemble);
     }
 
     template <index TOrder, typename TBegin, typename TEnd>
     void compute_elements_g(ProblemData& data, const TBegin& begin, const TEnd& end)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
+
+        double time_element_allocate;
+        double time_element_compute;
+        double time_element_assemble;
 
         for (index i = begin; i != end; ++i) {
             const auto& element_g = *m_elements_g[i];
@@ -424,6 +448,8 @@ private:    // methods: computation
                 continue;
             }
 
+            Timer timer_element_allocate;
+
             std::vector<double> buffer(m * n + m * n * n);
 
             Vector fs(m);
@@ -440,7 +466,15 @@ private:    // methods: computation
                 hs.push_back(h);
             }
 
+            time_element_allocate += timer_element_allocate.ellapsed();
+
+            Timer timer_element_compute;
+
             element_g.compute(fs, gs, hs);
+
+            time_element_compute += timer_element_compute.ellapsed();
+
+            Timer timer_element_assemble;
 
             for (const auto& equation_index : equation_indices) {
                 const auto& equation = m_equations[equation_index.global];
@@ -476,7 +510,13 @@ private:    // methods: computation
                     }
                 }
             }
+
+            time_element_assemble += timer_element_assemble.ellapsed();
         }
+
+        Log::info(2, "Elements allocated in {} sec", time_element_allocate);
+        Log::info(2, "Elements computed in {} sec", time_element_compute);
+        Log::info(2, "Elements assembled in {} sec", time_element_assemble);
     }
 
     template <typename TBegin, typename TEnd>
@@ -518,7 +558,13 @@ public:     // methods: computation
             throw std::invalid_argument("order");
         }
 
+        Log::info(1, "==> Compute problem...");
+
+        Timer timer;
+
         m_data.set_zero();
+
+        Log::info(2, "Compute objective...");
 
         if (!m_parallel) {
             compute_elements_f(order, m_data, 0, nb_elements_f());
@@ -543,6 +589,8 @@ public:     // methods: computation
             m_data.hl() *= sigma();
         }
 
+        Log::info(2, "Compute constraints...");
+
         if (!m_parallel) {
             compute_elements_g(order, m_data, 0, nb_elements_g());
         } else {
@@ -561,6 +609,8 @@ public:     // methods: computation
                 m_data += local;
             });
         }
+
+        Log::info(2, "Problem computed in {} sec", timer.ellapsed());
     }
 
 public:     // methods
