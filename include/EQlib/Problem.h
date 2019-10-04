@@ -478,14 +478,6 @@ public:     // constructors
             }
         }
 
-        Eigen::VectorXi sparse_size_dg(n);
-        Eigen::VectorXi sparse_size_hl(n);
-
-        for (index col = 0; col < n; col++) {
-            sparse_size_dg[col] = length(m_pattern_dg[col]);
-            sparse_size_hl[col] = length(m_pattern_hl[col]);
-        }
-
 
         Log::info(3, "Allocate memory...");
 
