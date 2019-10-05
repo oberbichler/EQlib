@@ -193,7 +193,7 @@ public:     // methods
     {
         for (TIndex col = 0; col < m_cols; col++) {
             for (TIndex i = m_ia[col]; i < m_ia[col + 1]; i++) {
-                const TIndex row = m_aj[i];
+                const TIndex row = m_ja[i];
                 action(row, col);
             }
         }
