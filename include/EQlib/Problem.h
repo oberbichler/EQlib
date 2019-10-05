@@ -66,6 +66,9 @@ private:    // variables
     std::vector<index> m_element_g_nb_variables;
     std::vector<index> m_element_g_nb_equations;
 
+    index m_max_element_n;
+    index m_max_element_m;
+
     std::vector<std::vector<Index>> m_element_f_variable_indices;
     std::vector<std::vector<Index>> m_element_f_df_indices;
 
@@ -88,6 +91,8 @@ public:     // constructors
     , m_elements_g(std::move(elements_g))
     , m_sigma(1.0)
     , m_parallel(false)
+    , m_max_element_n(0)
+    , m_max_element_m(0)
     {
         Log::info(1, "==> Initialize problem...");
 
@@ -118,7 +123,10 @@ public:     // constructors
 
             variables_f[i] = element.variables();
 
-            m_element_f_nb_variables[i] = length(variables_f[i]);
+            const index nb_variables = length(variables_f[i]);
+
+            m_element_f_nb_variables[i] = nb_variables;
+            m_max_element_n = std::max(m_max_element_n, nb_variables);
         }
 
         for (index i = 0; i < nb_elements_g; i++) {
@@ -127,8 +135,14 @@ public:     // constructors
             equations_g[i] = element.equations();
             variables_g[i] = element.variables();
 
-            m_element_g_nb_variables[i] = length(variables_g[i]);
-            m_element_g_nb_equations[i] = length(equations_g[i]);
+            const index nb_equations = length(equations_g[i]);
+            const index nb_variables = length(variables_g[i]);
+
+            m_element_g_nb_variables[i] = nb_variables;
+            m_element_g_nb_equations[i] = nb_equations;
+
+            m_max_element_n = std::max(m_max_element_n, nb_variables);
+            m_max_element_m = std::max(m_max_element_m, nb_equations);
         }
 
 
@@ -340,7 +354,7 @@ public:     // constructors
         m_dg_structure.set(m, n, m_pattern_dg);
         m_hl_structure.set(n, n, m_pattern_hl);
 
-        m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
+        m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
 
         Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
@@ -351,10 +365,6 @@ private:    // methods: computation
     void compute_elements_f(ProblemData& data, const TBegin& begin, const TEnd& end)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
-
-        double time_element_allocate;
-        double time_element_compute;
-        double time_element_assemble;
 
         for (index i = begin; i != end; ++i) {
             const auto& element_f = *m_elements_f[i];
@@ -369,24 +379,16 @@ private:    // methods: computation
 
             Timer timer_element_allocate;
 
-            Vector g;
-            Matrix h;
+            Map<Vector> g(data.m_buffer.data(), n);
+            Map<Matrix> h(data.m_buffer.data() + n, n, n);
 
-            if constexpr(TOrder > 0) {
-                g = Vector(n);
-            }
-
-            if constexpr(TOrder > 1) {
-                h = Matrix(n, n);
-            }
-
-            time_element_allocate += timer_element_allocate.ellapsed();
+            data.m_timer_allocate += timer_element_allocate.ellapsed();
 
             Timer timer_element_compute;
 
             const double f = element_f.compute(g, h);
 
-            time_element_compute += timer_element_compute.ellapsed();
+            data.m_timer_compute += timer_element_compute.ellapsed();
 
             Timer timer_element_assemble;
 
@@ -414,22 +416,14 @@ private:    // methods: computation
                 }
             }
 
-            time_element_assemble += timer_element_assemble.ellapsed();
+            data.m_timer_assemble += timer_element_assemble.ellapsed();
         }
-
-        Log::info(2, "Elements allocated in {} sec", time_element_allocate);
-        Log::info(2, "Elements computed in {} sec", time_element_compute);
-        Log::info(2, "Elements assembled in {} sec", time_element_assemble);
     }
 
     template <index TOrder, typename TBegin, typename TEnd>
     void compute_elements_g(ProblemData& data, const TBegin& begin, const TEnd& end)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
-
-        double time_element_allocate;
-        double time_element_compute;
-        double time_element_assemble;
 
         for (index i = begin; i != end; ++i) {
             const auto& element_g = *m_elements_g[i];
@@ -450,8 +444,6 @@ private:    // methods: computation
 
             Timer timer_element_allocate;
 
-            std::vector<double> buffer(m * n + m * n * n);
-
             Vector fs(m);
             std::vector<Ref<Vector>> gs;
             std::vector<Ref<Matrix>> hs;
@@ -460,19 +452,19 @@ private:    // methods: computation
             hs.reserve(m);
 
             for (index k = 0; k < m; k++) {
-                Map<Vector> g(buffer.data() + k * n, n);
-                Map<Matrix> h(buffer.data() + m * n + k * n * n, n, n);
+                Map<Vector> g(data.m_buffer.data() + k * n, n);
+                Map<Matrix> h(data.m_buffer.data() + m * n + k * n * n, n, n);
                 gs.push_back(g);
                 hs.push_back(h);
             }
 
-            time_element_allocate += timer_element_allocate.ellapsed();
+            data.m_timer_allocate += timer_element_allocate.ellapsed();
 
             Timer timer_element_compute;
 
             element_g.compute(fs, gs, hs);
 
-            time_element_compute += timer_element_compute.ellapsed();
+            data.m_timer_compute += timer_element_compute.ellapsed();
 
             Timer timer_element_assemble;
 
@@ -511,12 +503,8 @@ private:    // methods: computation
                 }
             }
 
-            time_element_assemble += timer_element_assemble.ellapsed();
+            data.m_timer_assemble += timer_element_assemble.ellapsed();
         }
-
-        Log::info(2, "Elements allocated in {} sec", time_element_allocate);
-        Log::info(2, "Elements computed in {} sec", time_element_compute);
-        Log::info(2, "Elements assembled in {} sec", time_element_assemble);
     }
 
     template <typename TBegin, typename TEnd>
@@ -573,7 +561,7 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
+                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
                     compute_elements_f(order, local_data, range.begin(), range.end());
                 }, tbb::static_partitioner()
             );
@@ -598,7 +586,7 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                     Log::info(5, "Launch kernel with {} elements", range.size());
                     auto& local_data = m_local_data.local();
-                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros());
+                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
                     compute_elements_g(order, local_data, range.begin(), range.end());
                 }, tbb::static_partitioner()
             );
@@ -611,6 +599,10 @@ public:     // methods: computation
         }
 
         Log::info(2, "Problem computed in {} sec", timer.ellapsed());
+
+        Log::info(3, "Elements allocated in {} sec", m_data.m_timer_allocate);
+        Log::info(3, "Elements computed in {} sec", m_data.m_timer_compute);
+        Log::info(3, "Elements assembled in {} sec", m_data.m_timer_assemble);
     }
 
 public:     // methods

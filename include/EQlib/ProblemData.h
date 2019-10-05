@@ -13,13 +13,24 @@ private:    // variables
     index m_nb_nonzeros_dg;
     index m_nb_nonzeros_hl;
 
+public:     // variables
+    double m_timer_allocate;
+    double m_timer_compute;
+    double m_timer_assemble;
+    std::vector<double> m_buffer;
+
+public:     // constructor
+    ProblemData() : m_timer_allocate(0), m_timer_compute(0), m_timer_assemble(0)
+    {
+    }
+
 public:     // methods
     void set_zero()
     {
         std::fill(m_data.begin(), m_data.end(), 0);
     }
 
-    void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hl)
+    void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hl, const index max_element_n, const index max_element_m)
     {
         m_n = n;
         m_m = m;
@@ -29,6 +40,8 @@ public:     // methods
         const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hl;
 
         m_data.resize(nb_entries);
+
+        m_buffer.resize(max_element_m + max_element_m * max_element_n + max_element_n * max_element_n);
 
         set_zero();
     }
@@ -140,6 +153,10 @@ public:     // methods
         for (index i = 0; i < length(m_data); i++) {
             m_data[i] += rhs.m_data[i];
         }
+
+        m_timer_allocate += rhs.m_timer_allocate;
+        m_timer_compute += rhs.m_timer_compute;
+        m_timer_assemble += rhs.m_timer_assemble;
 
         return *this;
     }
