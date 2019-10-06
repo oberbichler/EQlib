@@ -12,6 +12,8 @@ class Element
 public:     // methods
     Element() { }
 
+    virtual ~Element() = default;
+
     virtual std::vector<Pointer<Parameter>> dofs() const = 0;
 
     virtual double compute(Ref<Vector> g, Ref<Matrix> h) const = 0;

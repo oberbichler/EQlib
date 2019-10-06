@@ -18,6 +18,8 @@ private:    // variables
 public:     // methods
     Constraint() : m_is_active(true) { }
 
+    virtual ~Constraint() = default;
+
     const Pointer<Equation>& equation(const index i) const
     {
         return m_equations[i];

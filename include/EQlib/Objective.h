@@ -16,6 +16,8 @@ private:    // variables
 public:     // methods
     Objective() : m_is_active(true) { }
 
+    virtual ~Objective() = default;
+
     const Pointer<Variable>& variable(const index i) const
     {
         return m_variables[i];

@@ -25,6 +25,8 @@ namespace EQlib {
 
 struct LinearSolverOld
 {
+    virtual ~LinearSolverOld() = default;
+
     virtual void analyze(Ref<const Sparse> a) = 0;
 
     virtual void factorize(Ref<const Sparse> a) = 0;
