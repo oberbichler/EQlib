@@ -9,11 +9,12 @@ namespace EQlib {
 
 class Element
 {
-public:     // methods
+public:     // constructors
     Element() { }
 
     virtual ~Element() = default;
 
+public:     // methods
     virtual std::vector<Pointer<Parameter>> dofs() const = 0;
 
     virtual double compute(Ref<Vector> g, Ref<Matrix> h) const = 0;

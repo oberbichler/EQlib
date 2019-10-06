@@ -15,11 +15,12 @@ private:    // variables
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
 
-public:     // methods
+public:     // constructors
     Constraint() : m_is_active(true) { }
 
     virtual ~Constraint() = default;
 
+public:     // methods
     const Pointer<Equation>& equation(const index i) const
     {
         return m_equations[i];
@@ -91,11 +92,14 @@ public:     // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Trampoline, Holder>(m, "Constraint")
+            // constructors
             .def(py::init<>())
+            // properties
             .def_property("equations", &Type::equations, &Type::set_equations)
-            .def_property("variables", &Type::variables, &Type::set_variables)
-            .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
             .def_property("is_active", &Type::is_active, &Type::set_active)
+            .def_property("variables", &Type::variables, &Type::set_variables)
+            // methods
+            .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
         ;
     }
 };

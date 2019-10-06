@@ -13,11 +13,12 @@ private:    // variables
     bool m_is_active;
     std::vector<Pointer<Variable>> m_variables;
 
-public:     // methods
+public:     // constructors
     Objective() : m_is_active(true) { }
 
     virtual ~Objective() = default;
 
+public:     // methods
     const Pointer<Variable>& variable(const index i) const
     {
         return m_variables[i];
@@ -72,10 +73,13 @@ public:     // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Trampoline, Holder>(m, "Objective")
+            // constructors
             .def(py::init<>())
-            .def_property("variables", &Type::variables, &Type::set_variables)
-            .def("compute", &Type::compute, "g"_a, "h"_a)
+            // properties
             .def_property("is_active", &Type::is_active, &Type::set_active)
+            .def_property("variables", &Type::variables, &Type::set_variables)
+            // methods
+            .def("compute", &Type::compute, "g"_a, "h"_a)
         ;
     }
 };
