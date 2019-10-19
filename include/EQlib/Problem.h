@@ -70,13 +70,12 @@ private:    // variables
     index m_max_element_m;
 
     std::vector<std::vector<Index>> m_element_f_variable_indices;
-    std::vector<std::vector<Index>> m_element_f_df_indices;
-
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
     SparseStructure<double, int, false> m_dg_structure;
     SparseStructure<double, int, false> m_hl_structure;
+
     ProblemData m_data;
     tbb::combinable<ProblemData> m_local_data;
 
