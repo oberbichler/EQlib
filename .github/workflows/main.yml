@@ -17,5 +17,5 @@ jobs:
         echo test, and deploy your project.
     - name: Run Anaconda
       run: |
-        $CONDA/bin/activate
+        source $CONDA/bin/activate
         pip install .
