@@ -40,23 +40,3 @@ jobs:
       run: |
         source $CONDA/bin/activate
         python -m unittest discover -s ./tests -p "test_*.py"
-
-  test_macos:
-    name: Test on MacOS
-    runs-on: macOS-latest
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Install requirements
-      run: |
-        source $CONDA/bin/activate
-        conda install mkl-devel numpy scipy tbb-devel
-        pip install git+https://github.com/oberbichler/HyperJet
-    - name: Build package
-      run: |
-        source $CONDA/bin/activate
-        pip install .
-    - name: Run tests
-      run: |
-        source $CONDA/bin/activate
-        python -m unittest discover -s ./tests -p "test_*.py"
