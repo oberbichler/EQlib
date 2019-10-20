@@ -1,0 +1,19 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup
+      run: |
+        source $CONDA/bin/activate
+        conda install mkl-devel tbb-devel
+    - name: Build
+      run: |
+        source $CONDA/bin/activate
+        pip install .
