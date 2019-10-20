@@ -18,4 +18,4 @@ jobs:
     - name: Run Anaconda
       run: |
         $CONDA/bin/activate
-        conda install numpy
+        pip install .
