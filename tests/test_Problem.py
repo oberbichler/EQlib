@@ -9,32 +9,24 @@ class F1(eq.Objective):
         eq.Objective.__init__(self)
         self.x1 = x1
         self.x2 = x2
-
-    def variables(self):
-        return [self.x1, self.x2]
+        self.variables = [self.x1, self.x2]
 
     def compute(self, g, h):
         x1, x2 = hj.HyperJet.variables([self.x1.act_value, self.x2.act_value])
         r = x1**2 + x2**2
-        g[:] = r.g
-        h[:] = r.h
-        return r.f
+        return hj.explode(r, g, h)
 
 class F2(eq.Objective):
     def __init__(self, x2, x3):
         eq.Objective.__init__(self)
         self.x2 = x2
         self.x3 = x3
-
-    def variables(self):
-        return [self.x2, self.x3]
+        self.variables = [self.x2, self.x3]
 
     def compute(self, g, h):
         x2, x3 = hj.HyperJet.variables([self.x2.act_value, self.x3.act_value])
         r = x2**2 - x3
-        g[:] = r.g
-        h[:] = r.h
-        return r.f
+        return hj.explode(r, g, h)
 
 class C1(eq.Constraint):
     def __init__(self, g1, x1, x3):
@@ -42,20 +34,14 @@ class C1(eq.Constraint):
         self.g1 = g1
         self.x1 = x1
         self.x3 = x3
-
-    def equations(self):
-        return [self.g1]
-
-    def variables(self):
-        return [self.x1, self.x3]
+        self.equations = [self.g1]
+        self.variables = [self.x1, self.x3]
 
     def compute(self, fs, gs, hs):
         x1, x3 = hj.HyperJet.variables([self.x1.act_value, self.x3.act_value])
         rs = [x1**2 + x1 * x3]
         for k in range(len(rs)):
-            fs[k] = rs[k].f
-            gs[k][:] = rs[k].g
-            hs[k][:] = rs[k].h
+            fs[k] = hj.explode(rs[k], gs[k], hs[k])
 
 class C2(eq.Constraint):
     def __init__(self, g1, g2, x3):
@@ -63,20 +49,14 @@ class C2(eq.Constraint):
         self.g1 = g1
         self.g2 = g2
         self.x3 = x3
-
-    def equations(self):
-        return [self.g1, self.g2]
-
-    def variables(self):
-        return [self.x3]
+        self.equations = [self.g1, self.g2]
+        self.variables = [self.x3]
 
     def compute(self, fs, gs, hs):
         x3, = hj.HyperJet.variables([self.x3.act_value])
         rs = [x3**2, x3]
         for k in range(len(rs)):
-            fs[k] = rs[k].f
-            gs[k][:] = rs[k].g
-            hs[k][:] = rs[k].h
+            fs[k] = hj.explode(rs[k], gs[k], hs[k])
 
 class C3(eq.Constraint):
     def __init__(self, g2, g3, x4):
@@ -84,40 +64,28 @@ class C3(eq.Constraint):
         self.g2 = g2
         self.g3 = g3
         self.x4 = x4
-
-    def equations(self):
-        return [self.g2, self.g3]
-
-    def variables(self):
-        return [self.x4]
+        self.equations = [self.g2, self.g3]
+        self.variables = [self.x4]
 
     def compute(self, fs, gs, hs):
         x4, = hj.HyperJet.variables([self.x4.act_value])
         rs = [-x4, x4]
         for k in range(len(rs)):
-            fs[k] = rs[k].f
-            gs[k][:] = rs[k].g
-            hs[k][:] = rs[k].h
+            fs[k] = hj.explode(rs[k], gs[k], hs[k])
 
 class C4(eq.Constraint):
     def __init__(self, g3, x2):
         eq.Constraint.__init__(self)
         self.g3 = g3
         self.x2 = x2
-
-    def equations(self):
-        return [self.g3]
-
-    def variables(self):
-        return [self.x2]
+        self.equations = [self.g3]
+        self.variables = [self.x2]
 
     def compute(self, fs, gs, hs):
         x2, = hj.HyperJet.variables([self.x2.act_value])
         rs = [x2]
         for k in range(len(rs)):
-            fs[k] = rs[k].f
-            gs[k][:] = rs[k].g
-            hs[k][:] = rs[k].h
+            fs[k] = hj.explode(rs[k], gs[k], hs[k])
 
 class TestProblem(unittest.TestCase):
 
