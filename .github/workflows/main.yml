@@ -13,6 +13,7 @@ jobs:
       run: |
         source $CONDA/bin/activate
         conda install mkl-devel numpy scipy tbb-devel
+        pip install git+https://github.com/oberbichler/HyperJet
     - name: Build package
       run: |
         source $CONDA/bin/activate
