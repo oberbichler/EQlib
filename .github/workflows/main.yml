@@ -12,7 +12,7 @@ jobs:
     - name: Install requirements
       run: |
         source $CONDA/bin/activate
-        conda install mkl-devel tbb-devel
+        conda install mkl-devel numpy scipy tbb-devel
     - name: Build package
       run: |
         source $CONDA/bin/activate
