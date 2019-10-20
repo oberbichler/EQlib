@@ -12,4 +12,5 @@ jobs:
     - name: Build and install
       run: |
         source $CONDA/bin/activate
+        conda install mkl-devel tbb-devel
         pip install .
