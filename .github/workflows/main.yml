@@ -9,16 +9,16 @@ jobs:
     - uses: actions/checkout@v1
     - name: Install requirements
       run: |
-        call %CONDA%/bin/activate
+        call %CONDA%/Scripts/activate.bat
         conda install mkl-devel numpy scipy tbb-devel
         pip install git+https://github.com/oberbichler/HyperJet
     - name: Build package
       run: |
-        call %CONDA%/bin/activate
+        call %CONDA%/Scripts/activate.bat
         pip install .
     - name: Run tests
       run: |
-        call %CONDA%/bin/activate
+        call %CONDA%/Scripts/activate.bat
         python -m unittest discover -s ./tests -p "test_*.py"
       
   test_linux:
