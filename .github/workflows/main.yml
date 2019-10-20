@@ -1,25 +1,43 @@
 on: [push]
 
 jobs:
-  test:
+  test_linux:
     name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v1
-    - name: Activate conda
-      run: source $CONDA/bin/activate
-      if: matrix.os == 'ubuntu-latest'
     - name: Install requirements
       run: |
+        source $CONDA/bin/activate
         conda install mkl-devel numpy scipy tbb-devel
         pip install git+https://github.com/oberbichler/HyperJet
     - name: Build package
       run: |
+        source $CONDA/bin/activate
         pip install .
     - name: Run tests
       run: |
+        source $CONDA/bin/activate
+        python -m unittest discover -s ./tests -p "test_*.py"
+
+
+  test_windows:
+    name: Test on ${{ matrix.os }}
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install requirements
+      run: |
+        call $CONDA/bin/activate
+        conda install mkl-devel numpy scipy tbb-devel
+        pip install git+https://github.com/oberbichler/HyperJet
+    - name: Build package
+      run: |
+        call $CONDA/bin/activate
+        pip install .
+    - name: Run tests
+      run: |
+        call $CONDA/bin/activate
         python -m unittest discover -s ./tests -p "test_*.py"
