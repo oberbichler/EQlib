@@ -95,12 +95,4 @@ else()
 endif()
 
 
-find_package(CUDA)
-
-target_include_directories(EQlib SYSTEM PRIVATE ${CUDA_INCLUDE_DIRS})
-target_link_libraries(EQlib PRIVATE ${CUDA_LIBRARIES})
-target_link_libraries(EQlib PRIVATE ${CUDA_cusparse_LIBRARY})
-target_link_libraries(EQlib PRIVATE ${CUDA_cusolver_LIBRARY})
-
-
 install(TARGETS EQlib IGAlib DESTINATION bin)
