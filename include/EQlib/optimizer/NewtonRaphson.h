@@ -120,7 +120,7 @@ public:     // methods
 
             Log::info(2, "Computing system...");
 
-            m_problem->compute(); //assemble<2>(parallel, m_f, m_g, m_h);
+            m_problem->compute();
             m_gevals += 1;
             m_hevals += 1;
 
@@ -147,10 +147,6 @@ public:     // methods
             // solve iteration
 
             Log::info(2, "Solving the linear equation system...");
-
-            // if (damping != 0.0) {
-            //     m_problem->hl_add_diagonal(damping);
-            // }
 
             Vector delta = m_problem->hl_inv_v(m_residual);
 
