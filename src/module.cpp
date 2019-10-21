@@ -7,15 +7,11 @@
 #include <pybind11/stl_bind.h>
 
 #include <EQlib/Constraint.h>
-#include <EQlib/Element.h>
 #include <EQlib/Equation.h>
 #include <EQlib/Log.h>
-#include <EQlib/Node.h>
 #include <EQlib/Objective.h>
-#include <EQlib/Parameter.h>
 #include <EQlib/Problem.h>
 #include <EQlib/Point.h>
-#include <EQlib/System.h>
 #include <EQlib/Variable.h>
 
 #include <EQlib/optimizer/GradientDescent.h>
@@ -27,18 +23,10 @@
 #include <EQlib/optimizer/Worhp.h>
 #endif
 
-#include <EQlib/solver/LBfgsSolver.h>
-#include <EQlib/solver/LevenbergMarquardtSolver.h>
-#include <EQlib/solver/NewtonDescentSolver.h>
-#ifdef EQLIB_USE_WORHP
-#include <EQlib/solver/WorhpSolver.h>
-#endif
-
-#include <EQlib/Elements/BoundaryConstraint.h>
-#include <EQlib/Elements/EqualityConstraint.h>
-#include <EQlib/Elements/EqualSubdivisionConstraint.h>
-#include <EQlib/Elements/LengthConstraint.h>
-#include <EQlib/Elements/NodalEquilibrium.h>
+#include <EQlib/objectives/IgaShell3PAD.h>
+#include <EQlib/objectives/IgaShell3PRefAD.h>
+#include <EQlib/objectives/IgaShell3PLoadAD.h>
+#include <EQlib/objectives/IgaShell3PLoadRefAD.h>
 
 #include <EQlib/Version.h>
 
@@ -69,26 +57,11 @@ PYBIND11_MODULE(EQlib, m) {
     m.attr("USE_MKL") = false;
 #endif // EIGEN_USE_MKL_ALL
 
-    // Element
-    EQlib::Element::register_python(m);
-
     // Log
     EQlib::Log::register_python(m);
 
-    // Node
-    EQlib::Node::register_python(m);
-
     // Point
     EQlib::Point::register_python(m);
-
-    // Parameter
-    EQlib::Parameter::register_python(m);
-
-    // System
-    EQlib::System<false>::register_python(m);
-
-    // SymmetricSystem
-    EQlib::System<true>::register_python(m);
 
     // Timer
     EQlib::Timer::register_python(m);
@@ -97,20 +70,6 @@ PYBIND11_MODULE(EQlib, m) {
     // --- solver
 
     auto solver = m.def_submodule("solver");
-
-    // LBfgsSolver
-    EQlib::LBfgsSolver::register_python(solver);
-
-    // LevenbergMarquardtSolver
-    EQlib::LevenbergMarquardtSolver::register_python(solver);
-
-    // NewtonDescentSolver
-    EQlib::NewtonDescentSolver::register_python(solver);
-
-    // Worhp
-    #ifdef EQLIB_USE_WORHP
-    EQlib::WorhpSolver::register_python(solver);
-    #endif
 
 
     // --- optimizer
@@ -126,30 +85,12 @@ PYBIND11_MODULE(EQlib, m) {
     #endif
 
     // NewtonRaphson
-    EQlib::NewtonRaphson::register_python(optimizer);
+    EQlib::NewtonRaphson::register_python(m);
 
     // Worhp
     #ifdef EQLIB_USE_WORHP
     EQlib::Worhp::register_python(optimizer);
     #endif
-
-
-    // --- Elements
-
-    // BoundaryConstraint
-    EQlib::BoundaryConstraint::register_python(m);
-
-    // EqualityConstraint
-    EQlib::EqualityConstraint::register_python(m);
-
-    // EqualSubdivisionConstraint
-    EQlib::EqualSubdivisionConstraint::register_python(m);
-
-    // LengthConstraint
-    EQlib::LengthConstraint::register_python(m);
-
-    // NodalEquilibrium
-    EQlib::NodalEquilibrium::register_python(m);
 
 
     // Equation
@@ -166,4 +107,19 @@ PYBIND11_MODULE(EQlib, m) {
 
     // Problem
     EQlib::Problem::register_python(m);
+
+
+    // --- objectives
+
+    // IgaShell3PAD
+    EQlib::IgaShell3PAD::register_python(m);
+
+    // IgaShell3PRefAD
+    EQlib::IgaShell3PRefAD::register_python(m);
+
+    // IgaShell3PLoadAD
+    EQlib::IgaShell3PLoadAD::register_python(m);
+
+    // IgaShell3PLoadRefAD
+    EQlib::IgaShell3PLoadRefAD::register_python(m);
 }
