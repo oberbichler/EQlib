@@ -39,7 +39,6 @@ add_definitions(
 )
 
 pybind11_add_module(EQlib src/module.cpp)
-pybind11_add_module(IGAlib src/iga_module.cpp)
 
 if (DEFINED ENV{CONDA_PREFIX})
     message("-- Found Anaconda: $ENV{CONDA_PREFIX}")
@@ -62,7 +61,6 @@ if(MKL_LIBRARY)
     message("-- Found MKL: ${MKL_LIBRARY}")
     add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
     target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
-    target_link_libraries(IGAlib PRIVATE ${MKL_LIBRARY})
 else()
     message(FATAL_ERROR "-- MKL not found")
 endif()
@@ -74,7 +72,6 @@ find_library(TBB_DBG_LIBRARY tbb_debug)
 if(TBB_LIBRARY)
     message("-- Found TBB: ${TBB_LIBRARY}")
     target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
-    target_link_libraries(IGAlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
 else()
     message(FATAL_ERROR "-- TBB not found")
 endif()
@@ -98,8 +95,7 @@ endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(EQlib PUBLIC -fsized-deallocation)
-    target_compile_options(IGAlib PUBLIC -fsized-deallocation)
 endif()
 
 
-install(TARGETS EQlib IGAlib DESTINATION bin)
+install(TARGETS EQlib DESTINATION bin)
