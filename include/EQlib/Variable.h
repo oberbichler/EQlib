@@ -49,7 +49,7 @@ public:     // constructors
         const double upper_bound,
         const bool is_active,
         const std::string name) noexcept
-    : Variable(value, value, lower_bound, upper_bound, is_active, 1.0, "")
+    : Variable(value, value, lower_bound, upper_bound, is_active, 1.0, name)
     { }
 
     Variable(

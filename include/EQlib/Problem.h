@@ -51,7 +51,6 @@ private:    // variables
     double m_sigma;
 
     bool m_parallel;
-    bool m_general_hl;
 
     ElementsF m_elements_f;
     ElementsG m_elements_g;
@@ -70,13 +69,12 @@ private:    // variables
     index m_max_element_m;
 
     std::vector<std::vector<Index>> m_element_f_variable_indices;
-    std::vector<std::vector<Index>> m_element_f_df_indices;
-
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
     SparseStructure<double, int, false> m_dg_structure;
     SparseStructure<double, int, false> m_hl_structure;
+
     ProblemData m_data;
     tbb::combinable<ProblemData> m_local_data;
 
@@ -97,8 +95,6 @@ public:     // constructors
         Log::info(1, "==> Initialize problem...");
 
         Timer timer;
-
-        m_general_hl = get_or_default(linear_solver, "general_hl", false);
 
         const auto nb_elements_f = length(m_elements_f);
         const auto nb_elements_g = length(m_elements_g);
@@ -319,7 +315,7 @@ public:     // constructors
             for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                 const auto col = variable_indices[col_i];
 
-                for (index row_i = m_general_hl ? 0 : col_i; row_i < length(variable_indices); row_i++) {
+                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
                     m_pattern_hl[col.global].insert(row.global);
@@ -340,7 +336,7 @@ public:     // constructors
             for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                 const auto col = variable_indices[col_i];
 
-                for (index row_i = m_general_hl ? 0 : col_i; row_i < length(variable_indices); row_i++) {
+                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
                     m_pattern_hl[col.global].insert(row.global);
