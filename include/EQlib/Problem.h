@@ -630,6 +630,13 @@ public:     // methods
         return hl().selfadjointView<Eigen::Lower>() * v;
     }
 
+    void hl_add_diagonal(const double value)
+    {
+        for (index i = 0; i < hl().rows(); i++) {
+            m_data.hl(m_hl_structure.ia(i)) += value;
+        }
+    }
+
     // Pointer<Problem> clone() const
     // {
     //     return new_<Problem>(*this);
