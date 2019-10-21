@@ -12,92 +12,124 @@ namespace EQlib {
 class Point
 {
 private:    // variables
-    Pointer<Variable> m_x;
-    Pointer<Variable> m_y;
-    Pointer<Variable> m_z;
+    Pointer<Variable> m_ref_x;
+    Pointer<Variable> m_ref_y;
+    Pointer<Variable> m_ref_z;
+    Pointer<Variable> m_act_x;
+    Pointer<Variable> m_act_y;
+    Pointer<Variable> m_act_z;
 
-    std::unordered_map<std::string, Pointer<Variable>> m_parameters;
+    std::unordered_map<std::string, Pointer<Variable>> m_variables;
 
 public:     // constructors
     Point(const double x, const double y, const double z) noexcept
-    : m_x(new_<Variable>(x))
-    , m_y(new_<Variable>(y))
-    , m_z(new_<Variable>(z))
-    { }
+    : m_ref_x(new_<Variable>(x))
+    , m_ref_y(new_<Variable>(y))
+    , m_ref_z(new_<Variable>(z))
+    , m_act_x(new_<Variable>(x))
+    , m_act_y(new_<Variable>(y))
+    , m_act_z(new_<Variable>(z))
+    {
+    }
 
-    Point() noexcept : Point(0, 0, 0)
-    { }
+    Point() noexcept
+    : Point(0, 0, 0)
+    {
+    }
 
-public:     // getters and setters
+public:     // methods
+    Pointer<Variable> ref_x() noexcept
+    {
+        return m_ref_x;
+    }
+
+    Pointer<Variable> ref_y() noexcept
+    {
+        return m_ref_y;
+    }
+
+    Pointer<Variable> ref_z() noexcept
+    {
+        return m_ref_z;
+    }
+
     Pointer<Variable> x() noexcept
     {
-        return m_x;
+        return m_act_x;
     }
 
     Pointer<Variable> y() noexcept
     {
-        return m_y;
+        return m_act_y;
     }
 
     Pointer<Variable> z() noexcept
     {
-        return m_z;
+        return m_act_z;
     }
 
     Vector3D ref_location() const noexcept
     {
-        return Vector3D(m_x->ref_value(), m_y->ref_value(), m_z->ref_value());
+        return Vector3D(m_ref_x->act_value(), m_ref_y->act_value(), m_ref_z->act_value());
     }
 
     void set_ref_location(Vector3D value) noexcept
     {
-        m_x->set_ref_value(value[0]);
-        m_y->set_ref_value(value[1]);
-        m_z->set_ref_value(value[2]);
+        m_ref_x->set_ref_value(value[0]);
+        m_ref_y->set_ref_value(value[1]);
+        m_ref_z->set_ref_value(value[2]);
     }
 
     Vector3D act_location() const noexcept
     {
-        return Vector3D(m_x->act_value(), m_y->act_value(), m_z->act_value());
+        return Vector3D(m_act_x->act_value(), m_act_y->act_value(), m_act_z->act_value());
     }
 
     void set_act_location(Vector3D value) noexcept
     {
-        m_x->set_act_value(value[0]);
-        m_y->set_act_value(value[1]);
-        m_z->set_act_value(value[2]);
+        m_act_x->set_act_value(value[0]);
+        m_act_y->set_act_value(value[1]);
+        m_act_z->set_act_value(value[2]);
     }
 
     Vector3D displacements() const noexcept
     {
-        return Vector3D(m_x->delta(), m_y->delta(), m_z->delta());
+        return act_location() - ref_location();
     }
 
     void set_displacements(Vector3D value) noexcept
     {
-        m_x->set_delta(value[0]);
-        m_y->set_delta(value[1]);
-        m_z->set_delta(value[2]);
+        set_act_location(ref_location() + value);
     }
 
-public:     // operators
-    Pointer<Variable> operator[](const std::string& name) noexcept
+    Pointer<Variable> variable(const std::string& name) noexcept
     {
         if (name == "x") {
-            return m_x;
-        } else if (name == "y") {
-            return m_y;
-        } else if (name == "z") {
-            return m_z;
+            return m_act_x;
+        }
+        if (name == "y") {
+            return m_act_y;
+        }
+        if (name == "z") {
+            return m_act_z;
+        }
+        if (name == "ref_x") {
+            return m_ref_x;
+        }
+        if (name == "ref_y") {
+            return m_ref_y;
+        }
+        if (name == "ref_z") {
+            return m_ref_z;
         }
 
-        return m_parameters[name];
+        return m_variables[name];
     }
 
 public:     // methods
-    bool has_parameter(const std::string& name) noexcept
+    bool has_variable(const std::string& name) noexcept
     {
-        return m_parameters.find(name) != m_parameters.end();
+        return m_variables.find(name) != m_variables.end();
     }
 
 public:     // python
@@ -118,6 +150,9 @@ public:     // python
             .def_property_readonly("x", &Type::x)
             .def_property_readonly("y", &Type::y)
             .def_property_readonly("z", &Type::z)
+            .def_property_readonly("ref_x", &Type::ref_x)
+            .def_property_readonly("ref_y", &Type::ref_y)
+            .def_property_readonly("ref_z", &Type::ref_z)
             // properties
             .def_property("ref_location", &Type::ref_location,
                 &Type::set_ref_location)
@@ -126,10 +161,9 @@ public:     // python
             .def_property("displacements", &Type::displacements,
                 &Type::set_displacements)
             // methods
-            .def("has_parameter", &Type::has_parameter, "name"_a)
-            // operators
-            .def("__getitem__", &Type::operator[],
+            .def("variable", &Type::variable, "name"_a,
                 py::return_value_policy::reference_internal)
+            .def("has_variable", &Type::has_variable, "name"_a)
         ;
     }
 };
