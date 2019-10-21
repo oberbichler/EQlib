@@ -379,8 +379,8 @@ private:    // methods: computation
 
             Timer timer_element_allocate;
 
-            Map<Vector> g(data.m_buffer.data(), n);
-            Map<Matrix> h(data.m_buffer.data() + n, n, n);
+            Vector g(n);
+            Matrix h(n, n);
 
             data.m_timer_allocate += timer_element_allocate.ellapsed();
 
