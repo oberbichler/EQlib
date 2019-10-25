@@ -76,7 +76,6 @@ private:    // variables
     SparseStructure<double, int, false> m_hl_structure;
 
     ProblemData m_data;
-    tbb::combinable<ProblemData> m_local_data;
 
     LinearSolver m_linear_solver;
 
@@ -408,9 +407,9 @@ private:    // methods: computation
                 for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    auto hl_values = data.hl();
+                    index index = m_hl_structure.get_index(row.global, col.global);
 
-                    m_hl_structure.coeff_ref(hl_values, row.global, col.global) += h(row.local, col.local);
+                    data.hl(index) += h(row.local, col.local);
                 }
             }
 
@@ -483,9 +482,9 @@ private:    // methods: computation
                 for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    auto dg_values = data.dg();
+                    const index index = m_dg_structure.get_index(equation_index.global, col.global);
 
-                    m_dg_structure.coeff_ref(dg_values, equation_index.global, col.global) += local_g(col.local);
+                    data.dg(index) += local_g(col.local);
 
                     if constexpr(TOrder < 2) {
                         continue;
@@ -494,9 +493,9 @@ private:    // methods: computation
                     for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                         const auto row = variable_indices[row_i];
 
-                        auto hl_values = data.hl();
+                        const index index = m_hl_structure.get_index(row.global, col.global);
 
-                        m_hl_structure.coeff_ref(hl_values, row.global, col.global) += local_h(row.local, col.local);
+                        data.hl(index) += local_h(row.local, col.local);
                     }
                 }
             }
@@ -549,46 +548,49 @@ public:     // methods: computation
         Timer timer;
 
         m_data.set_zero();
+        
+        tbb::combinable<ProblemData> m_local_data(m_data);
 
         Log::info(2, "Compute objective...");
 
         if (!m_parallel) {
             compute_elements_f(order, m_data, 0, nb_elements_f());
         } else {
-            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 1000),
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 10),
                 [&](const tbb::blocked_range<index>& range) {
+                    Log::info("{}", m_local_data.local().hl().sum());
                     Log::info(5, "Launch kernel with {} elements", range.size());
-                    auto& local_data = m_local_data.local();
-                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
-                    compute_elements_f(order, local_data, range.begin(), range.end());
+                    compute_elements_f(order, m_local_data.local(), range.begin(), range.end());
                 }, tbb::static_partitioner()
             );
         }
 
-        m_data.f() *= sigma();
+        // m_data.f() *= sigma();
 
-        if (order > 0) {
-            m_data.df() *= sigma();
-        }
+        // if (order > 0) {
+        //     m_data.df() *= sigma();
+        // }
 
-        if (order > 1) {
-            m_data.hl() *= sigma();
-        }
+        // if (order > 1) {
+        //     m_data.hl() *= sigma();
+        // }
 
         Log::info(2, "Compute constraints...");
 
-        if (!m_parallel) {
-            compute_elements_g(order, m_data, 0, nb_elements_g());
-        } else {
-            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 1000),
-                [&](const tbb::blocked_range<index>& range) {
-                    Log::info(5, "Launch kernel with {} elements", range.size());
-                    auto& local_data = m_local_data.local();
-                    local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
-                    compute_elements_g(order, local_data, range.begin(), range.end());
-                }, tbb::static_partitioner()
-            );
+        // if (!m_parallel) {
+        //     compute_elements_g(order, m_data, 0, nb_elements_g());
+        // } else {
+        //     tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 10),
+        //         [&](const tbb::blocked_range<index>& range) {
+        //             Log::info(5, "Launch kernel with {} elements", range.size());
+        //             auto& local_data = m_local_data.local();
+        //             // local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
+        //             compute_elements_g(order, local_data, range.begin(), range.end());
+        //         }, tbb::static_partitioner()
+        //     );
+        // }
 
+        if (m_parallel) {
             Log::info(5, "Combine results...");
 
             m_local_data.combine_each([&](const ProblemData& local) {
@@ -610,7 +612,9 @@ public:     // methods
             return Vector(0);
         }
 
-        if (m_linear_solver.factorize(hl())) {
+        Map<const Sparse> hl = this->hl();
+
+        if (m_linear_solver.factorize(hl)) {
             throw std::runtime_error("Factorization failed");
         }
 
@@ -630,8 +634,8 @@ public:     // methods
 
     void hl_add_diagonal(const double value)
     {
-        for (index i = 0; i < hl().rows(); i++) {
-            m_data.hl(m_hl_structure.ia(i)) += value;
+        for (index i = 0; i < nb_variables(); i++) {
+            hl(i, i) += value;
         }
     }
 
@@ -906,13 +910,13 @@ public:     // methods: output dg
 
     double& dg(const index row, const index col)
     {
-        const auto index = m_dg_structure.coeff(m_data.dg(), row, col);
+        const index index = m_dg_structure.get_index(row, col);
         return m_data.dg(index);
     }
 
     double dg(const index row, const index col) const
     {
-        const auto index = m_dg_structure.coeff(m_data.dg(), row, col);
+        const index index = m_dg_structure.get_index(row, col);
         return m_data.dg(index);
     }
 
@@ -954,13 +958,13 @@ public:     // methods: output hl
 
     double& hl(const index row, const index col)
     {
-        const auto index = m_hl_structure.coeff(m_data.hl(), row, col);
+        index index = m_hl_structure.get_index(row, col);
         return m_data.hl(index);
     }
 
     double hl(const index row, const index col) const
     {
-        const auto index = m_hl_structure.coeff(m_data.hl(), row, col);
+        index index = m_hl_structure.get_index(row, col);
         return m_data.hl(index);
     }
 

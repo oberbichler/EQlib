@@ -51,15 +51,15 @@ public:     // methods
         return m_ja.at(index);
     }
 
-
-    template <typename TContainer>
-    TScalar& coeff_ref(TContainer& values, const index row, const index col) noexcept
+    index get_index(const index row, const index col) const
     {
-        assert(length(values) == nb_nonzeros());
+        if (row < 0 || rows() <= row)
+            throw std::runtime_error("error");
+        if (col < 0 || cols() <= col)
+            throw std::runtime_error("error");
+
         assert(row < rows());
         assert(col < cols());
-
-        static TScalar dummy;
 
         const auto i = static_cast<TIndex>(TRowMajor ? row : col);
         const auto j = static_cast<TIndex>(TRowMajor ? col : row);
@@ -70,36 +70,10 @@ public:     // methods
         const auto it = std::lower_bound(lower, upper, j);
 
         if (*it != j || it == upper) {
-            return dummy;
+            return -1;
         }
 
-        const auto index = std::distance(m_ja.begin(), it);
-
-        return values[index];
-    }
-
-    template <typename TContainer>
-    TScalar coeff(const TContainer& values, const index row, const index col) const noexcept
-    {
-        assert(length(values) == nb_nonzeros());
-        assert(row < rows());
-        assert(col < cols());
-
-        const TIndex i = static_cast<TIndex>(TRowMajor ? row : col);
-        const TIndex j = static_cast<TIndex>(TRowMajor ? col : row);
-
-        const auto lower = m_ja.begin() + m_ia[i];
-        const auto upper = m_ja.begin() + m_ia[i + 1];
-
-        const auto it = std::lower_bound(lower, upper, j);
-
-        if (*it != j || it == upper) {
-            return 0;
-        }
-
-        const auto index = std::distance(m_ja.begin(), it);
-
-        return values[index];
+        return std::distance(m_ja.begin(), it);
     }
 
     template <typename TPattern>
