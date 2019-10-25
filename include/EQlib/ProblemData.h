@@ -7,7 +7,6 @@ namespace EQlib {
 class ProblemData
 {
 private:    // variables
-    std::vector<double> m_data;
     index m_n;
     index m_m;
     index m_nb_nonzeros_dg;
@@ -18,6 +17,7 @@ public:     // variables
     double m_timer_compute;
     double m_timer_assemble;
     std::vector<double> m_buffer;
+    std::vector<double> m_data;
 
 public:     // constructor
     ProblemData() : m_timer_allocate(0), m_timer_compute(0), m_timer_assemble(0)
@@ -28,6 +28,7 @@ public:     // methods
     void set_zero()
     {
         std::fill(m_data.begin(), m_data.end(), 0);
+        std::fill(m_buffer.begin(), m_buffer.end(), 0);
     }
 
     void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hl, const index max_element_n, const index max_element_m)
@@ -39,9 +40,12 @@ public:     // methods
 
         const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hl;
 
-        m_data.resize(nb_entries);
+        m_data.resize(nb_entries * 2);
 
-        m_buffer.resize(max_element_m + max_element_m * max_element_n + max_element_n * max_element_n);
+        m_buffer.resize(
+            std::max(max_element_m , max_element_n) +
+            max_element_m * max_element_n +
+            max_element_n * max_element_n);
 
         set_zero();
     }
