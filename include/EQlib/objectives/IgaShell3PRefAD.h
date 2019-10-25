@@ -227,6 +227,8 @@ public:     // constructor
         const double act_b12 = act_a1_2.dot(act_a3);
         const double act_b22 = act_a2_2.dot(act_a3);
 
+        // energy
+
         const HyperJet3D delta_a(act_a11 - ref_a11, act_a22 - ref_a22, act_a12 - ref_a12);
         const HyperJet3D delta_b(ref_b11 - act_b11, ref_b12 - act_b12, ref_b22 - act_b22);
 
@@ -236,7 +238,7 @@ public:     // constructor
         const HyperJet3D n = m_dm * eps;
         const HyperJet3D m = m_db * kap;
 
-        const HyperJet p = (eps.dot(n) + kap.dot(m)) * 0.5 * m_weight * ref_da.f();
+        const HyperJet p = (eps.dot(n) + kap.dot(m)) * 0.5 * m_weight * ref_da;
 
         return hyperjet::explode(p, g, h);
     }
