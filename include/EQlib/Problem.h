@@ -376,8 +376,8 @@ private:    // methods: computation
 
             Timer timer_element_allocate;
 
-            Vector g(n);
-            Matrix h(n, n);
+            Vector g(TOrder > 0 ? n : 0);
+            Matrix h(TOrder > 1 ? n : 0, TOrder > 1 ? n : 0);
 
             data.m_timer_allocate += timer_element_allocate.ellapsed();
 
