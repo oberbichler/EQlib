@@ -23,6 +23,7 @@ private:    // members
     double m_xnorm;
     double m_rtol;
     double m_xtol;
+    double m_damping;
     index m_stopping_reason;
 
 private:    // methods
@@ -33,6 +34,7 @@ public:     // constructor
     , m_maxiter(100)
     , m_rtol(1e-6)
     , m_xtol(1e-6)
+    , m_damping(0.0)
     {
         if (problem->is_constrained()) {
             throw std::runtime_error("Constraints are not supported");
@@ -95,6 +97,16 @@ public:     // methods
         m_xtol = value;
     }
 
+    double damping() const noexcept
+    {
+        return m_damping;
+    }
+
+    void set_damping(const double value) noexcept
+    {
+        m_damping = value;
+    }
+
     void run()
     {
         // setup
@@ -148,6 +160,10 @@ public:     // methods
 
             Log::info(2, "Solving the linear equation system...");
 
+            if (m_damping != 0.0) {
+                m_problem->hl_add_diagonal(m_damping);
+            }
+
             Vector delta = m_problem->hl_inv_v(m_residual);
 
             // update system
@@ -194,8 +210,11 @@ public:     // python
         py::class_<Type>(m, "NewtonRaphson")
             .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
             .def("run", &Type::run)
-            .def_property("rtol", &Type::rtol, &Type::set_rtol)
+            // properties
+            .def_property("damping", &Type::damping, &Type::set_damping)
             .def_property("maxiter", &Type::maxiter, &Type::set_maxiter)
+            .def_property("rtol", &Type::rtol, &Type::set_rtol)
+            // read-only properties
             .def_property_readonly("iterations", &Type::iterations)
             .def_property_readonly("rnorm", &Type::rnorm)
             .def_property_readonly("fevals", &Type::fevals)
