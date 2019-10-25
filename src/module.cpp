@@ -23,6 +23,7 @@
 #include <EQlib/optimizer/Worhp.h>
 #endif
 
+#include <EQlib/objectives/IgaPointSupportAD.h>
 #include <EQlib/objectives/IgaShell3PAD.h>
 #include <EQlib/objectives/IgaShell3PRefAD.h>
 #include <EQlib/objectives/IgaShell3PLoadAD.h>
@@ -122,4 +123,7 @@ PYBIND11_MODULE(EQlib, m) {
 
     // IgaShell3PLoadRefAD
     EQlib::IgaShell3PLoadRefAD::register_python(m);
+
+    // IgaPointSupportAD
+    EQlib::IgaPointSupportAD::register_python(m);
 }
