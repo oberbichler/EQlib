@@ -138,7 +138,8 @@ public:     // constructor
         }
     }
 
-    double compute(Ref<Vector> g, Ref<Matrix> h) const override
+    template <int TOrder>
+    double compute_(Ref<Vector> g, Ref<Matrix> h) const
     {
         // reference configuration
 
@@ -146,15 +147,42 @@ public:     // constructor
 
         // actual configuration
 
-        const auto act_x = act_geometry<2>(0);
+        const auto act_x = act_geometry<TOrder>(0);
 
         // functional
 
-        const HyperJet3D u = m_target - act_x;
+        if constexpr(TOrder == 0) {
+            const Vector3D u = m_target - act_x;
 
-        const HyperJet p = u.dot(u) * 0.5 * m_weight;
+            const double p = u.dot(u) * 0.5 * m_weight;
 
-        return hyperjet::explode(p, g, h);
+            return hyperjet::explode(p, g, h);
+        }
+        if constexpr(TOrder == 1) {
+            const Jet3D u = m_target - act_x;
+
+            const Jet p = u.dot(u) * 0.5 * m_weight;
+
+            return hyperjet::explode(p, g, h);
+        }
+        if constexpr(TOrder == 2) {
+            const HyperJet3D u = m_target - act_x;
+
+            const HyperJet p = u.dot(u) * 0.5 * m_weight;
+
+            return hyperjet::explode(p, g, h);
+        }
+    }
+
+    double compute(Ref<Vector> g, Ref<Matrix> h) const override
+    {
+        if (g.size() == 0) {
+            return compute_<0>(g, h);
+        } else if (h.size() == 0) {
+            return compute_<1>(g, h);
+        } else {
+            return compute_<2>(g, h);
+        }
     }
 
 public:     // python
