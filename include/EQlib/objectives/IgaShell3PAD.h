@@ -15,6 +15,8 @@ namespace EQlib {
 class IgaShell3PAD : public Objective
 {
 private:    // types
+    using Type = IgaShell3PAD;
+
     using Jet = hyperjet::Jet<double>;
     using HyperJet = hyperjet::HyperJet<double>;
 
@@ -236,7 +238,7 @@ public:     // constructor
         const HyperJet3D n = m_dm * eps;
         const HyperJet3D m = m_db * kap;
 
-        const HyperJet p = (eps.dot(n) + kap.dot(m)) * 0.5 * m_weight * ref_da;
+        const HyperJet p = (eps.dot(n) + kap.dot(m)) * 0.5 * m_weight;
 
         return hyperjet::explode(p, g, h);
     }
@@ -248,7 +250,6 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = IgaShell3PAD;
         using Holder = Pointer<Type>;
         using Base = Objective;
 
