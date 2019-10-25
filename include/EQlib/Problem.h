@@ -351,7 +351,7 @@ public:     // constructors
 
         m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
-        Log::info(1, "Problem occupies {} MB", m_data.m_data.size() * 8.0 / 1'000'000.0);
+        Log::info(1, "The problem occupies {} MB", m_data.m_data.size() * 8.0 / 1'000'000.0);
 
 
         Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
