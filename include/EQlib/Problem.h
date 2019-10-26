@@ -556,12 +556,10 @@ public:     // methods: computation
         if (!m_parallel) {
             compute_elements_f(order, m_data, 0, nb_elements_f());
         } else {
-            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 10),
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 100),
                 [&](const tbb::blocked_range<index>& range) {
-                    Log::info("{}", m_local_data.local().hl().sum());
-                    Log::info(5, "Launch kernel with {} elements", range.size());
                     compute_elements_f(order, m_local_data.local(), range.begin(), range.end());
-                }, tbb::static_partitioner()
+                }
             );
         }
 
