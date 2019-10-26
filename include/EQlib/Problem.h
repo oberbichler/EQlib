@@ -548,7 +548,7 @@ public:     // methods: computation
         Timer timer;
 
         m_data.set_zero();
-        
+
         tbb::combinable<ProblemData> m_local_data(m_data);
 
         Log::info(2, "Compute objective...");
@@ -595,9 +595,9 @@ public:     // methods: computation
 
         Log::info(2, "Problem computed in {} sec", timer.ellapsed());
 
-        Log::info(3, "Elements allocated in {} sec", m_data.m_timer_allocate);
-        Log::info(3, "Elements computed in {} sec", m_data.m_timer_compute);
-        Log::info(3, "Elements assembled in {} sec", m_data.m_timer_assemble);
+        Log::info(3, "Memory allocation took {} sec", m_data.m_timer_allocate);
+        Log::info(3, "Element computation took {} sec", m_data.m_timer_compute);
+        Log::info(3, "Assembly of the system took {} sec", m_data.m_timer_assemble);
     }
 
 public:     // methods
