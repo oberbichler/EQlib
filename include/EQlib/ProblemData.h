@@ -29,6 +29,9 @@ public:     // methods
     {
         std::fill(m_data.begin(), m_data.end(), 0);
         std::fill(m_buffer.begin(), m_buffer.end(), 0);
+        m_timer_allocate = 0.0;
+        m_timer_compute = 0.0;
+        m_timer_assemble = 0.0;
     }
 
     void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hl, const index max_element_n, const index max_element_m)
