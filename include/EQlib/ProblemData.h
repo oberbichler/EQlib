@@ -40,7 +40,7 @@ public:     // methods
 
         const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hl;
 
-        m_data.resize(nb_entries * 2);
+        m_data.resize(nb_entries);
 
         m_buffer.resize(
             std::max(max_element_m , max_element_n) +
