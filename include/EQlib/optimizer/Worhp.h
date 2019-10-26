@@ -189,7 +189,7 @@ public:     // methods
         Log::info(2, "Apply variable data...");
 
         for (int i = 0; i < m_problem->nb_variables(); i++) {
-            opt.X[i] = m_problem->variable(i)->delta();
+            opt.X[i] = m_problem->variable(i)->value();
             opt.XL[i] = m_problem->variable(i)->lower_bound();
             opt.XU[i] = m_problem->variable(i)->upper_bound();
             opt.Lambda[i] = m_problem->variable(i)->multiplier();
