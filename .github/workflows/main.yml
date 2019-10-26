@@ -11,14 +11,17 @@ jobs:
       run: |
         call %CONDA%/Scripts/activate.bat
         conda install mkl-devel numpy scipy tbb-devel & pip install git+https://github.com/oberbichler/HyperJet
+      shell: cmd
     - name: Build package
       run: |
         call %CONDA%/Scripts/activate.bat
         pip install .
+      shell: cmd
     - name: Run tests
       run: |
         call %CONDA%/Scripts/activate.bat
         python -m unittest discover -s ./tests -p "test_*.py"
+      shell: cmd
       
   test_linux:
     name: Test on Ubuntu
