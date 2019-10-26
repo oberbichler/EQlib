@@ -565,30 +565,27 @@ public:     // methods: computation
             );
         }
 
-        // m_data.f() *= sigma();
+        m_data.f() *= sigma();
 
-        // if (order > 0) {
-        //     m_data.df() *= sigma();
-        // }
+        if (order > 0) {
+            m_data.df() *= sigma();
+        }
 
-        // if (order > 1) {
-        //     m_data.hl() *= sigma();
-        // }
+        if (order > 1) {
+            m_data.hl() *= sigma();
+        }
 
         Log::info(2, "Compute constraints...");
 
-        // if (!m_parallel) {
-        //     compute_elements_g(order, m_data, 0, nb_elements_g());
-        // } else {
-        //     tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 10),
-        //         [&](const tbb::blocked_range<index>& range) {
-        //             Log::info(5, "Launch kernel with {} elements", range.size());
-        //             auto& local_data = m_local_data.local();
-        //             // local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
-        //             compute_elements_g(order, local_data, range.begin(), range.end());
-        //         }, tbb::static_partitioner()
-        //     );
-        // }
+        if (!m_parallel) {
+            compute_elements_g(order, m_data, 0, nb_elements_g());
+        } else {
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 100),
+                [&](const tbb::blocked_range<index>& range) {
+                    compute_elements_g(order, m_local_data.local(), range.begin(), range.end());
+                }
+            );
+        }
 
         if (m_parallel) {
             Log::info(5, "Combine results...");
