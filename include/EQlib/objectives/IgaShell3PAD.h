@@ -3,7 +3,7 @@
 #include <Eigen/Geometry>
 
 #include <EQlib/Objective.h>
-#include <EQlib/Point.h>
+#include <EQlib/Node.h>
 #include <EQlib/Variable.h>
 
 #include <hyperjet/hyperjet.h>
@@ -24,7 +24,7 @@ private:    // types
     using HyperJet3D = Eigen::Matrix<HyperJet, 3, 1>;
 
 private:    // variables
-    std::vector<Pointer<Point>> m_nodes;
+    std::vector<Pointer<Node>> m_nodes;
     Matrix m_shape_functions;
     double m_thickness;
     double m_young_modulus;
@@ -135,7 +135,7 @@ private:    // variables
 
 public:     // constructor
     IgaShell3PAD(
-        std::vector<Pointer<Point>> nodes,
+        std::vector<Pointer<Node>> nodes,
         Matrix shape_functions,
         double thickness,
         double young_modulus,
@@ -254,7 +254,7 @@ public:     // python
         using Base = Objective;
 
         py::class_<Type, Base, Holder>(m, "IgaShell3PAD")
-            .def(py::init<std::vector<Pointer<Point>>, Matrix, double, double, double, double>())
+            .def(py::init<std::vector<Pointer<Node>>, Matrix, double, double, double, double>())
         ;
     }
 };

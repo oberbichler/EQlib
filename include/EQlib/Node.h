@@ -9,7 +9,7 @@
 
 namespace EQlib {
 
-class Point
+class Node
 {
 private:    // variables
     Pointer<Variable> m_ref_x;
@@ -22,7 +22,7 @@ private:    // variables
     std::unordered_map<std::string, Pointer<Variable>> m_variables;
 
 public:     // constructors
-    Point(const double x, const double y, const double z) noexcept
+    Node(const double x, const double y, const double z) noexcept
     : m_ref_x(new_<Variable>(x))
     , m_ref_y(new_<Variable>(y))
     , m_ref_z(new_<Variable>(z))
@@ -32,8 +32,8 @@ public:     // constructors
     {
     }
 
-    Point() noexcept
-    : Point(0, 0, 0)
+    Node() noexcept
+    : Node(0, 0, 0)
     {
     }
 
@@ -139,10 +139,10 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::Point;
+        using Type = EQlib::Node;
         using Holder = Pointer<Type>;
 
-        py::class_<Type, Holder>(m, "Point", py::dynamic_attr())
+        py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
             // constructors
             .def(py::init<>())
             .def(py::init<double, double, double>(), "x"_a=0, "y"_a=0, "z"_a=0)

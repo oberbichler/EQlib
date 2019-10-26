@@ -3,7 +3,7 @@
 #include <Eigen/Geometry>
 
 #include <EQlib/Objective.h>
-#include <EQlib/Point.h>
+#include <EQlib/Node.h>
 #include <EQlib/Variable.h>
 
 #include <hyperjet/hyperjet.h>
@@ -23,7 +23,7 @@ private:    // types
     using HyperJet33D = Eigen::Matrix<HyperJet, 3, 3>;
 
 private:    // variables
-    std::vector<Pointer<Point>> m_nodes;
+    std::vector<Pointer<Node>> m_nodes;
     Matrix m_shape_functions;
     double m_thickness;
     double m_young_modulus;
@@ -54,11 +54,11 @@ private:    // variables
 
         if constexpr(TOrder == 1) {
             Jet3D jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 jet[k] = Jet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -70,11 +70,11 @@ private:    // variables
 
         if constexpr(TOrder == 2) {
             HyperJet3D hyper_jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 hyper_jet[k] = HyperJet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 hyper_jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 hyper_jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -100,11 +100,11 @@ private:    // variables
 
         if constexpr(TOrder == 1) {
             Jet3D jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 jet[k] = Jet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -116,11 +116,11 @@ private:    // variables
 
         if constexpr(TOrder == 2) {
             HyperJet3D hyper_jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 hyper_jet[k] = HyperJet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 hyper_jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 hyper_jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -133,7 +133,7 @@ private:    // variables
 
 public:     // constructor
     IgaShell3PRefAD(
-        std::vector<Pointer<Point>> nodes,
+        std::vector<Pointer<Node>> nodes,
         Matrix shape_functions,
         double thickness,
         double young_modulus,
@@ -255,7 +255,7 @@ public:     // python
         using Base = Objective;
 
         py::class_<Type, Base, Holder>(m, "IgaShell3PRefAD")
-            .def(py::init<std::vector<Pointer<Point>>, Matrix, double, double, double, double>())
+            .def(py::init<std::vector<Pointer<Node>>, Matrix, double, double, double, double>())
         ;
     }
 };

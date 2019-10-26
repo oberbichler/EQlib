@@ -11,7 +11,7 @@
 #include <EQlib/Log.h>
 #include <EQlib/Objective.h>
 #include <EQlib/Problem.h>
-#include <EQlib/Point.h>
+#include <EQlib/Node.h>
 #include <EQlib/Variable.h>
 
 #include <EQlib/optimizer/GradientDescent.h>
@@ -61,8 +61,8 @@ PYBIND11_MODULE(EQlib, m) {
     // Log
     EQlib::Log::register_python(m);
 
-    // Point
-    EQlib::Point::register_python(m);
+    // Node
+    EQlib::Node::register_python(m);
 
     // Timer
     EQlib::Timer::register_python(m);
