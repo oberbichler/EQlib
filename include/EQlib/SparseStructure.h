@@ -53,13 +53,8 @@ public:     // methods
 
     index get_index(const index row, const index col) const
     {
-        if (row < 0 || rows() <= row)
-            throw std::runtime_error("error");
-        if (col < 0 || cols() <= col)
-            throw std::runtime_error("error");
-
-        assert(row < rows());
-        assert(col < cols());
+        assert(0 <= row && row < rows());
+        assert(0 <= col && col < cols());
 
         const auto i = static_cast<TIndex>(TRowMajor ? row : col);
         const auto j = static_cast<TIndex>(TRowMajor ? col : row);
