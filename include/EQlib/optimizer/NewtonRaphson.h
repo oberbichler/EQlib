@@ -187,10 +187,10 @@ public:     // methods
 
         switch (m_stopping_reason) {
         case 2:
-            Log::warn("The maximum number of iterations has been reached");
+            Log::warn("The maximum number of iterations has been reached after {:.3f} sec", timer.ellapsed());
             break;
         case 3:
-            Log::error("An unknown error has occurred");
+            Log::error("An unknown error has occurred after {:.3f} sec", timer.ellapsed());
             break;
         default:
             Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
