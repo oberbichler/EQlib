@@ -482,9 +482,9 @@ private:    // methods: computation
                 for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    const index index = m_dg_structure.get_index(equation_index.global, col.global);
+                    const index dg_value_i = m_dg_structure.get_index(equation_index.global, col.global);
 
-                    data.dg(index) += local_g(col.local);
+                    data.dg(dg_value_i) += local_g(col.local);
 
                     if constexpr(TOrder < 2) {
                         continue;
@@ -493,9 +493,9 @@ private:    // methods: computation
                     for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                         const auto row = variable_indices[row_i];
 
-                        const index index = m_hl_structure.get_index(row.global, col.global);
+                        const index hl_value_i = m_hl_structure.get_index(row.global, col.global);
 
-                        data.hl(index) += local_h(row.local, col.local);
+                        data.hl(hl_value_i) += local_h(row.local, col.local);
                     }
                 }
             }
