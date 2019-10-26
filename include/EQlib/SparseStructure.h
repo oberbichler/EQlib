@@ -31,6 +31,17 @@ public:     // methods
         return m_ia.back();
     }
 
+    double fill_grade() const noexcept
+    {
+        const index size = rows() * cols();
+
+        if (size == 0) {
+            return 0;
+        }
+
+        return (double)nb_nonzeros() / size;
+    }
+
     const std::vector<TIndex>& ia() const noexcept
     {
         return m_ia;

@@ -349,6 +349,12 @@ public:     // constructors
         m_dg_structure.set(m, n, m_pattern_dg);
         m_hl_structure.set(n, n, m_pattern_hl);
 
+        Log::info(2, "The hessian has {} nonzero entries ({:.3f}%)",
+            m_hl_structure.nb_nonzeros(), m_hl_structure.fill_grade() * 100.0);
+
+        Log::info(2, "The jacobian of the constraints has {} nonzero entries ({:.3f}%)",
+            m_dg_structure.nb_nonzeros(), m_dg_structure.fill_grade() * 100.0);
+
         m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
         Log::info(1, "Problem occupies {} MB", m_data.m_data.size() * 8.0 / 1'000'000.0);
