@@ -58,31 +58,42 @@ PYBIND11_MODULE(EQlib, m) {
     m.attr("USE_MKL") = false;
 #endif // EIGEN_USE_MKL_ALL
 
+
+    // --- core
+
+    // Constraint
+    EQlib::Constraint::register_python(m);
+
+    // Equation
+    EQlib::Equation::register_python(m);
+
     // Log
     EQlib::Log::register_python(m);
 
     // Node
     EQlib::Node::register_python(m);
 
+    // Objective
+    EQlib::Objective::register_python(m);
+
+    // Problem
+    EQlib::Problem::register_python(m);
+
     // Timer
     EQlib::Timer::register_python(m);
+
+    // Variable
+    EQlib::Variable::register_python(m);
 
 
     // --- solver
 
-    auto solver = m.def_submodule("solver");
-
-
-    // --- optimizer
-
-    auto optimizer = m.def_submodule("optimizer");
-
     // GradientDescent
-    EQlib::GradientDescent::register_python(optimizer);
+    EQlib::GradientDescent::register_python(m);
 
     // IPOpt
     #ifdef EQLIB_USE_IPOPT
-    EQlib::IPOpt::register_python(optimizer);
+    EQlib::IPOpt::register_python(m);
     #endif
 
     // NewtonRaphson
@@ -90,24 +101,8 @@ PYBIND11_MODULE(EQlib, m) {
 
     // Worhp
     #ifdef EQLIB_USE_WORHP
-    EQlib::Worhp::register_python(optimizer);
+    EQlib::Worhp::register_python(m);
     #endif
-
-
-    // Equation
-    EQlib::Equation::register_python(m);
-
-    // Variable
-    EQlib::Variable::register_python(m);
-
-    // Objective
-    EQlib::Objective::register_python(m);
-
-    // Constraint
-    EQlib::Constraint::register_python(m);
-
-    // Problem
-    EQlib::Problem::register_python(m);
 
 
     // --- objectives
