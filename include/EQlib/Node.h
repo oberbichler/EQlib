@@ -9,7 +9,7 @@
 
 namespace EQlib {
 
-class Point
+class Node
 {
 private:    // variables
     Pointer<Variable> m_ref_x;
@@ -22,7 +22,7 @@ private:    // variables
     std::unordered_map<std::string, Pointer<Variable>> m_variables;
 
 public:     // constructors
-    Point(const double x, const double y, const double z) noexcept
+    Node(const double x, const double y, const double z) noexcept
     : m_ref_x(new_<Variable>(x))
     , m_ref_y(new_<Variable>(y))
     , m_ref_z(new_<Variable>(z))
@@ -32,8 +32,8 @@ public:     // constructors
     {
     }
 
-    Point() noexcept
-    : Point(0, 0, 0)
+    Node() noexcept
+    : Node(0, 0, 0)
     {
     }
 
@@ -70,26 +70,26 @@ public:     // methods
 
     Vector3D ref_location() const noexcept
     {
-        return Vector3D(m_ref_x->act_value(), m_ref_y->act_value(), m_ref_z->act_value());
+        return Vector3D(m_ref_x->value(), m_ref_y->value(), m_ref_z->value());
     }
 
     void set_ref_location(Vector3D value) noexcept
     {
-        m_ref_x->set_ref_value(value[0]);
-        m_ref_y->set_ref_value(value[1]);
-        m_ref_z->set_ref_value(value[2]);
+        m_ref_x->set_value(value[0]);
+        m_ref_y->set_value(value[1]);
+        m_ref_z->set_value(value[2]);
     }
 
     Vector3D act_location() const noexcept
     {
-        return Vector3D(m_act_x->act_value(), m_act_y->act_value(), m_act_z->act_value());
+        return Vector3D(m_act_x->value(), m_act_y->value(), m_act_z->value());
     }
 
     void set_act_location(Vector3D value) noexcept
     {
-        m_act_x->set_act_value(value[0]);
-        m_act_y->set_act_value(value[1]);
-        m_act_z->set_act_value(value[2]);
+        m_act_x->set_value(value[0]);
+        m_act_y->set_value(value[1]);
+        m_act_z->set_value(value[2]);
     }
 
     Vector3D displacements() const noexcept
@@ -139,10 +139,10 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::Point;
+        using Type = EQlib::Node;
         using Holder = Pointer<Type>;
 
-        py::class_<Type, Holder>(m, "Point", py::dynamic_attr())
+        py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
             // constructors
             .def(py::init<>())
             .def(py::init<double, double, double>(), "x"_a=0, "y"_a=0, "z"_a=0)

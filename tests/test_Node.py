@@ -15,29 +15,13 @@ class TestNode(unittest.TestCase):
     def test_constructor(self):
         node = eq.Node(1, 2, 3)
 
-        self.assertEqual(node.x.ref_value, 1)
-        self.assertEqual(node.y.ref_value, 2)
-        self.assertEqual(node.z.ref_value, 3)
+        self.assertEqual(node.ref_x.value, 1)
+        self.assertEqual(node.ref_y.value, 2)
+        self.assertEqual(node.ref_z.value, 3)
 
-        self.assertEqual(node.x.act_value, 1)
-        self.assertEqual(node.y.act_value, 2)
-        self.assertEqual(node.z.act_value, 3)
-
-        self.assertEqual(node.x.delta, 0)
-        self.assertEqual(node.y.delta, 0)
-        self.assertEqual(node.z.delta, 0)
-
-        self.assertEqual(node.x.target, 0)
-        self.assertEqual(node.y.target, 0)
-        self.assertEqual(node.z.target, 0)
-
-        self.assertEqual(node.x.result, 0)
-        self.assertEqual(node.y.result, 0)
-        self.assertEqual(node.z.result, 0)
-
-        self.assertEqual(node.x.residual, 0)
-        self.assertEqual(node.y.residual, 0)
-        self.assertEqual(node.z.residual, 0)
+        self.assertEqual(node.x.value, 1)
+        self.assertEqual(node.y.value, 2)
+        self.assertEqual(node.z.value, 3)
 
     def test_getters_and_setters(self):
         node = eq.Node(1, 2, 3)

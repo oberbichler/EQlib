@@ -3,7 +3,7 @@
 #include <Eigen/Geometry>
 
 #include <EQlib/Objective.h>
-#include <EQlib/Point.h>
+#include <EQlib/Node.h>
 #include <EQlib/Variable.h>
 
 #include <hyperjet/hyperjet.h>
@@ -24,20 +24,20 @@ private:    // types
     using HyperJet3D = Eigen::Matrix<HyperJet, 3, 1>;
 
 private:    // variables
-    std::vector<Pointer<Point>> m_nodes;
+    std::vector<Pointer<Node>> m_nodes;
     Matrix m_shape_functions;
     double m_thickness;
     double m_young_modulus;
     double m_poisson_ratio;
     Eigen::Matrix3d m_dm;
     Eigen::Matrix3d m_db;
-    double m_a11;
-    double m_a12;
-    double m_a22;
-    double m_b11;
-    double m_b12;
-    double m_b22;
-    Eigen::Matrix3d m_tm;
+    double ref_a11;
+    double ref_a12;
+    double ref_a22;
+    double ref_b11;
+    double ref_b12;
+    double ref_b22;
+    Eigen::Matrix3d tm;
     double m_weight;
     double m_da;
 
@@ -56,11 +56,11 @@ private:    // variables
 
         if constexpr(TOrder == 1) {
             Jet3D jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 jet[k] = Jet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -72,11 +72,11 @@ private:    // variables
 
         if constexpr(TOrder == 2) {
             HyperJet3D hyper_jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 hyper_jet[k] = HyperJet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 hyper_jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 hyper_jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -102,11 +102,11 @@ private:    // variables
 
         if constexpr(TOrder == 1) {
             Jet3D jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 jet[k] = Jet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -118,11 +118,11 @@ private:    // variables
 
         if constexpr(TOrder == 2) {
             HyperJet3D hyper_jet;
-            
+
             for (index k = 0; k < 3; k++) {
                 hyper_jet[k] = HyperJet(value(k), length(m_nodes) * 3);
             }
-            
+
             for (index j = 0; j < length(m_nodes); j++) {
                 hyper_jet(0).g(j * 3 + 0) = m_shape_functions(i, j);
                 hyper_jet(1).g(j * 3 + 1) = m_shape_functions(i, j);
@@ -135,7 +135,7 @@ private:    // variables
 
 public:     // constructor
     IgaShell3PAD(
-        std::vector<Pointer<Point>> nodes,
+        std::vector<Pointer<Node>> nodes,
         Matrix shape_functions,
         double thickness,
         double young_modulus,
@@ -161,10 +161,7 @@ public:     // constructor
             m_variables[i * 3 + 1] = nodes[i]->y();
             m_variables[i * 3 + 2] = nodes[i]->z();
         }
-    }
 
-    double compute(Ref<Vector> g, Ref<Matrix> h) const override
-    {
         // reference configuration
 
         const Vector3D ref_a1 = ref_geometry<0>(1);
@@ -178,13 +175,13 @@ public:     // constructor
         const double ref_da = ref_a3.norm();
         ref_a3 = ref_a3 / ref_da;
 
-        const double ref_a11 = ref_a1.dot(ref_a1);
-        const double ref_a22 = ref_a2.dot(ref_a2);
-        const double ref_a12 = ref_a1.dot(ref_a2);
+        ref_a11 = ref_a1.dot(ref_a1);
+        ref_a22 = ref_a2.dot(ref_a2);
+        ref_a12 = ref_a1.dot(ref_a2);
 
-        const double ref_b11 = ref_a1_1.dot(ref_a3);
-        const double ref_b12 = ref_a1_2.dot(ref_a3);
-        const double ref_b22 = ref_a2_2.dot(ref_a3);
+        ref_b11 = ref_a1_1.dot(ref_a3);
+        ref_b12 = ref_a1_2.dot(ref_a3);
+        ref_b22 = ref_a2_2.dot(ref_a3);
 
         const Vector3D e1 = ref_a1 / ref_a1.norm();
         Vector3D e2 = ref_a2 - ref_a2.dot(e1) * e1;
@@ -203,11 +200,14 @@ public:     // constructor
         const double eg21 = e2.dot(g_con1);
         const double eg22 = e2.dot(g_con2);
 
-        Eigen::Matrix3d tm;
+        // Eigen::Matrix3d tm;
         tm << eg11 * eg11, eg12 * eg12, 2 * eg11 * eg12,
               eg21 * eg21, eg22 * eg22, 2 * eg21 * eg22,
               2 * eg11 * eg21, 2 * eg12 * eg22, 2 * (eg11 * eg22 + eg12 * eg21);
+    }
 
+    double compute(Ref<Vector> g, Ref<Matrix> h) const override
+    {
         // actual configuration
 
         const HyperJet3D act_a1 = act_geometry<2>(1);
@@ -254,7 +254,7 @@ public:     // python
         using Base = Objective;
 
         py::class_<Type, Base, Holder>(m, "IgaShell3PAD")
-            .def(py::init<std::vector<Pointer<Point>>, Matrix, double, double, double, double>())
+            .def(py::init<std::vector<Pointer<Node>>, Matrix, double, double, double, double>())
         ;
     }
 };

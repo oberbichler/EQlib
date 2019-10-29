@@ -349,6 +349,12 @@ public:     // constructors
         m_dg_structure.set(m, n, m_pattern_dg);
         m_hl_structure.set(n, n, m_pattern_hl);
 
+        Log::info(2, "The hessian has {} nonzero entries ({:.3f}%)",
+            m_hl_structure.nb_nonzeros(), m_hl_structure.fill_grade() * 100.0);
+
+        Log::info(2, "The jacobian of the constraints has {} nonzero entries ({:.3f}%)",
+            m_dg_structure.nb_nonzeros(), m_dg_structure.fill_grade() * 100.0);
+
         m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
         Log::info(1, "The problem occupies {} MB", m_data.m_data.size() * 8.0 / 1'000'000.0);
@@ -482,9 +488,9 @@ private:    // methods: computation
                 for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    const index index = m_dg_structure.get_index(equation_index.global, col.global);
+                    const index dg_value_i = m_dg_structure.get_index(equation_index.global, col.global);
 
-                    data.dg(index) += local_g(col.local);
+                    data.dg(dg_value_i) += local_g(col.local);
 
                     if constexpr(TOrder < 2) {
                         continue;
@@ -493,9 +499,9 @@ private:    // methods: computation
                     for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                         const auto row = variable_indices[row_i];
 
-                        const index index = m_hl_structure.get_index(row.global, col.global);
+                        const index hl_value_i = m_hl_structure.get_index(row.global, col.global);
 
-                        data.hl(index) += local_h(row.local, col.local);
+                        data.hl(hl_value_i) += local_h(row.local, col.local);
                     }
                 }
             }
@@ -548,7 +554,7 @@ public:     // methods: computation
         Timer timer;
 
         m_data.set_zero();
-        
+
         tbb::combinable<ProblemData> m_local_data(m_data);
 
         Log::info(2, "Compute objective...");
@@ -556,38 +562,34 @@ public:     // methods: computation
         if (!m_parallel) {
             compute_elements_f(order, m_data, 0, nb_elements_f());
         } else {
-            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 10),
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 100),
                 [&](const tbb::blocked_range<index>& range) {
-                    Log::info(5, "Launch kernel with {} elements", range.size());
                     compute_elements_f(order, m_local_data.local(), range.begin(), range.end());
-                }, tbb::static_partitioner()
+                }
             );
         }
 
-        // m_data.f() *= sigma();
+        m_data.f() *= sigma();
 
-        // if (order > 0) {
-        //     m_data.df() *= sigma();
-        // }
+        if (order > 0) {
+            m_data.df() *= sigma();
+        }
 
-        // if (order > 1) {
-        //     m_data.hl() *= sigma();
-        // }
+        if (order > 1) {
+            m_data.hl() *= sigma();
+        }
 
         Log::info(2, "Compute constraints...");
 
-        // if (!m_parallel) {
-        //     compute_elements_g(order, m_data, 0, nb_elements_g());
-        // } else {
-        //     tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 10),
-        //         [&](const tbb::blocked_range<index>& range) {
-        //             Log::info(5, "Launch kernel with {} elements", range.size());
-        //             auto& local_data = m_local_data.local();
-        //             // local_data.resize(nb_variables(), nb_equations(), m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
-        //             compute_elements_g(order, local_data, range.begin(), range.end());
-        //         }, tbb::static_partitioner()
-        //     );
-        // }
+        if (!m_parallel) {
+            compute_elements_g(order, m_data, 0, nb_elements_g());
+        } else {
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 100),
+                [&](const tbb::blocked_range<index>& range) {
+                    compute_elements_g(order, m_local_data.local(), range.begin(), range.end());
+                }
+            );
+        }
 
         if (m_parallel) {
             Log::info(5, "Combine results...");
@@ -599,9 +601,9 @@ public:     // methods: computation
 
         Log::info(2, "Problem computed in {} sec", timer.ellapsed());
 
-        Log::info(3, "Elements allocated in {} sec", m_data.m_timer_allocate);
-        Log::info(3, "Elements computed in {} sec", m_data.m_timer_compute);
-        Log::info(3, "Elements assembled in {} sec", m_data.m_timer_assemble);
+        Log::info(3, "Memory allocation took {} sec", m_data.m_timer_allocate);
+        Log::info(3, "Element computation took {} sec", m_data.m_timer_compute);
+        Log::info(3, "Assembly of the system took {} sec", m_data.m_timer_assemble);
     }
 
 public:     // methods
@@ -700,39 +702,12 @@ public:     // methods: model properties
     }
 
 public:     // methods: input
-    Vector delta() const
-    {
-        Vector result(nb_variables());
-
-        for (index i = 0; i < length(result); i++) {
-            result(i) = variable(i)->delta();
-        }
-
-        return result;
-    }
-
-    void set_delta(Ref<const Vector> value) const
-    {
-        if (length(value) != nb_variables()) {
-            throw std::runtime_error("Invalid size");
-        }
-
-        for (index i = 0; i < length(value); i++) {
-            variable(i)->set_delta(value[i]);
-        }
-    }
-
-    void set_delta(double* const value) const
-    {
-        set_delta(Map<const Vector>(value, nb_variables()));
-    }
-
     Vector x() const
     {
         Vector result(nb_variables());
 
         for (index i = 0; i < length(result); i++) {
-            result(i) = variable(i)->act_value();
+            result(i) = variable(i)->value();
         }
 
         return result;
@@ -745,7 +720,7 @@ public:     // methods: input
         }
 
         for (index i = 0; i < length(value); i++) {
-            variable(i)->set_act_value(value[i]);
+            variable(i)->set_value(value[i]);
         }
     }
 
@@ -1017,8 +992,6 @@ public:     // methods: python
             .def_property("f", &Type::f, &Type::set_f)
             .def_property("parallel", &Type::parallel, &Type::set_parallel)
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
-            .def_property("delta",py::overload_cast<>(&Type::delta, py::const_),
-                py::overload_cast<Ref<const Vector>>(&Type::set_delta, py::const_))
             .def_property("x", py::overload_cast<>(&Type::x, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
             .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_),
