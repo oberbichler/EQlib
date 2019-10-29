@@ -357,7 +357,7 @@ public:     // constructors
 
         m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
-        Log::info(1, "Problem occupies {} MB", m_data.m_data.size() * 8.0 / 1'000'000.0);
+        Log::info(1, "The problem occupies {} MB", m_data.m_data.size() * 8.0 / 1'000'000.0);
 
 
         Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
@@ -382,8 +382,8 @@ private:    // methods: computation
 
             Timer timer_element_allocate;
 
-            Vector g(n);
-            Matrix h(n, n);
+            Vector g(TOrder > 0 ? n : 0);
+            Matrix h(TOrder > 1 ? n : 0, TOrder > 1 ? n : 0);
 
             data.m_timer_allocate += timer_element_allocate.ellapsed();
 
@@ -515,13 +515,13 @@ private:    // methods: computation
     {
         switch (order) {
         case 0:
-            compute_elements_f<0>(m_data, begin, end);
+            compute_elements_f<0>(data, begin, end);
             break;
         case 1:
-            compute_elements_f<1>(m_data, begin, end);
+            compute_elements_f<1>(data, begin, end);
             break;
         case 2:
-            compute_elements_f<2>(m_data, begin, end);
+            compute_elements_f<2>(data, begin, end);
             break;
         }
     }
@@ -531,13 +531,13 @@ private:    // methods: computation
     {
         switch (order) {
         case 0:
-            compute_elements_g<0>(m_data, begin, end);
+            compute_elements_g<0>(data, begin, end);
             break;
         case 1:
-            compute_elements_g<1>(m_data, begin, end);
+            compute_elements_g<1>(data, begin, end);
             break;
         case 2:
-            compute_elements_g<2>(m_data, begin, end);
+            compute_elements_g<2>(data, begin, end);
             break;
         }
     }
