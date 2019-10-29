@@ -126,8 +126,8 @@ class TestProblem(unittest.TestCase):
         assert_almost_equal(problem.dg_values, [5, 1, 4, 1, -1, 1])
         assert_almost_equal(problem.hl_values, [9.4, 0, 3.2, 6, 0, 6.4, 0])
 
-        assert_almost_equal(problem.dg.todense(), [[5, 0, 4, 0], [0, 0, 1, -1], [0, 1, 0, 1]])
-        assert_almost_equal(problem.hl.todense(), [[9.4, 0, 0, 0], [0, 6, 0, 0], [3.2, 0, 6.4, 0], [0, 0, 0, 0]])
+        assert_almost_equal(problem.dg.toarray(), [[5, 0, 4, 0], [0, 0, 1, -1], [0, 1, 0, 1]])
+        assert_almost_equal(problem.hl.toarray(), [[9.4, 0, 0, 0], [0, 6, 0, 0], [3.2, 0, 6.4, 0], [0, 0, 0, 0]])
 
 if __name__ == '__main__':
     unittest.main()
