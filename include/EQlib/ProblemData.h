@@ -65,11 +65,13 @@ public:     // methods
 
     double& g(const index i) noexcept
     {
+        assert(0 <= i && i < m_m);
         return m_data[1 + i];
     }
 
     double g(const index i) const noexcept
     {
+        assert(0 <= i && i < m_m);
         return m_data[1 + i];
     }
 
@@ -85,11 +87,13 @@ public:     // methods
 
     double& df(const index i) noexcept
     {
+        assert(0 <= i && i < m_n);
         return m_data[1 + m_m + i];
     }
 
     double df(const index i) const noexcept
     {
+        assert(0 <= i && i < m_n);
         return m_data[1 + m_m + i];
     }
 
@@ -105,11 +109,13 @@ public:     // methods
 
     double& dg(const index i) noexcept
     {
+        assert(0 <= i && i < m_nb_nonzeros_dg);
         return m_data[1 + m_m + m_n + i];
     }
 
     double dg(const index i) const noexcept
     {
+        assert(0 <= i && i < m_nb_nonzeros_dg);
         return m_data[1 + m_m + m_n + i];
     }
 
@@ -130,11 +136,13 @@ public:     // methods
 
     double& hl(const index i) noexcept
     {
+        assert(0 <= i && i < m_nb_nonzeros_hl);
         return m_data[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
     double hl(const index i) const noexcept
     {
+        assert(0 <= i && i < m_nb_nonzeros_hl);
         return m_data[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
