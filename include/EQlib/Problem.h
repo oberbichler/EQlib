@@ -515,13 +515,13 @@ private:    // methods: computation
     {
         switch (order) {
         case 0:
-            compute_elements_f<0>(m_data, begin, end);
+            compute_elements_f<0>(data, begin, end);
             break;
         case 1:
-            compute_elements_f<1>(m_data, begin, end);
+            compute_elements_f<1>(data, begin, end);
             break;
         case 2:
-            compute_elements_f<2>(m_data, begin, end);
+            compute_elements_f<2>(data, begin, end);
             break;
         }
     }
@@ -531,13 +531,13 @@ private:    // methods: computation
     {
         switch (order) {
         case 0:
-            compute_elements_g<0>(m_data, begin, end);
+            compute_elements_g<0>(data, begin, end);
             break;
         case 1:
-            compute_elements_g<1>(m_data, begin, end);
+            compute_elements_g<1>(data, begin, end);
             break;
         case 2:
-            compute_elements_g<2>(m_data, begin, end);
+            compute_elements_g<2>(data, begin, end);
             break;
         }
     }
