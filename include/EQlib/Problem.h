@@ -50,7 +50,7 @@ private:    // types
 private:    // variables
     double m_sigma;
 
-    bool m_parallel;
+    int m_nb_threats;
 
     ElementsF m_elements_f;
     ElementsG m_elements_g;
@@ -87,7 +87,7 @@ public:     // constructors
     : m_elements_f(std::move(elements_f))
     , m_elements_g(std::move(elements_g))
     , m_sigma(1.0)
-    , m_parallel(false)
+    , m_nb_threats(1)
     , m_max_element_n(0)
     , m_max_element_m(0)
     {
@@ -559,14 +559,19 @@ public:     // methods: computation
 
         Log::info(2, "Compute objective...");
 
-        if (!m_parallel) {
+        if (m_nb_threats == 1) {
             compute_elements_f(order, m_data, 0, nb_elements_f());
         } else {
-            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), 100),
+            tbb::task_arena arena(m_nb_threats);
+
+            arena.execute([&]() {
+                tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f()),
                 [&](const tbb::blocked_range<index>& range) {
-                    compute_elements_f(order, m_local_data.local(), range.begin(), range.end());
+                        auto& data = m_local_data.local();
+                        compute_elements_f(order, data, range.begin(), range.end());
                 }
             );
+            });
         }
 
         m_data.f() *= sigma();
@@ -581,17 +586,22 @@ public:     // methods: computation
 
         Log::info(2, "Compute constraints...");
 
-        if (!m_parallel) {
+        if (m_nb_threats == 1) {
             compute_elements_g(order, m_data, 0, nb_elements_g());
         } else {
+            tbb::task_arena arena(m_nb_threats);
+
+            arena.execute([&]() {
             tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 100),
                 [&](const tbb::blocked_range<index>& range) {
-                    compute_elements_g(order, m_local_data.local(), range.begin(), range.end());
+                        auto& data = m_local_data.local();
+                        compute_elements_g(order, data, range.begin(), range.end());
                 }
             );
+            });
         }
 
-        if (m_parallel) {
+        if (m_nb_threats != 1) {
             Log::info(5, "Combine results...");
 
             m_local_data.combine_each([&](const ProblemData& local) {
@@ -646,14 +656,14 @@ public:     // methods
     // }
 
 public:     // methods: model properties
-    bool parallel() const noexcept
+    int nb_threats() const noexcept
     {
-        return m_parallel;
+        return m_nb_threats;
     }
 
-    void set_parallel(const bool value) noexcept
+    void set_nb_threats(const int value) noexcept
     {
-        m_parallel = value;
+        m_nb_threats = value;
     }
 
     bool is_constrained() const noexcept
@@ -990,7 +1000,7 @@ public:     // methods: python
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
             .def_property("f", &Type::f, &Type::set_f)
-            .def_property("parallel", &Type::parallel, &Type::set_parallel)
+            .def_property("nb_threats", &Type::nb_threats, &Type::set_nb_threats)
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
             .def_property("x", py::overload_cast<>(&Type::x, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
