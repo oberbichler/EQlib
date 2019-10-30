@@ -51,6 +51,7 @@ private:    // variables
     double m_sigma;
 
     int m_nb_threats;
+    int m_grainsize;
 
     ElementsF m_elements_f;
     ElementsG m_elements_g;
@@ -85,6 +86,7 @@ public:     // constructors
     , m_elements_g(std::move(elements_g))
     , m_sigma(1.0)
     , m_nb_threats(1)
+    , m_grainsize(100)
     , m_max_element_n(0)
     , m_max_element_m(0)
     {
@@ -562,11 +564,11 @@ public:     // methods: computation
             tbb::task_arena arena(m_nb_threats);
 
             arena.execute([&]() {
-                tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f()),
+                tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), m_grainsize),
                 [&](const tbb::blocked_range<index>& range) {
                         auto& data = m_local_data.local();
                         compute_elements_f(order, data, range.begin(), range.end());
-            });
+                });
             });
         }
 
@@ -588,12 +590,11 @@ public:     // methods: computation
             tbb::task_arena arena(m_nb_threats);
 
             arena.execute([&]() {
-            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), 100),
+            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), m_grainsize),
                 [&](const tbb::blocked_range<index>& range) {
                         auto& data = m_local_data.local();
                         compute_elements_g(order, data, range.begin(), range.end());
-                }
-            );
+                });
             });
         }
 
@@ -660,6 +661,16 @@ public:     // methods: model properties
     void set_nb_threats(const int value) noexcept
     {
         m_nb_threats = value;
+    }
+
+    int grainsize() const noexcept
+    {
+        return m_grainsize;
+    }
+
+    void set_grainsize(const int value) noexcept
+    {
+        m_grainsize = value;
     }
 
     bool is_constrained() const noexcept
@@ -996,6 +1007,7 @@ public:     // methods: python
             // properties
             .def_property("f", &Type::f, &Type::set_f)
             .def_property("nb_threats", &Type::nb_threats, &Type::set_nb_threats)
+            .def_property("grainsize", &Type::grainsize, &Type::set_grainsize)
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
             .def_property("x", py::overload_cast<>(&Type::x, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
