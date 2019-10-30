@@ -14,8 +14,7 @@ namespace EQlib {
 class Log
 {
 private:    // methods
-    static Pointer<spdlog::logger>
-    create()
+    static Pointer<spdlog::logger> create()
     {
         auto logger = spdlog::stdout_color_mt("console");
 

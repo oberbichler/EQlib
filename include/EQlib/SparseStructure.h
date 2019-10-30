@@ -31,7 +31,7 @@ public:     // methods
         return m_ia.back();
     }
 
-    double fill_grade() const noexcept
+    double density() const noexcept
     {
         const index size = rows() * cols();
 
