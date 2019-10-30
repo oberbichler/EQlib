@@ -976,8 +976,7 @@ public:     // methods: python
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<ElementsF, ElementsG>(),
-                "objective"_a=py::list(), "constraints"_a=py::list())
+            .def(py::init<ElementsF, ElementsG>(), "objective"_a=py::list(), "constraints"_a=py::list())
             // read-only properties
             .def_property_readonly("is_constrained", &Type::is_constrained)
             .def_property_readonly("equations", &Type::equations)
