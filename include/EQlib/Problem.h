@@ -379,18 +379,15 @@ private:    // methods: computation
 
             const auto n = m_element_f_nb_variables[i];
 
-            Timer timer_element_allocate;
 
             Vector g(TOrder > 0 ? n : 0);
             Matrix h(TOrder > 1 ? n : 0, TOrder > 1 ? n : 0);
-
-            data.m_timer_allocate += timer_element_allocate.ellapsed();
 
             Timer timer_element_compute;
 
             const double f = element_f.compute(g, h);
 
-            data.m_timer_compute += timer_element_compute.ellapsed();
+            data.computation_time() += timer_element_compute.ellapsed();
 
             Timer timer_element_assemble;
 
@@ -418,7 +415,7 @@ private:    // methods: computation
                 }
             }
 
-            data.m_timer_assemble += timer_element_assemble.ellapsed();
+            data.assemble_time() += timer_element_assemble.ellapsed();
         }
     }
 
@@ -460,13 +457,11 @@ private:    // methods: computation
                 hs.push_back(h);
             }
 
-            data.m_timer_allocate += timer_element_allocate.ellapsed();
-
             Timer timer_element_compute;
 
             element_g.compute(fs, gs, hs);
 
-            data.m_timer_compute += timer_element_compute.ellapsed();
+            data.computation_time() += timer_element_compute.ellapsed();
 
             Timer timer_element_assemble;
 
@@ -505,7 +500,7 @@ private:    // methods: computation
                 }
             }
 
-            data.m_timer_assemble += timer_element_assemble.ellapsed();
+            data.assemble_time() += timer_element_assemble.ellapsed();
         }
     }
 
@@ -608,9 +603,8 @@ public:     // methods: computation
 
         Log::info(2, "Problem computed in {} sec", timer.ellapsed());
 
-        Log::info(3, "Memory allocation took {} sec", m_data.m_timer_allocate);
-        Log::info(3, "Element computation took {} sec", m_data.m_timer_compute);
-        Log::info(3, "Assembly of the system took {} sec", m_data.m_timer_assemble);
+        Log::info(3, "Element computation took {} sec", m_data.computation_time());
+        Log::info(3, "Assembly of the system took {} sec", m_data.assemble_time());
     }
 
 public:     // methods

@@ -13,18 +13,26 @@ private:    // variables
     index m_nb_nonzeros_hl;
 
 public:     // variables
-    double m_timer_allocate;
-    double m_timer_compute;
-    double m_timer_assemble;
+    double m_computation_time;
+    double m_assemble_time;
     std::vector<double> m_buffer;
-    std::vector<double> m_data;
 
 public:     // constructor
-    ProblemData() : m_timer_allocate(0), m_timer_compute(0), m_timer_assemble(0)
+    ProblemData() : m_computation_time(0), m_assemble_time(0)
     {
     }
 
 public:     // methods
+    double& computation_time()
+    {
+        return m_computation_time;
+    }
+
+    double& assemble_time()
+    {
+        return m_assemble_time;
+    }
+
     void set_zero()
     {
         std::fill(m_data.begin(), m_data.end(), 0);
@@ -169,9 +177,8 @@ public:     // methods
             m_data[i] += rhs.m_data[i];
         }
 
-        m_timer_allocate += rhs.m_timer_allocate;
-        m_timer_compute += rhs.m_timer_compute;
-        m_timer_assemble += rhs.m_timer_assemble;
+        m_computation_time += rhs.m_computation_time;
+        m_assemble_time += rhs.m_assemble_time;
 
         return *this;
     }
