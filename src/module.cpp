@@ -15,6 +15,7 @@
 #include <EQlib/Variable.h>
 
 #include <EQlib/optimizer/GradientDescent.h>
+#include <EQlib/optimizer/LBFGS.h>
 #ifdef EQLIB_USE_IPOPT
 #include <EQlib/optimizer/IPOpt.h>
 #endif
@@ -87,6 +88,9 @@ PYBIND11_MODULE(EQlib, m) {
 
 
     // --- solver
+
+    // LBFGS
+    EQlib::LBFGS::register_python(m);
 
     // GradientDescent
     EQlib::GradientDescent::register_python(m);
