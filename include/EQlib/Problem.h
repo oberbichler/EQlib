@@ -566,8 +566,7 @@ public:     // methods: computation
                 [&](const tbb::blocked_range<index>& range) {
                         auto& data = m_local_data.local();
                         compute_elements_f(order, data, range.begin(), range.end());
-                }
-            );
+            });
             });
         }
 
