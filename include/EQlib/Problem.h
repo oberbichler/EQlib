@@ -804,6 +804,17 @@ public:     // methods: input
         m_sigma = value;
     }
 
+public:     // methods: output values
+    Ref<Vector> values() noexcept
+    {
+        return Map<Vector>(m_data.values_ptr(), m_data.values().size());
+    }
+
+    Ref<const Vector> values() const noexcept
+    {
+        return Map<const Vector>(m_data.values_ptr(), m_data.values().size());
+    }
+
 public:     // methods: output f
     double f() const noexcept
     {
@@ -997,6 +1008,7 @@ public:     // methods: python
             .def_property_readonly("hl_indices", &Type::hl_indices)
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
+            .def_property_readonly("values", py::overload_cast<>(&Type::values))
             // properties
             .def_property("f", &Type::f, &Type::set_f)
             .def_property("nb_threats", &Type::nb_threats, &Type::set_nb_threats)
