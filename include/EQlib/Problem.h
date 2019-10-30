@@ -379,9 +379,11 @@ private:    // methods: computation
 
             const auto n = m_element_f_nb_variables[i];
 
+            index size_g = TOrder > 0 ? n : 0;
+            index size_h = TOrder > 1 ? n : 0;
 
-            Vector g(TOrder > 0 ? n : 0);
-            Matrix h(TOrder > 1 ? n : 0, TOrder > 1 ? n : 0);
+            Map<Vector> g(data.m_buffer.data(), size_g);
+            Map<Matrix> h(data.m_buffer.data() + size_g, size_h, size_h);
 
             Timer timer_element_compute;
 
