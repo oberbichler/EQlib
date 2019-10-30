@@ -1017,6 +1017,7 @@ public:     // methods: python
             // methods
             // // .def("clone", &Type::clone)
             .def("compute", &Type::compute, "order"_a=2, py::call_guard<py::gil_scoped_release>())
+            .def("hl_add_diagonal", &Type::hl_add_diagonal, "values"_a)
             .def("hl_inv_v", &Type::hl_inv_v)
             .def("hl_v", &Type::hl_v)
         ;
