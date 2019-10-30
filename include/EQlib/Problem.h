@@ -561,7 +561,7 @@ public:     // methods: computation
         if (m_nb_threats == 1) {
             compute_elements_f(order, m_data, 0, nb_elements_f());
         } else {
-            tbb::task_arena arena(m_nb_threats);
+            tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
                 tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), m_grainsize),
@@ -587,7 +587,7 @@ public:     // methods: computation
         if (m_nb_threats == 1) {
             compute_elements_g(order, m_data, 0, nb_elements_g());
         } else {
-            tbb::task_arena arena(m_nb_threats);
+            tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
             tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), m_grainsize),
