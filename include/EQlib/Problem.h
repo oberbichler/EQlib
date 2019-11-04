@@ -25,6 +25,8 @@ namespace EQlib {
 class Problem
 {
 private:    // types
+    using Type = Problem;
+
     using ElementsF = std::vector<Pointer<Objective>>;
     using ElementsG = std::vector<Pointer<Constraint>>;
 
@@ -985,7 +987,6 @@ public:     // methods: python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = Problem;
         using Holder = Pointer<Type>;
 
         const std::string name = "Problem";
