@@ -90,18 +90,18 @@ public:     // constructors
     , m_max_element_n(0)
     , m_max_element_m(0)
     {
-        Log::info(1, "==> Initialize problem...");
+        Log::task_begin("Initialize problem...");
 
         Timer timer;
 
         const auto nb_elements_f = length(m_elements_f);
         const auto nb_elements_g = length(m_elements_g);
 
-        Log::info(2, "The objective consists of {} elements", nb_elements_f);
-        Log::info(2, "The constraints consist of {} elements", nb_elements_g);
+        Log::task_info("The objective consists of {} elements", nb_elements_f);
+        Log::task_info("The constraints consist of {} elements", nb_elements_g);
 
 
-        Log::info(3, "Getting equations and variables...");
+        Log::task_step("Getting equations and variables...");
 
         m_element_f_nb_variables.resize(nb_elements_f);
         m_element_g_nb_variables.resize(nb_elements_g);
@@ -140,7 +140,7 @@ public:     // constructors
         }
 
 
-        Log::info(3, "Creating the set of unique equations...");
+        Log::task_step("Creating the set of unique equations...");
 
         tsl::robin_set<Pointer<Equation>> equation_set;
 
@@ -159,7 +159,7 @@ public:     // constructors
         }
 
 
-        Log::info(3, "Creating the set of unique variables...");
+        Log::task_step("Creating the set of unique variables...");
 
         tsl::robin_set<Pointer<Variable>> variable_set;
 
@@ -194,11 +194,11 @@ public:     // constructors
         const auto nb_equations = length(m_equations);
         const auto nb_variables = length(m_variables);
 
-        Log::info(2, "The problem contains {} variables", nb_variables);
-        Log::info(2, "The problem contains {} constraint equations", nb_equations);
+        Log::task_info("The problem contains {} variables", nb_variables);
+        Log::task_info("The problem contains {} constraint equations", nb_equations);
 
 
-        Log::info(3, "Compute indices for variables and equations...");
+        Log::task_step("Compute indices for variables and equations...");
 
         m_equation_indices.set_empty_key(nullptr);
         m_variable_indices.set_empty_key(nullptr);
@@ -217,7 +217,7 @@ public:     // constructors
         }
 
 
-        Log::info(3, "Compute indices for elements...");
+        Log::task_step("Compute indices for elements...");
 
         // variable indices f
 
@@ -299,7 +299,7 @@ public:     // constructors
         }
 
 
-        Log::info(3, "Analyse sparse patterns...");
+        Log::task_step("Analyse sparse patterns...");
 
         const auto n = length(m_variables);
         const auto m = length(m_equations);
@@ -343,23 +343,23 @@ public:     // constructors
         }
 
 
-        Log::info(3, "Allocate memory...");
+        Log::task_step("Allocate memory...");
 
         m_dg_structure.set(m, n, m_pattern_dg);
         m_hl_structure.set(n, n, m_pattern_hl);
 
-        Log::info(2, "The hessian has {} nonzero entries ({:.3f}%)",
+        Log::task_info("The hessian has {} nonzero entries ({:.3f}%)",
             m_hl_structure.nb_nonzeros(), m_hl_structure.density() * 100.0);
 
-        Log::info(2, "The jacobian of the constraints has {} nonzero entries ({:.3f}%)",
+        Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)",
             m_dg_structure.nb_nonzeros(), m_dg_structure.density() * 100.0);
 
         m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
-        Log::info(1, "The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
+        Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
 
-        Log::info(2, "Problem initialized in {} sec", timer.ellapsed());
+        Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
     }
 
 private:    // methods: computation
@@ -539,13 +539,15 @@ private:    // methods: computation
     }
 
 public:     // methods: computation
+    template <bool TInfo>
     void compute(const index order = 2)
     {
         if (order < 0 || 2 < order) {
             throw std::invalid_argument("order");
         }
 
-        Log::info(1, "==> Compute problem...");
+        if (TInfo)
+        Log::task_begin("Compute problem...");
 
         Timer timer;
 
@@ -553,7 +555,8 @@ public:     // methods: computation
 
         tbb::combinable<ProblemData> m_local_data(m_data);
 
-        Log::info(2, "Compute objective...");
+        if (TInfo)
+        Log::task_step("Compute objective...");
 
         if (m_nb_threats == 1) {
             compute_elements_f(order, m_data, 0, nb_elements_f());
@@ -579,7 +582,8 @@ public:     // methods: computation
             m_data.hl() *= sigma();
         }
 
-        Log::info(2, "Compute constraints...");
+        if (TInfo)
+        Log::task_step("Compute constraints...");
 
         if (m_nb_threats == 1) {
             compute_elements_g(order, m_data, 0, nb_elements_g());
@@ -596,17 +600,25 @@ public:     // methods: computation
         }
 
         if (m_nb_threats != 1) {
-            Log::info(5, "Combine results...");
+            if (TInfo)
+            Log::task_step("Combine results...");
 
             m_local_data.combine_each([&](const ProblemData& local) {
                 m_data += local;
             });
         }
 
-        Log::info(2, "Problem computed in {} sec", timer.ellapsed());
+        if (TInfo) {
+        Log::task_info("Element computation took {} sec", m_data.computation_time());
+        Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
 
-        Log::info(3, "Element computation took {} sec", m_data.computation_time());
-        Log::info(3, "Assembly of the system took {} sec", m_data.assemble_time());
+        Log::task_end("Problem computed in {:.3f} sec", timer.ellapsed());
+        }
+    }
+
+    void compute(const index order = 2)
+    {
+        compute<true>(order);
     }
 
 public:     // methods

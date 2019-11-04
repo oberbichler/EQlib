@@ -18,7 +18,7 @@ private:    // methods
     {
         auto logger = spdlog::stdout_color_mt("console");
 
-        logger->set_pattern("%H:%M:%S.%e %^[%L]%$ %v");
+        logger->set_pattern("%H:%M:%S.%e  %v");
 
         return logger;
     }
@@ -43,6 +43,33 @@ public:     // methods
     static void debug(TArgs&&... args)
     {
         s_console->debug(std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    static void task_begin(std::string text, TArgs&&... args)
+    {
+        std::string message = "\u001b[1;32m> " + text + "\u001b[0m";
+        info(1, message.c_str(), std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    static void task_end(std::string text, TArgs&&... args)
+    {
+        info(1, text.c_str(), std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    static void task_info(std::string text, TArgs&&... args)
+    {
+        std::string message = "\033[38;5;33m" + text + "\033[0m";
+        info(2, message.c_str(), std::forward<TArgs>(args)...);
+    }
+
+    template<class... TArgs>
+    static void task_step(std::string text, TArgs&&... args)
+    {
+        std::string message = "\033[38;5;8m" + text + "\033[0m";
+        info(3, message.c_str(), std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
@@ -78,9 +105,10 @@ public:     // methods
     }
 
     template<class... TArgs>
-    static void warn(TArgs&&... args)
+    static void warn(std::string text, TArgs&&... args)
     {
-        s_console->warn(std::forward<TArgs>(args)...);
+        std::string message = "\033[38;5;208m" + text + "\033[0m";
+        s_console->warn(message.c_str(), std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
@@ -90,7 +118,7 @@ public:     // methods
             return;
         }
 
-        s_console->warn(std::forward<TArgs>(args)...);
+        warn(std::forward<TArgs>(args)...);
     }
 
     template<class... TArgs>
@@ -133,8 +161,8 @@ public:     // python
             .def_static("error", py::overload_cast<const int,
                 const std::string&>(&Type::error<const std::string&>),
                 "level"_a, "message"_a)
-            .def_static("warn", py::overload_cast<const std::string&>(
-                &Type::warn<const std::string&>), "message"_a)
+            // .def_static("warn", py::overload_cast<const std::string&>(
+            //     &Type::warn<const std::string&>), "message"_a)
             .def_static("warn", py::overload_cast<const int,
                 const std::string&>(&Type::warn<const std::string&>),
                 "level"_a, "message"_a)

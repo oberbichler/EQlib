@@ -111,7 +111,7 @@ public:     // methods
     {
         // setup
 
-        Log::info(1, "==> Solving nonlinear system...");
+        Log::task_begin("Solving nonlinear system using Newton-Raphson...");
 
         Timer timer;
 
@@ -122,43 +122,43 @@ public:     // methods
 
             if (iteration >= m_maxiter) {
                 m_stopping_reason = 2;
-                Log::info(2, "Stopped because iteration >= {}", m_maxiter);
+                Log::warn(1, "Stopped because iteration >= {}", m_maxiter);
                 break;
             }
 
-            Log::info(2, "Iteration {}", iteration + 1);
+            Log::task_info("Iteration {}:", iteration + 1);
 
             // compute g and h
 
-            Log::info(2, "Computing system...");
+            Log::task_step("Computing system...");
 
-            m_problem->compute();
+            m_problem->compute<false>();
             m_gevals += 1;
             m_hevals += 1;
 
-            Log::info(2, "The current value is {}", m_problem->f());
+            Log::task_info("The current value is {}", m_problem->f());
 
             // check residual
 
-            Log::info(2, "Computing residual...");
+            Log::task_step("Computing residual...");
 
             Vector m_residual = m_problem->df();
 
             const double rnorm = m_residual.norm();
 
-            Log::info(2, "The norm of the residual is {}", rnorm);
+            Log::task_info("The norm of the residual is {}", rnorm);
 
             // check residual norm
 
             if (rnorm < m_rtol) {
                 m_stopping_reason = 0;
-                Log::info(2, "Stopped because rnorm < {}", m_rtol);
+                Log::task_info("Stopped because rnorm < {}", m_rtol);
                 break;
             }
 
             // solve iteration
 
-            Log::info(2, "Solving the linear equation system...");
+            Log::task_step("Solving the linear equation system...");
 
             if (m_damping != 0.0) {
                 m_problem->hl_add_diagonal(m_damping);
@@ -168,7 +168,7 @@ public:     // methods
 
             // update system
 
-            Log::info(2, "Updating system...");
+            Log::task_step("Updating system...");
 
             m_problem->set_x(m_problem->x() - delta);
 
@@ -176,26 +176,16 @@ public:     // methods
 
             const double xnorm = delta.norm();
 
-            Log::info(2, "The norm of the step is {}", xnorm);
+            Log::task_info("The norm of the step is {}", xnorm);
 
             if (xnorm < m_xtol) {
-                Log::info(2, "Stopped because xnorm < {}", m_xtol);
+                Log::task_info("Stopped because xnorm < {}", m_xtol);
                 m_stopping_reason = 1;
                 break;
             }
         }
 
-        switch (m_stopping_reason) {
-        case 2:
-            Log::warn("The maximum number of iterations has been reached after {:.3f} sec", timer.ellapsed());
-            break;
-        case 3:
-            Log::error("An unknown error has occurred after {:.3f} sec", timer.ellapsed());
-            break;
-        default:
-            Log::info(1, "System solved in {:.3f} sec", timer.ellapsed());
-            break;
-        }
+        Log::task_end("System solved in {:.3f} sec", timer.ellapsed());
     }
 
 public:     // python
