@@ -36,6 +36,7 @@ add_subdirectory(external_libraries/pybind11)
 add_definitions(
     -DEIGEN_DEFAULT_TO_ROW_MAJOR
     -DFMT_HEADER_ONLY
+    -DSPDLOG_FMT_EXTERNAL
 )
 
 pybind11_add_module(EQlib src/module.cpp)
