@@ -11,7 +11,9 @@
 
 #include <sparsehash/dense_hash_map>
 
+#ifdef EQLIB_USE_TBB
 #include <tbb/tbb.h>
+#endif
 
 #include <tsl/robin_set.h>
 
@@ -365,180 +367,176 @@ public:     // constructors
     }
 
 private:    // methods: computation
-    template <index TOrder, typename TBegin, typename TEnd>
-    void compute_elements_f(ProblemData& data, const TBegin& begin, const TEnd& end)
+    template <index TOrder>
+    void compute_elements_f(ProblemData& data, const index i)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        for (index i = begin; i != end; ++i) {
-            const auto& element_f = *m_elements_f[i];
+        const auto& element_f = *m_elements_f[i];
 
-            if (!element_f.is_active()) {
-                continue;
+        if (!element_f.is_active()) {
+            return;
+        }
+
+        const auto& variable_indices = m_element_f_variable_indices[i];
+
+        const auto n = m_element_f_nb_variables[i];
+
+        index size_g = TOrder > 0 ? n : 0;
+        index size_h = TOrder > 1 ? n : 0;
+
+        Map<Vector> g(data.m_buffer.data(), size_g);
+        Map<Matrix> h(data.m_buffer.data() + size_g, size_h, size_h);
+
+        Timer timer_element_compute;
+
+        const double f = element_f.compute(g, h);
+
+        data.computation_time() += timer_element_compute.ellapsed();
+
+        Timer timer_element_assemble;
+
+        data.f() += f;
+
+        if constexpr(TOrder < 1) {
+            return;
+        }
+
+        for (index col_i = 0; col_i != length(variable_indices); ++col_i) {
+            const auto col = variable_indices[col_i];
+
+            data.df(col.global) += g(col.local);
+
+            if constexpr(TOrder < 2) {
+                return;
             }
 
-            const auto& variable_indices = m_element_f_variable_indices[i];
+            for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-            const auto n = m_element_f_nb_variables[i];
+                index index = m_hl_structure.get_index(row.global, col.global);
 
-            index size_g = TOrder > 0 ? n : 0;
-            index size_h = TOrder > 1 ? n : 0;
+                data.hl(index) += h(row.local, col.local);
+            }
+        }
 
-            Map<Vector> g(data.m_buffer.data(), size_g);
-            Map<Matrix> h(data.m_buffer.data() + size_g, size_h, size_h);
+        data.assemble_time() += timer_element_assemble.ellapsed();
+    }
 
-            Timer timer_element_compute;
+    template <index TOrder>
+    void compute_elements_g(ProblemData& data, const index i)
+    {
+        static_assert(0 <= TOrder && TOrder <= 2);
 
-            const double f = element_f.compute(g, h);
+        const auto& element_g = *m_elements_g[i];
 
-            data.computation_time() += timer_element_compute.ellapsed();
+        if (!element_g.is_active()) {
+            return;
+        }
 
-            Timer timer_element_assemble;
+        const auto& equation_indices = m_element_g_equation_indices[i];
+        const auto& variable_indices = m_element_g_variable_indices[i];
 
-            data.f() += f;
+        const auto m = m_element_g_nb_equations[i];
+        const auto n = m_element_g_nb_variables[i];
+
+        if (n == 0 || m == 0) { // FIXME: check reduces counts
+            return;
+        }
+
+        Timer timer_element_allocate;
+
+        Vector fs(m);
+        std::vector<Ref<Vector>> gs;
+        std::vector<Ref<Matrix>> hs;
+
+        gs.reserve(m);
+        hs.reserve(m);
+
+        for (index k = 0; k < m; k++) {
+            Map<Vector> g(data.m_buffer.data() + k * n, n);
+            Map<Matrix> h(data.m_buffer.data() + m * n + k * n * n, n, n);
+            gs.push_back(g);
+            hs.push_back(h);
+        }
+
+        Timer timer_element_compute;
+
+        element_g.compute(fs, gs, hs);
+
+        data.computation_time() += timer_element_compute.ellapsed();
+
+        Timer timer_element_assemble;
+
+        for (const auto& equation_index : equation_indices) {
+            const auto& equation = m_equations[equation_index.global];
+
+            data.g(equation_index.global) += fs(equation_index.local);
 
             if constexpr(TOrder < 1) {
-                continue;
+                return;
             }
 
-            for (index col_i = 0; col_i != length(variable_indices); ++col_i) {
+            auto& local_g = gs[equation_index.local];
+            auto& local_h = hs[equation_index.local];
+
+            local_h *= equation->multiplier();
+
+            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
                 const auto col = variable_indices[col_i];
 
-                data.df(col.global) += g(col.local);
+                const index dg_value_i = m_dg_structure.get_index(equation_index.global, col.global);
+
+                data.dg(dg_value_i) += local_g(col.local);
 
                 if constexpr(TOrder < 2) {
-                    continue;
+                    return;
                 }
 
                 for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    index index = m_hl_structure.get_index(row.global, col.global);
+                    const index hl_value_i = m_hl_structure.get_index(row.global, col.global);
 
-                    data.hl(index) += h(row.local, col.local);
+                    data.hl(hl_value_i) += local_h(row.local, col.local);
                 }
             }
-
-            data.assemble_time() += timer_element_assemble.ellapsed();
         }
+
+        data.assemble_time() += timer_element_assemble.ellapsed();
     }
 
-    template <index TOrder, typename TBegin, typename TEnd>
-    void compute_elements_g(ProblemData& data, const TBegin& begin, const TEnd& end)
-    {
-        static_assert(0 <= TOrder && TOrder <= 2);
-
-        for (index i = begin; i != end; ++i) {
-            const auto& element_g = *m_elements_g[i];
-
-            if (!element_g.is_active()) {
-                continue;
-            }
-
-            const auto& equation_indices = m_element_g_equation_indices[i];
-            const auto& variable_indices = m_element_g_variable_indices[i];
-
-            const auto m = m_element_g_nb_equations[i];
-            const auto n = m_element_g_nb_variables[i];
-
-            if (n == 0 || m == 0) { // FIXME: check reduces counts
-                continue;
-            }
-
-            Timer timer_element_allocate;
-
-            Vector fs(m);
-            std::vector<Ref<Vector>> gs;
-            std::vector<Ref<Matrix>> hs;
-
-            gs.reserve(m);
-            hs.reserve(m);
-
-            for (index k = 0; k < m; k++) {
-                Map<Vector> g(data.m_buffer.data() + k * n, n);
-                Map<Matrix> h(data.m_buffer.data() + m * n + k * n * n, n, n);
-                gs.push_back(g);
-                hs.push_back(h);
-            }
-
-            Timer timer_element_compute;
-
-            element_g.compute(fs, gs, hs);
-
-            data.computation_time() += timer_element_compute.ellapsed();
-
-            Timer timer_element_assemble;
-
-            for (const auto& equation_index : equation_indices) {
-                const auto& equation = m_equations[equation_index.global];
-
-                data.g(equation_index.global) += fs(equation_index.local);
-
-                if constexpr(TOrder < 1) {
-                    continue;
-                }
-
-                auto& local_g = gs[equation_index.local];
-                auto& local_h = hs[equation_index.local];
-
-                local_h *= equation->multiplier();
-
-                for (index col_i = 0; col_i < length(variable_indices); col_i++) {
-                    const auto col = variable_indices[col_i];
-
-                    const index dg_value_i = m_dg_structure.get_index(equation_index.global, col.global);
-
-                    data.dg(dg_value_i) += local_g(col.local);
-
-                    if constexpr(TOrder < 2) {
-                        continue;
-                    }
-
-                    for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                        const auto row = variable_indices[row_i];
-
-                        const index hl_value_i = m_hl_structure.get_index(row.global, col.global);
-
-                        data.hl(hl_value_i) += local_h(row.local, col.local);
-                    }
-                }
-            }
-
-            data.assemble_time() += timer_element_assemble.ellapsed();
-        }
-    }
-
-    template <typename TBegin, typename TEnd>
-    void compute_elements_f(const index order, ProblemData& data, const TBegin& begin, const TEnd& end)
+    inline void compute_elements_f(const index order, ProblemData& data, const index i)
     {
         switch (order) {
         case 0:
-            compute_elements_f<0>(data, begin, end);
+            compute_elements_f<0>(data, i);
             break;
         case 1:
-            compute_elements_f<1>(data, begin, end);
+            compute_elements_f<1>(data, i);
             break;
         case 2:
-            compute_elements_f<2>(data, begin, end);
+            compute_elements_f<2>(data, i);
             break;
         }
     }
 
-    template <typename TBegin, typename TEnd>
-    void compute_elements_g(const index order, ProblemData& data, const TBegin& begin, const TEnd& end)
+    inline void compute_elements_g(const index order, ProblemData& data, const index i)
     {
         switch (order) {
         case 0:
-            compute_elements_g<0>(data, begin, end);
+            compute_elements_g<0>(data, i);
             break;
         case 1:
-            compute_elements_g<1>(data, begin, end);
+            compute_elements_g<1>(data, i);
             break;
         case 2:
-            compute_elements_g<2>(data, begin, end);
+            compute_elements_g<2>(data, i);
             break;
         }
     }
+
+#pragma omp declare reduction(Add : ProblemData : omp_out += omp_in) 
 
 public:     // methods: computation
     template <bool TInfo>
@@ -555,23 +553,36 @@ public:     // methods: computation
 
         m_data.set_zero();
 
+#ifdef EQLIB_USE_TBB
         tbb::combinable<ProblemData> m_local_data(m_data);
+#endif
 
         if (TInfo)
         Log::task_step("Compute objective...");
 
         if (m_nb_threats == 1) {
-            compute_elements_f(order, m_data, 0, nb_elements_f());
+            for (index i = 0; i < nb_elements_f(); i++) {
+                compute_elements_f(order, m_data, i);
+            }
         } else {
+#ifdef EQLIB_USE_TBB
             tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
                 tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), m_grainsize),
-                [&](const tbb::blocked_range<index>& range) {
+                    [&](const tbb::blocked_range<index>& range) {
                         auto& data = m_local_data.local();
-                        compute_elements_f(order, data, range.begin(), range.end());
-                });
+                        for (index i = range.begin(); i != range.end(); ++i) {
+                            compute_elements_f(order, data, i);
+                        }
+                    });
             });
+#else
+            #pragma omp parallel for num_threads(m_nb_threats) schedule(guided, m_grainsize) reduction(Add : m_data)
+            for (index i = 0; i < nb_elements_f(); i++) {
+                compute_elements_f(order, m_data, i);
+            }
+#endif
         }
 
         m_data.f() *= sigma();
@@ -588,19 +599,31 @@ public:     // methods: computation
         Log::task_step("Compute constraints...");
 
         if (m_nb_threats == 1) {
-            compute_elements_g(order, m_data, 0, nb_elements_g());
+            for (index i = 0; i < nb_elements_g(); i++) {
+                compute_elements_g(order, m_data, i);
+            }
         } else {
+#ifdef EQLIB_USE_TBB
             tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
             tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), m_grainsize),
                 [&](const tbb::blocked_range<index>& range) {
-                        auto& data = m_local_data.local();
-                        compute_elements_g(order, data, range.begin(), range.end());
+                    auto& data = m_local_data.local();
+                    for (index i = range.begin(); i != range.end(); ++i) {
+                        compute_elements_g(order, data, i);
+                    }
                 });
             });
+#else
+            #pragma omp parallel for num_threads(m_nb_threats) schedule(guided, m_grainsize) reduction(Add : m_data)
+            for (index i = 0; i < nb_elements_f(); i++) {
+                compute_elements_g(order, m_data, i);
+            }
+#endif
         }
 
+#ifdef EQLIB_USE_TBB
         if (m_nb_threats != 1) {
             if (TInfo)
             Log::task_step("Combine results...");
@@ -609,6 +632,7 @@ public:     // methods: computation
                 m_data += local;
             });
         }
+#endif
 
         if (TInfo) {
         Log::task_info("Element computation took {} sec", m_data.computation_time());
