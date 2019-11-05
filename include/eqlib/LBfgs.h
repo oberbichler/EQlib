@@ -9,6 +9,7 @@
 
 namespace eqlib {
 
+// Adapted from https://github.com/PatWie/CppNumericalSolvers
 class LBfgs
 {
 private:    // types
