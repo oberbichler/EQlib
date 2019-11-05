@@ -617,7 +617,7 @@ public:     // methods: computation
             });
 #else
             #pragma omp parallel for num_threads(m_nb_threats) schedule(guided, m_grainsize) reduction(Add : m_data)
-            for (index i = 0; i < nb_elements_f(); i++) {
+            for (index i = 0; i < nb_elements_g(); i++) {
                 compute_elements_g(order, m_data, i);
             }
 #endif
