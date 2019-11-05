@@ -10,7 +10,7 @@ jobs:
     - name: Install requirements
       run: |
         call %CONDA%/Scripts/activate.bat
-        conda install mkl-devel numpy scipy tbb-devel & pip install git+https://github.com/oberbichler/HyperJet
+        conda install mkl-devel numpy scipy tbb-devel & pip install hyperjet
       shell: cmd
     - name: Build package
       run: |
@@ -33,7 +33,7 @@ jobs:
       run: |
         source $CONDA/bin/activate
         conda install mkl-devel numpy scipy tbb-devel
-        pip install git+https://github.com/oberbichler/HyperJet
+        pip install hyperjet
     - name: Build package
       run: |
         source $CONDA/bin/activate
