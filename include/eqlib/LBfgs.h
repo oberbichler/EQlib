@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Define.h"
-#include "../Log.h"
-#include "../Problem.h"
-#include "../Timer.h"
+#include "Define.h"
+#include "Log.h"
+#include "Problem.h"
+#include "Timer.h"
 
 #include <Eigen/LU>
 

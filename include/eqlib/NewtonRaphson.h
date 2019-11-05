@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Define.h"
-#include "../Log.h"
-#include "../Problem.h"
-#include "../Settings.h"
-#include "../Timer.h"
+#include "Define.h"
+#include "Log.h"
+#include "Problem.h"
+#include "Settings.h"
+#include "Timer.h"
 
 namespace eqlib {
 

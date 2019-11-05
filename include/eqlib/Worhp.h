@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Define.h"
-#include "../Log.h"
-#include "../Timer.h"
-#include "../Problem.h"
+#include "Define.h"
+#include "Log.h"
+#include "Timer.h"
+#include "Problem.h"
 
 #include <worhp/worhp.h>
 
