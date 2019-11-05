@@ -7,6 +7,7 @@
 
 namespace eqlib {
 
+// Adapted from https://github.com/PatWie/CppNumericalSolvers
 class GradientDescent
 {
 private:    // types
