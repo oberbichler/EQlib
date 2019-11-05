@@ -14,11 +14,11 @@
 #include <eqlib/Node.h>
 #include <eqlib/Variable.h>
 
-#include <eqlib/optimizer/GradientDescent.h>
-#include <eqlib/optimizer/LBfgs.h>
-#include <eqlib/optimizer/NewtonRaphson.h>
+#include <eqlib/GradientDescent.h>
+#include <eqlib/LBfgs.h>
+#include <eqlib/NewtonRaphson.h>
 #ifdef EQLIB_USE_WORHP
-#include <eqlib/optimizer/Worhp.h>
+#include <eqlib/Worhp.h>
 #endif
 
 #include <eqlib/objectives/IgaPointSupportAD.h>
