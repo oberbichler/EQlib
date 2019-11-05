@@ -16,9 +16,6 @@
 
 #include <eqlib/optimizer/GradientDescent.h>
 #include <eqlib/optimizer/LBFGS.h>
-#ifdef EQLIB_USE_IPOPT
-#include <eqlib/optimizer/IPOpt.h>
-#endif
 #include <eqlib/optimizer/NewtonRaphson.h>
 #ifdef EQLIB_USE_WORHP
 #include <eqlib/optimizer/Worhp.h>
@@ -94,11 +91,6 @@ PYBIND11_MODULE(eqlib, m) {
 
     // GradientDescent
     eqlib::GradientDescent::register_python(m);
-
-    // IPOpt
-    #ifdef EQLIB_USE_IPOPT
-    eqlib::IPOpt::register_python(m);
-    #endif
 
     // NewtonRaphson
     eqlib::NewtonRaphson::register_python(m);
