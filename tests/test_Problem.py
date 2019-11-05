@@ -1,5 +1,5 @@
 import unittest
-import EQlib as eq
+import eqlib as eq
 import numpy as np
 import hyperjet as hj
 from numpy.testing import assert_almost_equal, assert_equal

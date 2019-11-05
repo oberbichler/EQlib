@@ -10,7 +10,7 @@
 #include <string>
 #include <variant>
 
-namespace EQlib {
+namespace eqlib {
 
 using index = std::ptrdiff_t;
 

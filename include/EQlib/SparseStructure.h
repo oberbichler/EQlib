@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace EQlib {
+namespace eqlib {
 
 template <typename TScalar = double, typename TIndex = int, bool TRowMajor = false>
 class SparseStructure
@@ -180,4 +180,4 @@ public:     // methods
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

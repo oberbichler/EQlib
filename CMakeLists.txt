@@ -10,11 +10,11 @@ execute_process(
 
 set(CMAKE_CXX_STANDARD 17)
 
-project(EQlib-py)
+project(eqlib-py)
 
 configure_file(
-  ${CMAKE_SOURCE_DIR}/include/EQlib/Version.h.in
-  ${CMAKE_BINARY_DIR}/generated/EQlib/Version.h
+  ${CMAKE_SOURCE_DIR}/include/eqlib/Version.h.in
+  ${CMAKE_BINARY_DIR}/generated/eqlib/Version.h
 )
 
 include_directories(
@@ -39,7 +39,7 @@ add_definitions(
     -DSPDLOG_FMT_EXTERNAL
 )
 
-pybind11_add_module(EQlib src/module.cpp)
+pybind11_add_module(eqlib src/module.cpp)
 
 if (DEFINED ENV{CONDA_PREFIX})
     message("-- Found Anaconda: $ENV{CONDA_PREFIX}")
@@ -61,7 +61,7 @@ find_library(MKL_LIBRARY mkl_rt)
 if(MKL_LIBRARY)
     message("-- Found MKL: ${MKL_LIBRARY}")
     add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
-    target_link_libraries(EQlib PRIVATE ${MKL_LIBRARY})
+    target_link_libraries(eqlib PRIVATE ${MKL_LIBRARY})
 else()
     message(FATAL_ERROR "-- MKL not found")
 endif()
@@ -72,7 +72,7 @@ find_library(TBB_DBG_LIBRARY tbb_debug)
 
 if(TBB_LIBRARY)
     message("-- Found TBB: ${TBB_LIBRARY}")
-    target_link_libraries(EQlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
+    target_link_libraries(eqlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
 else()
     message(FATAL_ERROR "-- TBB not found")
 endif()
@@ -87,16 +87,16 @@ find_library(WORHP_LIBRARY worhp)
 if(WORHP_LIBRARY)
     message("-- Found WORHP: ${WORHP_LIBRARY}")
     add_definitions(-DEQLIB_USE_WORHP)
-    target_include_directories(EQlib SYSTEM PRIVATE "${WORHP_ROOT}/include")
-    target_link_libraries(EQlib PRIVATE ${WORHP_LIBRARY})
+    target_include_directories(eqlib SYSTEM PRIVATE "${WORHP_ROOT}/include")
+    target_link_libraries(eqlib PRIVATE ${WORHP_LIBRARY})
 else()
     message("-- WORHP not found")
 endif()
 
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    target_compile_options(EQlib PUBLIC -fsized-deallocation)
+    target_compile_options(eqlib PUBLIC -fsized-deallocation)
 endif()
 
 
-install(TARGETS EQlib DESTINATION bin)
+install(TARGETS eqlib DESTINATION bin)

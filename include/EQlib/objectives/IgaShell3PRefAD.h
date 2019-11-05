@@ -2,15 +2,15 @@
 
 #include <Eigen/Geometry>
 
-#include <EQlib/Objective.h>
-#include <EQlib/Node.h>
-#include <EQlib/Variable.h>
+#include <eqlib/Objective.h>
+#include <eqlib/Node.h>
+#include <eqlib/Variable.h>
 
 #include <hyperjet/hyperjet.h>
 
 #include <vector>
 
-namespace EQlib {
+namespace eqlib {
 
 class IgaShell3PRefAD : public Objective
 {
@@ -260,4 +260,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

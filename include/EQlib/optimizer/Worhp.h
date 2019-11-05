@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-namespace EQlib {
+namespace eqlib {
 
 class Worhp
 {
@@ -344,7 +344,7 @@ public:     // python
 
         py::class_<Type>(m, "Worhp")
             // constructors
-            .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
+            .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
             // read-only properties
             .def_property_readonly("problem", &Type::problem)
             // properties
@@ -359,4 +359,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

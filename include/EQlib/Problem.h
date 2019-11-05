@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-namespace EQlib {
+namespace eqlib {
 
 class Problem
 {
@@ -1045,4 +1045,4 @@ public:     // methods: python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

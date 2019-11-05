@@ -5,7 +5,7 @@
 #include "../Timer.h"
 #include "../Problem.h"
 
-namespace EQlib {
+namespace eqlib {
 
 class GradientDescent
 {
@@ -520,10 +520,10 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::GradientDescent;
+        using Type = eqlib::GradientDescent;
 
         py::class_<Type>(m, "GradientDescent")
-            .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
+            .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
             .def("run", &Type::run)
             .def_property("rtol", &Type::rtol, &Type::set_rtol)
             .def_property("maxiter", &Type::maxiter, &Type::set_maxiter)
@@ -535,4 +535,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

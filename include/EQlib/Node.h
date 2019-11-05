@@ -7,7 +7,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace EQlib {
+namespace eqlib {
 
 class Node
 {
@@ -139,7 +139,7 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::Node;
+        using Type = eqlib::Node;
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
@@ -168,4 +168,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

@@ -7,12 +7,12 @@
 
 #include <Eigen/LU>
 
-namespace EQlib {
+namespace eqlib {
 
 class LBFGS
 {
 private:    // types
-    using Type = EQlib::LBFGS;
+    using Type = eqlib::LBFGS;
 
 private:    // members
     Pointer<Problem> m_problem;
@@ -521,7 +521,7 @@ public:     // python
 
         py::class_<Type>(m, "LBFGS")
             // constructors
-            .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
+            .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
             // methods
             .def("run", &Type::run)
             // properties
@@ -537,4 +537,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

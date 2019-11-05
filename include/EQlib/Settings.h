@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <variant>
 
-namespace EQlib {
+namespace eqlib {
 
 using Settings = std::unordered_map<std::string, std::variant<int, double,
     std::string>>;
@@ -49,4 +49,4 @@ double get_or_default(const Settings& options, const std::string key,
     return std::get<double>(it->second);
 }
 
-} // namespace EQlib
+} // namespace eqlib

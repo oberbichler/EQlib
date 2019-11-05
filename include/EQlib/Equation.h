@@ -5,7 +5,7 @@
 #include <limits>
 #include <string>
 
-namespace EQlib {
+namespace eqlib {
 
 class Equation
 {
@@ -142,4 +142,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

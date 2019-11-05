@@ -6,37 +6,37 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include <EQlib/Constraint.h>
-#include <EQlib/Equation.h>
-#include <EQlib/Log.h>
-#include <EQlib/Objective.h>
-#include <EQlib/Problem.h>
-#include <EQlib/Node.h>
-#include <EQlib/Variable.h>
+#include <eqlib/Constraint.h>
+#include <eqlib/Equation.h>
+#include <eqlib/Log.h>
+#include <eqlib/Objective.h>
+#include <eqlib/Problem.h>
+#include <eqlib/Node.h>
+#include <eqlib/Variable.h>
 
-#include <EQlib/optimizer/GradientDescent.h>
-#include <EQlib/optimizer/LBFGS.h>
+#include <eqlib/optimizer/GradientDescent.h>
+#include <eqlib/optimizer/LBFGS.h>
 #ifdef EQLIB_USE_IPOPT
-#include <EQlib/optimizer/IPOpt.h>
+#include <eqlib/optimizer/IPOpt.h>
 #endif
-#include <EQlib/optimizer/NewtonRaphson.h>
+#include <eqlib/optimizer/NewtonRaphson.h>
 #ifdef EQLIB_USE_WORHP
-#include <EQlib/optimizer/Worhp.h>
+#include <eqlib/optimizer/Worhp.h>
 #endif
 
-#include <EQlib/objectives/IgaPointSupportAD.h>
-#include <EQlib/objectives/IgaShell3PAD.h>
-#include <EQlib/objectives/IgaShell3PRefAD.h>
-#include <EQlib/objectives/IgaShell3PLoadAD.h>
-#include <EQlib/objectives/IgaShell3PLoadRefAD.h>
+#include <eqlib/objectives/IgaPointSupportAD.h>
+#include <eqlib/objectives/IgaShell3PAD.h>
+#include <eqlib/objectives/IgaShell3PRefAD.h>
+#include <eqlib/objectives/IgaShell3PLoadAD.h>
+#include <eqlib/objectives/IgaShell3PLoadRefAD.h>
 
-#include <EQlib/Version.h>
+#include <eqlib/Version.h>
 
-PYBIND11_MODULE(EQlib, m) {
-    m.doc() = "EQlib by Thomas Oberbichler";
+PYBIND11_MODULE(eqlib, m) {
+    m.doc() = "eqlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
     m.attr("__copyright__") = "Copyright (c) 2018-2019, Thomas Oberbichler";
-    m.attr("__version__") = EQlib::version();
+    m.attr("__version__") = eqlib::version();
     m.attr("__email__") = "thomas.oberbichler@gmail.com";
     m.attr("__status__") = "Development";
 
@@ -63,66 +63,66 @@ PYBIND11_MODULE(EQlib, m) {
     // --- core
 
     // Constraint
-    EQlib::Constraint::register_python(m);
+    eqlib::Constraint::register_python(m);
 
     // Equation
-    EQlib::Equation::register_python(m);
+    eqlib::Equation::register_python(m);
 
     // Log
-    EQlib::Log::register_python(m);
+    eqlib::Log::register_python(m);
 
     // Node
-    EQlib::Node::register_python(m);
+    eqlib::Node::register_python(m);
 
     // Objective
-    EQlib::Objective::register_python(m);
+    eqlib::Objective::register_python(m);
 
     // Problem
-    EQlib::Problem::register_python(m);
+    eqlib::Problem::register_python(m);
 
     // Timer
-    EQlib::Timer::register_python(m);
+    eqlib::Timer::register_python(m);
 
     // Variable
-    EQlib::Variable::register_python(m);
+    eqlib::Variable::register_python(m);
 
 
     // --- solver
 
     // LBFGS
-    EQlib::LBFGS::register_python(m);
+    eqlib::LBFGS::register_python(m);
 
     // GradientDescent
-    EQlib::GradientDescent::register_python(m);
+    eqlib::GradientDescent::register_python(m);
 
     // IPOpt
     #ifdef EQLIB_USE_IPOPT
-    EQlib::IPOpt::register_python(m);
+    eqlib::IPOpt::register_python(m);
     #endif
 
     // NewtonRaphson
-    EQlib::NewtonRaphson::register_python(m);
+    eqlib::NewtonRaphson::register_python(m);
 
     // Worhp
     #ifdef EQLIB_USE_WORHP
-    EQlib::Worhp::register_python(m);
+    eqlib::Worhp::register_python(m);
     #endif
 
 
     // --- objectives
 
     // IgaShell3PAD
-    EQlib::IgaShell3PAD::register_python(m);
+    eqlib::IgaShell3PAD::register_python(m);
 
     // IgaShell3PRefAD
-    EQlib::IgaShell3PRefAD::register_python(m);
+    eqlib::IgaShell3PRefAD::register_python(m);
 
     // IgaShell3PLoadAD
-    EQlib::IgaShell3PLoadAD::register_python(m);
+    eqlib::IgaShell3PLoadAD::register_python(m);
 
     // IgaShell3PLoadRefAD
-    EQlib::IgaShell3PLoadRefAD::register_python(m);
+    eqlib::IgaShell3PLoadRefAD::register_python(m);
 
     // IgaPointSupportAD
-    EQlib::IgaPointSupportAD::register_python(m);
+    eqlib::IgaPointSupportAD::register_python(m);
 }

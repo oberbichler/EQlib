@@ -6,7 +6,7 @@
 #include "../Settings.h"
 #include "../Timer.h"
 
-namespace EQlib {
+namespace eqlib {
 
 class NewtonRaphson
 {
@@ -195,10 +195,10 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::NewtonRaphson;
+        using Type = eqlib::NewtonRaphson;
 
         py::class_<Type>(m, "NewtonRaphson")
-            .def(py::init<Pointer<EQlib::Problem>>(), "problem"_a)
+            .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
             .def("run", &Type::run)
             // properties
             .def_property("damping", &Type::damping, &Type::set_damping)
@@ -214,4 +214,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

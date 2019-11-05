@@ -2,7 +2,7 @@
 
 #include "Define.h"
 
-namespace EQlib {
+namespace eqlib {
 
 class ProblemData
 {
@@ -199,4 +199,4 @@ public:     // methods
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

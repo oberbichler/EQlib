@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace EQlib {
+namespace eqlib {
 
 class Objective
 {
@@ -84,4 +84,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

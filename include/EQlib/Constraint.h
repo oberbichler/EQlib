@@ -6,7 +6,7 @@
 
 #include <vector>
 
-namespace EQlib {
+namespace eqlib {
 
 class Constraint
 {
@@ -104,4 +104,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

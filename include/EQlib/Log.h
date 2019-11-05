@@ -9,7 +9,7 @@
 
 #include <stack>
 
-namespace EQlib {
+namespace eqlib {
 
 class Log
 {
@@ -144,7 +144,7 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = EQlib::Log;
+        using Type = eqlib::Log;
 
         py::class_<Type>(m, "Log")
             .def_property_static("info_level", [](py::object) { return
@@ -175,4 +175,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

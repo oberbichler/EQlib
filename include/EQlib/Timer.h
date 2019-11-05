@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-namespace EQlib {
+namespace eqlib {
 
 class Timer
 {
@@ -54,4 +54,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib

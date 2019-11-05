@@ -4,7 +4,7 @@
 
 #include <Eigen/PardisoSupport>
 
-namespace EQlib {
+namespace eqlib {
 
 class LinearSolver
 {
@@ -51,4 +51,4 @@ public:     // methods
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib
