@@ -9,10 +9,10 @@
 
 namespace eqlib {
 
-class LBFGS
+class LBfgs
 {
 private:    // types
-    using Type = eqlib::LBFGS;
+    using Type = eqlib::LBfgs;
 
 private:    // members
     Pointer<Problem> m_problem;
@@ -354,7 +354,7 @@ protected:
     }
 
 public:     // constructor
-    LBFGS(Pointer<Problem> system) : m_problem(system), m_maxiter(100),
+    LBfgs(Pointer<Problem> system) : m_problem(system), m_maxiter(100),
         m_rtol(1e-6), m_xtol(1e-6)
     {
     }
@@ -519,7 +519,7 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        py::class_<Type>(m, "LBFGS")
+        py::class_<Type>(m, "LBfgs")
             // constructors
             .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
             // methods

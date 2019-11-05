@@ -15,7 +15,7 @@
 #include <eqlib/Variable.h>
 
 #include <eqlib/optimizer/GradientDescent.h>
-#include <eqlib/optimizer/LBFGS.h>
+#include <eqlib/optimizer/LBfgs.h>
 #include <eqlib/optimizer/NewtonRaphson.h>
 #ifdef EQLIB_USE_WORHP
 #include <eqlib/optimizer/Worhp.h>
@@ -86,8 +86,8 @@ PYBIND11_MODULE(eqlib, m) {
 
     // --- solver
 
-    // LBFGS
-    eqlib::LBFGS::register_python(m);
+    // LBfgs
+    eqlib::LBfgs::register_python(m);
 
     // GradientDescent
     eqlib::GradientDescent::register_python(m);
