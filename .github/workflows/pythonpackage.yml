@@ -1,0 +1,44 @@
+on: [push]
+
+jobs:
+  test_windows:
+    name: Test on Windows
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install requirements
+      run: |
+        call %CONDA%/Scripts/activate.bat
+        conda install mkl-devel numpy scipy tbb-devel & pip install hyperjet
+      shell: cmd
+    - name: Build package
+      run: |
+        call %CONDA%/Scripts/activate.bat
+        pip install .
+      shell: cmd
+    - name: Run tests
+      run: |
+        call %CONDA%/Scripts/activate.bat
+        python -m unittest discover -s ./tests -p "test_*.py"
+      shell: cmd
+      
+  test_linux:
+    name: Test on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install requirements
+      run: |
+        source $CONDA/bin/activate
+        conda install mkl-devel numpy scipy tbb-devel
+        pip install hyperjet
+    - name: Build package
+      run: |
+        source $CONDA/bin/activate
+        pip install .
+    - name: Run tests
+      run: |
+        source $CONDA/bin/activate
+        python -m unittest discover -s ./tests -p "test_*.py"
