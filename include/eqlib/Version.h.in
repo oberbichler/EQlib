@@ -1,0 +1,12 @@
+#pragma once
+
+#include <string>
+
+namespace eqlib {
+
+static std::string version()
+{
+    return "@EQLIB_VERSION@ <@GIT_COMMIT_HASH@>";
+}
+
+} // namespace eqlib
