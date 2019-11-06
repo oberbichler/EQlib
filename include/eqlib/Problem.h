@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Define.h"
 #include "Constraint.h"
+#include "Define.h"
 #include "LinearSolver.h"
 #include "Objective.h"
+#include "PardisoLDLT.h"
 #include "ProblemData.h"
 #include "Settings.h"
-#include "Timer.h"
+#include "SimplicialLDLT.h"
 #include "SparseStructure.h"
+#include "Timer.h"
 
 #include <sparsehash/dense_hash_map>
 
@@ -82,7 +84,7 @@ private:    // variables
 
     ProblemData m_data;
 
-    LinearSolver m_linear_solver;
+    std::unique_ptr<LinearSolver> m_linear_solver;
 
 public:     // constructors
     Problem(ElementsF elements_f, ElementsG elements_g)
@@ -362,6 +364,11 @@ public:     // constructors
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
+        #ifdef EQLIB_USEMKL
+        m_linear_solver = new_<PardisoLDLT>();
+        #else
+        m_linear_solver = new_<SimplicialLDLT>();
+        #endif
 
         Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
     }
@@ -654,13 +661,13 @@ public:     // methods
 
         Map<const Sparse> hl = this->hl();
 
-        if (m_linear_solver.factorize(hl)) {
+        if (m_linear_solver->factorize(hl)) {
             throw std::runtime_error("Factorization failed");
         }
 
         Vector x(nb_variables());
 
-        if (m_linear_solver.solve(v, x)) {
+        if (m_linear_solver->solve(hl, v, x)) {
             throw std::runtime_error("Solve failed");
         }
 
@@ -683,6 +690,11 @@ public:     // methods
     // {
     //     return new_<Problem>(*this);
     // }
+
+    std::string solver_name() const
+    {
+        return m_linear_solver->solver_name();
+    }
 
 public:     // methods: model properties
     int nb_threats() const noexcept
