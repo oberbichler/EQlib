@@ -4,7 +4,9 @@
 #include "Define.h"
 #include "LinearSolver.h"
 #include "Objective.h"
+#ifdef EQLIB_USE_MKL
 #include "PardisoLDLT.h"
+#endif
 #include "ProblemData.h"
 #include "Settings.h"
 #include "SimplicialLDLT.h"
