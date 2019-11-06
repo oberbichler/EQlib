@@ -99,7 +99,7 @@ public:     // methods
 
         m_ia[0] = 0;
 
-        for (TIndex i = 0; i < cols; i++) {
+        for (TIndex i = 0; i < (TRowMajor ? rows : cols); i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
             m_ia[i + 1] = m_ia[i] + n;
@@ -109,7 +109,7 @@ public:     // methods
 
         auto ja_it = m_ja.begin();
 
-        for (TIndex i = 0; i < cols; i++) {
+        for (TIndex i = 0; i < (TRowMajor ? rows : cols); i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
             for (const auto j : pattern[i]) {
