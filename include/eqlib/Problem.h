@@ -366,7 +366,7 @@ public:     // constructors
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
-        #ifdef EQLIB_USEMKL
+        #ifdef EQLIB_USE_MKL
         m_linear_solver = new_<PardisoLDLT>();
         #else
         m_linear_solver = new_<SimplicialLDLT>();
