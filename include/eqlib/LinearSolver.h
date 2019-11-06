@@ -9,7 +9,7 @@ namespace eqlib {
 class LinearSolver
 {
 private:    // variables
-    Eigen::PardisoLDLT<Sparse, Eigen::Lower> m_solver;
+    Eigen::PardisoLDLT<Sparse, Eigen::Upper> m_solver;
     bool m_is_analyzed;
 
 public:     // constructors

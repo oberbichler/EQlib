@@ -75,8 +75,8 @@ private:    // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
-    SparseStructure<double, int, false> m_dg_structure;
-    SparseStructure<double, int, false> m_hl_structure;
+    SparseStructure<double, int, true> m_dg_structure;
+    SparseStructure<double, int, true> m_hl_structure;
 
     ProblemData m_data;
 
@@ -306,19 +306,19 @@ public:     // constructors
         const auto n = length(m_variables);
         const auto m = length(m_equations);
 
-        std::vector<std::set<index>> m_pattern_dg(n);
+        std::vector<std::set<index>> m_pattern_dg(m);
         std::vector<std::set<index>> m_pattern_hl(n);
 
         for (index i = 0; i < length(m_elements_f); i++) {
             const auto& variable_indices = m_element_f_variable_indices[i];
 
-            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
-                const auto col = variable_indices[col_i];
+            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                    const auto col = variable_indices[col_i];
 
-                    m_pattern_hl[col.global].insert(row.global);
+                    m_pattern_hl[row.global].insert(col.global);
                 }
             }
         }
@@ -329,17 +329,17 @@ public:     // constructors
 
             for (const auto row : equation_indices) {
                 for (const auto col : variable_indices) {
-                    m_pattern_dg[col.global].insert(row.global);
+                    m_pattern_dg[row.global].insert(col.global);
                 }
             }
 
-            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
-                const auto col = variable_indices[col_i];
+            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                    const auto col = variable_indices[col_i];
 
-                    m_pattern_hl[col.global].insert(row.global);
+                    m_pattern_hl[row.global].insert(col.global);
                 }
             }
         }
@@ -647,7 +647,7 @@ public:     // methods
 
     Vector hl_v(Ref<const Vector> v) const
     {
-        return hl().selfadjointView<Eigen::Lower>() * v;
+        return hl().selfadjointView<Eigen::Upper>() * v;
     }
 
     void hl_add_diagonal(const double value)
