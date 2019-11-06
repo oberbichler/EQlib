@@ -76,10 +76,15 @@ public:     // methods
         const auto it = std::lower_bound(lower, upper, j);
 
         if (*it != j || it == upper) {
+            assert(false);
             return -1;
         }
 
-        return std::distance(m_ja.begin(), it);
+        const index value_index = std::distance(m_ja.begin(), it);
+
+        assert(value_index < nb_nonzeros());
+
+        return value_index;
     }
 
     template <typename TPattern>
