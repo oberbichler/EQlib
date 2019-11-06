@@ -158,7 +158,7 @@ public:     // methods
 
             // solve iteration
 
-            Log::task_step("Solving the linear equation system...");
+            Log::task_step("Solving the linear equation system with {}...", LinearSolver::solver_name());
 
             if (m_damping != 0.0) {
                 m_problem->hl_add_diagonal(m_damping);

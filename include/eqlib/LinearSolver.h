@@ -28,6 +28,16 @@ public:     // constructors
 #endif
     }
 
+public:     // static methods
+    static std::string solver_name()
+    {
+#ifdef EQLIB_USE_MKL
+        return "PardisoLDLT";
+#else
+        return "SimplicialLDLT";
+#endif
+    }
+
 public:     // methods
     bool analyze(Ref<const Sparse> a)
     {
