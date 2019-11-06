@@ -63,18 +63,19 @@ if(MKL_LIBRARY)
     add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
     target_link_libraries(eqlib PRIVATE ${MKL_LIBRARY})
 else()
-    message(FATAL_ERROR "-- MKL not found")
+    message("-- MKL not found")
 endif()
 
 
 find_library(TBB_LIBRARY tbb)
 find_library(TBB_DBG_LIBRARY tbb_debug)
 
-if(TBB_LIBRARY)
+if(TBB_LIBRARY AND TBB_DBG_LIBRARY)
     message("-- Found TBB: ${TBB_LIBRARY}")
+    add_definitions(-DEQLIB_USE_TBB)
     target_link_libraries(eqlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
 else()
-    message(FATAL_ERROR "-- TBB not found")
+    message("-- TBB not found")
 endif()
 
 

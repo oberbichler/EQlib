@@ -2,20 +2,40 @@
 
 #include "Define.h"
 
+#ifdef EQLIB_USE_MKL
 #include <Eigen/PardisoSupport>
+#else
+#include <Eigen/SparseCholesky>
+#endif
 
 namespace eqlib {
 
 class LinearSolver
 {
 private:    // variables
-    Eigen::PardisoLDLT<Sparse, Eigen::Upper> m_solver;
+#ifdef EQLIB_USE_MKL
+    Eigen::PardisoLDLT<Sparse, Eigen::Lower> m_solver;
+#else
+    Eigen::SimplicialLDLT<Sparse, Eigen::Lower> m_solver;
+#endif
     bool m_is_analyzed;
 
 public:     // constructors
     LinearSolver() : m_is_analyzed(false)
     {
+#ifdef EQLIB_USE_MKL
         m_solver.pardisoParameterArray()[1] = 3;    // enable OMP
+#endif
+    }
+
+public:     // static methods
+    static std::string solver_name()
+    {
+#ifdef EQLIB_USE_MKL
+        return "PardisoLDLT";
+#else
+        return "SimplicialLDLT";
+#endif
     }
 
 public:     // methods
