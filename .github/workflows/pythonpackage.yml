@@ -15,8 +15,9 @@ jobs:
       shell: cmd
     - name: Install dependencies
       run: |
-        conda install mkl-devel numpy scipy tbb-devel
+        conda install mkl-devel tbb-devel
         python -m pip install --upgrade pip
+        pip install -r requirements.txt
         pip install hyperjet
       shell: cmd
     - name: Install package
@@ -44,8 +45,9 @@ jobs:
         source $CONDA/bin/activate
     - name: Install dependencies
       run: |
-        conda install mkl-devel numpy scipy tbb-devel
+        conda install mkl-devel tbb-devel
         python -m pip install --upgrade pip
+        pip install -r requirements.txt
         pip install hyperjet
     - name: Install package
       run: |
