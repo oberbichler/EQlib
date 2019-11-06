@@ -9,20 +9,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Install requirements
+    - name: Activate conda
       run: |
-        call %CONDA%/Scripts/activate.bat
+        source $CONDA/bin/activate
+    - name: Install dependencies
+      run: |
         conda install mkl-devel numpy scipy tbb-devel & pip install hyperjet
       shell: cmd
-    - name: Build package
+    - name: Install package
       run: |
-        call %CONDA%/Scripts/activate.bat
         pip install .
       shell: cmd
-    - name: Run tests
+    - name: Test with pytest
       run: |
-        call %CONDA%/Scripts/activate.bat
-        python -m unittest discover -s ./tests -p "test_*.py"
+        pip install pytest
+        pytest
       shell: cmd
       
   build_linux:
@@ -31,19 +32,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Install requirements
+    - name: Activate conda
       run: |
         source $CONDA/bin/activate
+    - name: Install dependencies
+      run: |
         conda install mkl-devel numpy scipy tbb-devel
         pip install hyperjet
-    - name: Build package
+    - name: Install package
       run: |
-        source $CONDA/bin/activate
         pip install .
-    - name: Run tests
+    - name: Test with pytest
       run: |
-        source $CONDA/bin/activate
-        python -m unittest discover -s ./tests -p "test_*.py"
+        pip install pytest
+        pytest
 
   build:
     runs-on: ${{ matrix.os }}
