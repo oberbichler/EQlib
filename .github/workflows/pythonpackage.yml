@@ -30,8 +30,12 @@ jobs:
       shell: cmd
       
   build_linux:
-    name: build (ubuntu-latest, conda)
-    runs-on: ubuntu-latest
+    name: build (${{ matrix.os }}, conda)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 4
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
 
     steps:
     - uses: actions/checkout@v1
