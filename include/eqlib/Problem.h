@@ -1081,6 +1081,37 @@ public:     // methods: python
             .def("hl_add_diagonal", &Type::hl_add_diagonal, "value"_a)
             .def("hl_inv_v", &Type::hl_inv_v)
             .def("hl_v", &Type::hl_v)
+            .def("f_of_x", [](Type& self, Ref<const Vector> x) {
+                self.set_x(x);
+                self.compute<false>(0);
+                return self.f();
+            }, "x"_a)
+            .def("g_of_x", [](Type& self, Ref<const Vector> x) {
+                self.set_x(x);
+                self.compute<false>(0);
+                return self.g();
+            }, "x"_a)
+            .def("df_of_x", [](Type& self, Ref<const Vector> x) {
+                self.set_x(x);
+                self.compute<false>(1);
+                return self.df();
+            }, "x"_a)
+            .def("dg_of_x", [=](Type& self, Ref<const Vector> x) {
+                self.set_x(x);
+                self.compute<false>(1);
+                return csr_matrix(
+                    std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
+                    std::make_pair(self.nb_equations(), self.nb_variables())
+                ).release();
+            }, "x"_a)
+            .def("hl_of_x", [=](Type& self, Ref<const Vector> x) {
+                self.set_x(x);
+                self.compute<false>(2);
+                return csr_matrix(
+                    std::make_tuple(self.hl_values(), self.hl_indices(), self.hl_indptr()),
+                    std::make_pair(self.nb_variables(), self.nb_variables())
+                ).release();
+            }, "x"_a)
         ;
     }
 };
