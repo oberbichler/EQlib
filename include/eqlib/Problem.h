@@ -401,17 +401,17 @@ private:    // methods: computation
                 continue;
             }
 
-            for (index col_i = 0; col_i != length(variable_indices); ++col_i) {
-                const auto col = variable_indices[col_i];
+            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-                data.df(col.global) += g(col.local);
+                data.df(row.global) += g(row.local);
 
                 if constexpr(TOrder < 2) {
                     continue;
                 }
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+                for (index col_i = row_i; col_i != length(variable_indices); ++col_i) {
+                    const auto col = variable_indices[col_i];
 
                     index index = m_hl_structure.get_index(row.global, col.global);
 
@@ -483,19 +483,19 @@ private:    // methods: computation
 
                 local_h *= equation->multiplier();
 
-                for (index col_i = 0; col_i < length(variable_indices); col_i++) {
-                    const auto col = variable_indices[col_i];
+                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                    const auto row = variable_indices[row_i];
 
-                    const index dg_value_i = m_dg_structure.get_index(equation_index.global, col.global);
+                    const index dg_value_i = m_dg_structure.get_index(equation_index.global, row.global);
 
-                    data.dg(dg_value_i) += local_g(col.local);
+                    data.dg(dg_value_i) += local_g(row.local);
 
                     if constexpr(TOrder < 2) {
                         continue;
                     }
 
-                    for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                        const auto row = variable_indices[row_i];
+                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                        const auto col = variable_indices[col_i];
 
                         const index hl_value_i = m_hl_structure.get_index(row.global, col.global);
 
