@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build_windows_conda:
-    name: Build on Windows with conda
+    name: build (windows-latest, conda)
     runs-on: windows-latest
 
     steps:
@@ -26,7 +26,7 @@ jobs:
       shell: cmd
       
   build_linux:
-    name: Build on Ubuntu with conda
+    name: build (ubuntu-latest, conda)
     runs-on: ubuntu-latest
 
     steps:
