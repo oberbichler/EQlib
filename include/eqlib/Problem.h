@@ -536,8 +536,6 @@ private:    // methods: computation
         }
     }
 
-#pragma omp declare reduction(Add : ProblemData : omp_out += omp_in) 
-
 public:     // methods: computation
     template <bool TInfo>
     void compute(const index order = 2)
