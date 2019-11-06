@@ -36,7 +36,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        os: [ubuntu-latest]
 
     steps:
     - uses: actions/checkout@v1
@@ -46,7 +46,7 @@ jobs:
     - name: Install dependencies
       run: |
         source $CONDA/bin/activate
-        conda --user install mkl-devel tbb-devel
+        conda install mkl-devel tbb-devel
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
