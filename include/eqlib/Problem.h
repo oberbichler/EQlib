@@ -589,8 +589,18 @@ public:     // methods: computation
                     });
             });
             #else
-            for (index i = 0; i < nb_elements_f(); i++) {
-                compute_elements_f(order, m_data, i);
+            #pragma omp parallel num_threads(m_nb_threats) firstprivate(m_data)
+            {
+                ProblemData data = m_data;
+                data.set_zero();
+
+                #pragma omp for schedule(guided, m_grainsize)
+                for (index i = 0; i < nb_elements_f(); i++) {
+                    compute_elements_f(order, m_data, i);
+                }
+
+                #pragma omp critical
+                m_data += data;
             }
             #endif
         }
@@ -627,8 +637,18 @@ public:     // methods: computation
                 });
             });
             #else
-            for (index i = 0; i < nb_elements_g(); i++) {
-                compute_elements_g(order, m_data, i);
+            #pragma omp parallel num_threads(m_nb_threats) firstprivate(m_data)
+            {
+                ProblemData data = m_data;
+                data.set_zero();
+
+                #pragma omp for schedule(guided, m_grainsize)
+                for (index i = 0; i < nb_elements_g(); i++) {
+                    compute_elements_g(order, m_data, i);
+                }
+
+                #pragma omp critical
+                m_data += data;
             }
             #endif
         }
