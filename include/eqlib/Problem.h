@@ -555,6 +555,8 @@ public:     // methods: computation
 
 #ifdef EQLIB_USE_TBB
         tbb::combinable<ProblemData> m_local_data(m_data);
+#else
+        Log::warn("Serial computation");
 #endif
 
         if (TInfo)
@@ -578,7 +580,6 @@ public:     // methods: computation
                     });
             });
 #else
-            #pragma omp parallel for num_threads(m_nb_threats) schedule(guided, m_grainsize) reduction(Add : m_data)
             for (index i = 0; i < nb_elements_f(); i++) {
                 compute_elements_f(order, m_data, i);
             }
@@ -616,7 +617,6 @@ public:     // methods: computation
                 });
             });
 #else
-            #pragma omp parallel for num_threads(m_nb_threats) schedule(guided, m_grainsize) reduction(Add : m_data)
             for (index i = 0; i < nb_elements_g(); i++) {
                 compute_elements_g(order, m_data, i);
             }
