@@ -9,12 +9,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Activate conda
-      run: |
-        call %CONDA%/Scripts/activate.bat
-      shell: cmd
     - name: Install dependencies
       run: |
+        call %CONDA%/Scripts/activate.bat
         conda install mkl-devel tbb-devel
         python -m pip install --upgrade pip
         pip install -r requirements.txt
@@ -22,10 +19,12 @@ jobs:
       shell: cmd
     - name: Install package
       run: |
+        call %CONDA%/Scripts/activate.bat
         pip install .
       shell: cmd
     - name: Test with pytest
       run: |
+        call %CONDA%/Scripts/activate.bat
         pip install pytest
         pytest
       shell: cmd
@@ -40,9 +39,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Activate conda
-      run: |
-        source $CONDA/bin/activate
     - name: Install dependencies
       run: |
         source $CONDA/bin/activate
@@ -52,9 +48,11 @@ jobs:
         pip install hyperjet
     - name: Install package
       run: |
+        source $CONDA/bin/activate
         pip install .
     - name: Test with pytest
       run: |
+        source $CONDA/bin/activate
         pip install pytest
         pytest
 
