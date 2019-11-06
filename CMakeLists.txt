@@ -63,7 +63,7 @@ if(MKL_LIBRARY)
     add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
     target_link_libraries(eqlib PRIVATE ${MKL_LIBRARY})
 else()
-    message(FATAL_ERROR "-- MKL not found")
+    message("-- MKL not found")
 endif()
 
 
