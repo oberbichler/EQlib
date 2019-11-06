@@ -553,28 +553,30 @@ public:     // methods: computation
             throw std::invalid_argument("order");
         }
 
-        if (TInfo)
-        Log::task_begin("Compute problem...");
+        if (TInfo) {
+            Log::task_begin("Compute problem...");
+        }
 
         Timer timer;
 
         m_data.set_zero();
 
-#ifdef EQLIB_USE_TBB
+        #ifdef EQLIB_USE_TBB
         tbb::combinable<ProblemData> m_local_data(m_data);
-#else
+        #else
         Log::warn("Serial computation");
-#endif
+        #endif
 
-        if (TInfo)
-        Log::task_step("Compute objective...");
+        if (TInfo) {
+            Log::task_step("Compute objective...");
+        }
 
         if (m_nb_threats == 1) {
             for (index i = 0; i < nb_elements_f(); i++) {
                 compute_elements_f(order, m_data, i);
             }
         } else {
-#ifdef EQLIB_USE_TBB
+            #ifdef EQLIB_USE_TBB
             tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
@@ -586,11 +588,11 @@ public:     // methods: computation
                         }
                     });
             });
-#else
+            #else
             for (index i = 0; i < nb_elements_f(); i++) {
                 compute_elements_f(order, m_data, i);
             }
-#endif
+            #endif
         }
 
         m_data.f() *= sigma();
@@ -603,15 +605,16 @@ public:     // methods: computation
             m_data.hl() *= sigma();
         }
 
-        if (TInfo)
-        Log::task_step("Compute constraints...");
+        if (TInfo) {
+            Log::task_step("Compute constraints...");
+        }
 
         if (m_nb_threats == 1) {
             for (index i = 0; i < nb_elements_g(); i++) {
                 compute_elements_g(order, m_data, i);
             }
         } else {
-#ifdef EQLIB_USE_TBB
+            #ifdef EQLIB_USE_TBB
             tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
@@ -623,29 +626,30 @@ public:     // methods: computation
                     }
                 });
             });
-#else
+            #else
             for (index i = 0; i < nb_elements_g(); i++) {
                 compute_elements_g(order, m_data, i);
             }
-#endif
+            #endif
         }
 
-#ifdef EQLIB_USE_TBB
+        #ifdef EQLIB_USE_TBB
         if (m_nb_threats != 1) {
-            if (TInfo)
-            Log::task_step("Combine results...");
+            if (TInfo) {
+                Log::task_step("Combine results...");
+            }
 
             m_local_data.combine_each([&](const ProblemData& local) {
                 m_data += local;
             });
         }
-#endif
+        #endif
 
         if (TInfo) {
-        Log::task_info("Element computation took {} sec", m_data.computation_time());
-        Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
+            Log::task_info("Element computation took {} sec", m_data.computation_time());
+            Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
 
-        Log::task_end("Problem computed in {:.3f} sec", timer.ellapsed());
+            Log::task_end("Problem computed in {:.3f} sec", timer.ellapsed());
         }
     }
 
