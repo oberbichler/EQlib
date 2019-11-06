@@ -46,7 +46,7 @@ jobs:
     - name: Install dependencies
       run: |
         source $CONDA/bin/activate
-        conda install mkl-devel tbb-devel
+        sudo conda install mkl-devel tbb-devel
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
