@@ -561,12 +561,6 @@ public:     // methods: computation
 
         m_data.set_zero();
 
-        #ifdef EQLIB_USE_TBB
-        tbb::combinable<ProblemData> m_local_data(m_data);
-        #else
-        Log::warn("Serial computation");
-        #endif
-
         if (TInfo) {
             Log::task_step("Compute objective...");
         }
@@ -577,30 +571,34 @@ public:     // methods: computation
             }
         } else {
             #ifdef EQLIB_USE_TBB
+            tbb::combinable<ProblemData> local_data(m_data);
+
             tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
                 tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), m_grainsize),
                     [&](const tbb::blocked_range<index>& range) {
-                        auto& data = m_local_data.local();
+                        auto& data = local_data.local();
                         for (index i = range.begin(); i != range.end(); ++i) {
                             compute_elements_f(order, data, i);
                         }
                     });
             });
-            #else
-            #pragma omp parallel num_threads(m_nb_threats) firstprivate(m_data)
-            {
-                ProblemData data = m_data;
-                data.set_zero();
 
+            local_data.combine_each([&](const ProblemData& local) {
+                m_data += local;
+            });
+            #else
+            ProblemData local_data = m_data;
+            #pragma omp parallel num_threads(m_nb_threats) firstprivate(local_data)
+            {
+                local_data.set_zero();
                 #pragma omp for schedule(guided, m_grainsize)
                 for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_elements_f(order, m_data, i);
+                    compute_elements_f(order, local_data, i);
                 }
-
                 #pragma omp critical
-                m_data += data;
+                m_data += local_data;
             }
             #endif
         }
@@ -625,45 +623,37 @@ public:     // methods: computation
             }
         } else {
             #ifdef EQLIB_USE_TBB
+            tbb::combinable<ProblemData> local_data(m_data);
+
             tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
 
             arena.execute([&]() {
             tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), m_grainsize),
                 [&](const tbb::blocked_range<index>& range) {
-                    auto& data = m_local_data.local();
+                    auto& data = local_data.local();
                     for (index i = range.begin(); i != range.end(); ++i) {
                         compute_elements_g(order, data, i);
                     }
                 });
             });
-            #else
-            #pragma omp parallel num_threads(m_nb_threats) firstprivate(m_data)
-            {
-                ProblemData data = m_data;
-                data.set_zero();
 
+            local_data.combine_each([&](const ProblemData& local) {
+                m_data += local;
+            });
+            #else
+            ProblemData local_data = m_data;
+            #pragma omp parallel num_threads(m_nb_threats) firstprivate(local_data)
+            {
+                local_data.set_zero();
                 #pragma omp for schedule(guided, m_grainsize)
                 for (index i = 0; i < nb_elements_g(); i++) {
-                    compute_elements_g(order, m_data, i);
+                    compute_elements_g(order, local_data, i);
                 }
-
                 #pragma omp critical
-                m_data += data;
+                m_data += local_data;
             }
             #endif
         }
-
-        #ifdef EQLIB_USE_TBB
-        if (m_nb_threats != 1) {
-            if (TInfo) {
-                Log::task_step("Combine results...");
-            }
-
-            m_local_data.combine_each([&](const ProblemData& local) {
-                m_data += local;
-            });
-        }
-        #endif
 
         if (TInfo) {
             Log::task_info("Element computation took {} sec", m_data.computation_time());
