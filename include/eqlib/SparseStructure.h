@@ -76,10 +76,15 @@ public:     // methods
         const auto it = std::lower_bound(lower, upper, j);
 
         if (*it != j || it == upper) {
+            assert(false);
             return -1;
         }
 
-        return std::distance(m_ja.begin(), it);
+        const index value_index = std::distance(m_ja.begin(), it);
+
+        assert(value_index < nb_nonzeros());
+
+        return value_index;
     }
 
     template <typename TPattern>
@@ -94,7 +99,7 @@ public:     // methods
 
         m_ia[0] = 0;
 
-        for (TIndex i = 0; i < cols; i++) {
+        for (TIndex i = 0; i < (TRowMajor ? rows : cols); i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
             m_ia[i + 1] = m_ia[i] + n;
@@ -104,7 +109,7 @@ public:     // methods
 
         auto ja_it = m_ja.begin();
 
-        for (TIndex i = 0; i < cols; i++) {
+        for (TIndex i = 0; i < (TRowMajor ? rows : cols); i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
             for (const auto j : pattern[i]) {

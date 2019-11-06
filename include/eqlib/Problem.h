@@ -77,8 +77,8 @@ private:    // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
-    SparseStructure<double, int, false> m_dg_structure;
-    SparseStructure<double, int, false> m_hl_structure;
+    SparseStructure<double, int, true> m_dg_structure;
+    SparseStructure<double, int, true> m_hl_structure;
 
     ProblemData m_data;
 
@@ -308,19 +308,19 @@ public:     // constructors
         const auto n = length(m_variables);
         const auto m = length(m_equations);
 
-        std::vector<std::set<index>> m_pattern_dg(n);
+        std::vector<std::set<index>> m_pattern_dg(m);
         std::vector<std::set<index>> m_pattern_hl(n);
 
         for (index i = 0; i < length(m_elements_f); i++) {
             const auto& variable_indices = m_element_f_variable_indices[i];
 
-            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
-                const auto col = variable_indices[col_i];
+            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                    const auto col = variable_indices[col_i];
 
-                    m_pattern_hl[col.global].insert(row.global);
+                    m_pattern_hl[row.global].insert(col.global);
                 }
             }
         }
@@ -331,17 +331,17 @@ public:     // constructors
 
             for (const auto row : equation_indices) {
                 for (const auto col : variable_indices) {
-                    m_pattern_dg[col.global].insert(row.global);
+                    m_pattern_dg[row.global].insert(col.global);
                 }
             }
 
-            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
-                const auto col = variable_indices[col_i];
+            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                    const auto col = variable_indices[col_i];
 
-                    m_pattern_hl[col.global].insert(row.global);
+                    m_pattern_hl[row.global].insert(col.global);
                 }
             }
         }
@@ -402,17 +402,17 @@ private:    // methods: computation
             return;
         }
 
-        for (index col_i = 0; col_i != length(variable_indices); ++col_i) {
-            const auto col = variable_indices[col_i];
+            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-            data.df(col.global) += g(col.local);
+                data.df(row.global) += g(row.local);
 
             if constexpr(TOrder < 2) {
                 return;
             }
 
-            for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                const auto row = variable_indices[row_i];
+                for (index col_i = row_i; col_i != length(variable_indices); ++col_i) {
+                    const auto col = variable_indices[col_i];
 
                 index index = m_hl_structure.get_index(row.global, col.global);
 
@@ -482,19 +482,19 @@ private:    // methods: computation
 
             local_h *= equation->multiplier();
 
-            for (index col_i = 0; col_i < length(variable_indices); col_i++) {
-                const auto col = variable_indices[col_i];
+                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                    const auto row = variable_indices[row_i];
 
-                const index dg_value_i = m_dg_structure.get_index(equation_index.global, col.global);
+                    const index dg_value_i = m_dg_structure.get_index(equation_index.global, row.global);
 
-                data.dg(dg_value_i) += local_g(col.local);
+                    data.dg(dg_value_i) += local_g(row.local);
 
                 if constexpr(TOrder < 2) {
                     return;
                 }
 
-                for (index row_i = col_i; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                        const auto col = variable_indices[col_i];
 
                     const index hl_value_i = m_hl_structure.get_index(row.global, col.global);
 
@@ -669,7 +669,7 @@ public:     // methods
 
     Vector hl_v(Ref<const Vector> v) const
     {
-        return hl().selfadjointView<Eigen::Lower>() * v;
+        return hl().selfadjointView<Eigen::Upper>() * v;
     }
 
     void hl_add_diagonal(const double value)
@@ -1014,7 +1014,7 @@ public:     // methods: python
         const std::string name = "Problem";
 
         py::object scipy_sparse = py::module::import("scipy.sparse");
-        py::object csc_matrix = scipy_sparse.attr("csc_matrix");
+        py::object csr_matrix = scipy_sparse.attr("csr_matrix");
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
@@ -1026,7 +1026,7 @@ public:     // methods: python
             .def_property_readonly("g", py::overload_cast<>(&Type::g))
             .def_property_readonly("df", py::overload_cast<>(&Type::df))
             .def_property_readonly("dg", [=](Type& self) {
-                return csc_matrix(
+                return csr_matrix(
                     std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
                     std::make_pair(self.nb_equations(), self.nb_variables())
                 ).release();
@@ -1035,7 +1035,7 @@ public:     // methods: python
             .def_property_readonly("dg_indptr", &Type::dg_indptr)
             .def_property_readonly("dg_indices", &Type::dg_indices)
             .def_property_readonly("hl", [=](Type& self) {
-                return csc_matrix(
+                return csr_matrix(
                     std::make_tuple(self.hl_values(), self.hl_indices(), self.hl_indptr()),
                     std::make_pair(self.nb_variables(), self.nb_variables())
                 ).release();
