@@ -65,7 +65,6 @@ setup(
     url='https://github.com/oberbichler/EQlib',
     author='Thomas Oberbichler',
     author_email='thomas.oberbichler@gmail.com',
-    license='MIT',
     ext_modules=[CMakeExtension('eqlib')],
     cmdclass=dict(build_ext=CMakeBuild),
     install_requires=['mkl', 'numpy', 'scipy'],
