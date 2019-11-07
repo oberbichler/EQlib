@@ -22,8 +22,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
-        ls /opt/hostedtoolcache/
-        ls /opt/hostedtoolcache/Python/
+        ls /opt/hostedtoolcache/Python/3.7.5
+        ls /opt/hostedtoolcache/Python/3.7.5/include
+        ls /opt/hostedtoolcache/Python/3.7.5/lib
     - name: Install package
       run: |
         pip install .
