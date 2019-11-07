@@ -55,10 +55,6 @@ else()
     message("-- Anaconda not found")
 endif()
 
-if (DEFINED ENV{MKL_ROOT})
-    include_directories(SYSTEM $ENV{MKL_ROOT}/include)
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{MKL_ROOT}/lib")
-endif()
 
 find_library(MKL_LIBRARY mkl_rt)
 
