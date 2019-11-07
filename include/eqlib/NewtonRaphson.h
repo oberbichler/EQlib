@@ -132,7 +132,7 @@ public:     // methods
 
             Log::task_step("Computing system...");
 
-            m_problem->compute<false>();
+            m_problem->compute<false, 2>();
             m_gevals += 1;
             m_hevals += 1;
 
