@@ -1,4 +1,4 @@
 cmake
-mkl-devel
+mkl-include
 numpy
 scipy
