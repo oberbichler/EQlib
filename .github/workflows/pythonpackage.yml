@@ -74,8 +74,7 @@ jobs:
         pip install hyperjet
     - name: Install package
       run: |
-        python -c "from sysconfig import get_paths as gp; print(gp())"
-        export MKL_ROOT=/opt/hostedtoolcache/Python/3.6.9/x64
+        export MKL_ROOT=$(python -c "from sysconfig import get_paths as gp; print(gp()['data'])")
         pip install .
         python -c "import eqlib; print(eqlib.USE_MKL)"
     - name: Test with pytest
