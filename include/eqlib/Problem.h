@@ -824,12 +824,12 @@ public:     // methods: output f
     }
 
 public:     // methods: output g
-    Ref<Vector> g() noexcept
+    Map<Vector> g() noexcept
     {
         return m_data.g();
     }
 
-    Ref<const Vector> g() const noexcept
+    Map<const Vector> g() const noexcept
     {
         return m_data.g();
     }
@@ -845,12 +845,12 @@ public:     // methods: output g
     }
 
 public:     // methods: output df
-    Ref<Vector> df() noexcept
+    Map<Vector> df() noexcept
     {
         return m_data.df();
     }
 
-    Ref<const Vector> df() const noexcept
+    Map<const Vector> df() const noexcept
     {
         return m_data.df();
     }
