@@ -15,10 +15,6 @@
 
 #include <sparsehash/dense_hash_map>
 
-#ifdef EQLIB_USE_TBB
-#include <tbb/tbb.h>
-#endif
-
 #include <tsl/robin_set.h>
 
 #include <set>
@@ -515,45 +511,13 @@ private:    // methods: computation
         data.assemble_time() += timer_element_assemble.ellapsed();
     }
 
-    inline void compute_elements_f(const index order, ProblemData& data, const index i)
-    {
-        switch (order) {
-        case 0:
-            compute_elements_f<0>(data, i);
-            break;
-        case 1:
-            compute_elements_f<1>(data, i);
-            break;
-        case 2:
-            compute_elements_f<2>(data, i);
-            break;
-        }
-    }
-
-    inline void compute_elements_g(const index order, ProblemData& data, const index i)
-    {
-        switch (order) {
-        case 0:
-            compute_elements_g<0>(data, i);
-            break;
-        case 1:
-            compute_elements_g<1>(data, i);
-            break;
-        case 2:
-            compute_elements_g<2>(data, i);
-            break;
-        }
-    }
-
 public:     // methods: computation
-    template <bool TInfo>
-    void compute(const index order = 2)
+    template <bool TInfo, index TOrder>
+    void compute()
     {
-        if (order < 0 || 2 < order) {
-            throw std::invalid_argument("order");
-        }
+        static_assert(0 <= TOrder && TOrder <= 2);
 
-        if (TInfo) {
+        if constexpr(TInfo) {
             Log::task_begin("Compute problem...");
         }
 
@@ -561,101 +525,38 @@ public:     // methods: computation
 
         m_data.set_zero();
 
-        if (TInfo) {
-            Log::task_step("Compute objective...");
-        }
+        ProblemData local_data(m_data);
 
-        if (m_nb_threats == 1) {
+        // FIXME: use private(m_data) when msvc supports omp private with member variables
+        #pragma omp parallel if(m_nb_threats != 1) num_threads(m_nb_threats) firstprivate(local_data)
+        {
+            #pragma omp for schedule(guided, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f(); i++) {
-                compute_elements_f(order, m_data, i);
+                compute_elements_f<TOrder>(local_data, i);
             }
-        } else {
-            #ifdef EQLIB_USE_TBB
-            tbb::combinable<ProblemData> local_data(m_data);
 
-            tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
+            if (sigma() != 1.0) {
+                local_data.f() *= sigma();
 
-            arena.execute([&]() {
-                tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_f(), m_grainsize),
-                    [&](const tbb::blocked_range<index>& range) {
-                        auto& data = local_data.local();
-                        for (index i = range.begin(); i != range.end(); ++i) {
-                            compute_elements_f(order, data, i);
-                        }
-                    });
-            });
-
-            local_data.combine_each([&](const ProblemData& local) {
-                m_data += local;
-            });
-            #else
-            ProblemData local_data = m_data;
-            #pragma omp parallel num_threads(m_nb_threats) firstprivate(local_data)
-            {
-                local_data.set_zero();
-                #pragma omp for schedule(guided, m_grainsize)
-                for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_elements_f(order, local_data, i);
+                if constexpr(TOrder > 0) {
+                    local_data.df() *= sigma();
                 }
-                #pragma omp critical
-                m_data += local_data;
+
+                if constexpr(TOrder > 1) {
+                    local_data.hl() *= sigma();
+                }
             }
-            #endif
-        }
 
-        m_data.f() *= sigma();
-
-        if (order > 0) {
-            m_data.df() *= sigma();
-        }
-
-        if (order > 1) {
-            m_data.hl() *= sigma();
-        }
-
-        if (TInfo) {
-            Log::task_step("Compute constraints...");
-        }
-
-        if (m_nb_threats == 1) {
+            #pragma omp for schedule(guided, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g(); i++) {
-                compute_elements_g(order, m_data, i);
+                compute_elements_g<TOrder>(local_data, i);
             }
-        } else {
-            #ifdef EQLIB_USE_TBB
-            tbb::combinable<ProblemData> local_data(m_data);
 
-            tbb::task_arena arena(m_nb_threats < 1 ? tbb::task_arena::automatic : m_nb_threats);
-
-            arena.execute([&]() {
-            tbb::parallel_for(tbb::blocked_range<index>(0, nb_elements_g(), m_grainsize),
-                [&](const tbb::blocked_range<index>& range) {
-                    auto& data = local_data.local();
-                    for (index i = range.begin(); i != range.end(); ++i) {
-                        compute_elements_g(order, data, i);
-                    }
-                });
-            });
-
-            local_data.combine_each([&](const ProblemData& local) {
-                m_data += local;
-            });
-            #else
-            ProblemData local_data = m_data;
-            #pragma omp parallel num_threads(m_nb_threats) firstprivate(local_data)
-            {
-                local_data.set_zero();
-                #pragma omp for schedule(guided, m_grainsize)
-                for (index i = 0; i < nb_elements_g(); i++) {
-                    compute_elements_g(order, local_data, i);
-                }
-                #pragma omp critical
-                m_data += local_data;
-            }
-            #endif
+            #pragma omp critical
+            m_data += local_data;
         }
 
-        if (TInfo) {
+        if constexpr(TInfo) {
             Log::task_info("Element computation took {} sec", m_data.computation_time());
             Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
 
@@ -663,9 +564,39 @@ public:     // methods: computation
         }
     }
 
+    template <bool TInfo>
     void compute(const index order = 2)
     {
-        compute<true>(order);
+        switch (order) {
+        case 0:
+            compute<TInfo, 0>();
+            break;
+        case 1:
+            compute<TInfo, 1>();
+            break;
+        case 2:
+            compute<TInfo, 2>();
+            break;
+        default:
+            throw std::invalid_argument("order");
+        }
+    }
+
+    void compute(const index order = 2)
+    {
+        switch (order) {
+        case 0:
+            compute<true, 0>();
+            break;
+        case 1:
+            compute<true, 1>();
+            break;
+        case 2:
+            compute<true, 2>();
+            break;
+        default:
+            throw std::invalid_argument("order");
+        }
     }
 
 public:     // methods
