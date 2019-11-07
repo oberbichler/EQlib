@@ -1053,6 +1053,13 @@ public:     // methods: python
                     std::make_pair(self.nb_variables(), self.nb_variables())
                 ).release();
             }, "x"_a)
+            .def("bounds", [](Type& self) {
+                std::vector<std::pair<double, double>> bounds(self.nb_variables());
+                for (index i = 0; i < self.nb_variables(); i++) {
+                    bounds[i] = {self.variable(i)->lower_bound(), self.variable(i)->upper_bound()};
+                }
+                return bounds;
+            })
         ;
     }
 };
