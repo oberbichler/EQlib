@@ -41,20 +41,10 @@ add_definitions(
 
 pybind11_add_module(eqlib src/Module.cpp)
 
-if (DEFINED ENV{CONDA_PREFIX})
-    message("-- Found Anaconda: $ENV{CONDA_PREFIX}")
-
-    if(WIN32)
-        include_directories(SYSTEM $ENV{CONDA_PREFIX}/Library/include)
-        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{CONDA_PREFIX}/Library/lib")
-    else()
-        include_directories(SYSTEM $ENV{CONDA_PREFIX}/include)
-        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{CONDA_PREFIX}/lib")
-    endif()
-else()
-    message("-- Anaconda not found")
+if (DEFINED ENV{MKL_ROOT})
+    include_directories(SYSTEM $ENV{MKL_ROOT}/include)
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{MKL_ROOT}/lib")
 endif()
-
 
 find_library(MKL_LIBRARY mkl_rt)
 
