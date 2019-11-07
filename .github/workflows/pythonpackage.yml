@@ -74,9 +74,10 @@ jobs:
         pip install hyperjet
     - name: Install package
       run: |
-        export MKL_ROOT=$(python -c "from sysconfig import get_paths as gp; print(gp()['data'])")
+        $env:MKL_ROOT=python -c "from sysconfig import get_paths as gp; print(gp()['data'])"
         pip install .
         python -c "import eqlib; print(eqlib.USE_MKL)"
+      shell: pwsh
     - name: Test with pytest
       run: |
         pip install pytest
