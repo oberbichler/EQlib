@@ -75,6 +75,7 @@ jobs:
     - name: Install package
       run: |
         pip install .
+        python -c "import eqlib; print(eqlib.USE_MKL)"
     - name: Test with pytest
       run: |
         pip install pytest
