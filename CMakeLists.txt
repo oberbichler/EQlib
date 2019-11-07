@@ -67,18 +67,6 @@ else()
 endif()
 
 
-find_library(TBB_LIBRARY tbb)
-find_library(TBB_DBG_LIBRARY tbb_debug)
-
-if(TBB_LIBRARY AND TBB_DBG_LIBRARY)
-    message("-- Found TBB: ${TBB_LIBRARY}")
-    add_definitions(-DEQLIB_USE_TBB)
-    target_link_libraries(eqlib PRIVATE ${TBB_LIBRARY} debug ${TBB_DBG_LIBRARY})
-else()
-    message("-- TBB not found")
-endif()
-
-
 if(DEFINED WORHP_ROOT)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${WORHP_ROOT}/bin")
 endif()

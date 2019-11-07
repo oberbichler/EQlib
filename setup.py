@@ -8,7 +8,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-EQLIB_VERSION = '0.20.0'
+EQLIB_VERSION = '0.22.0'
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -36,7 +36,7 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DEQlib_VERSION=' + EQLIB_VERSION]
+                      '-DEQLIB_VERSION=' + EQLIB_VERSION]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -67,8 +67,6 @@ setup(
     author_email='thomas.oberbichler@gmail.com',
     ext_modules=[CMakeExtension('eqlib')],
     cmdclass=dict(build_ext=CMakeBuild),
-    install_requires=['cmake', 'numpy'],
-    test_suite='nose.collector',
-    tests_require=['nose'],
+    install_requires=['mkl', 'numpy', 'scipy'],
     zip_safe=False,
 )
