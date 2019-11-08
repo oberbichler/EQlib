@@ -87,11 +87,11 @@ PYBIND11_MODULE(eqlib, m) {
 
     // --- solver
 
-    // LBfgs
-    eqlib::LBfgs::register_python(m);
-
     // GradientDescent
     eqlib::GradientDescent::register_python(m);
+
+    // LBfgs
+    eqlib::LBfgs::register_python(m);
 
     // LevenbergMarquardt
     eqlib::LevenbergMarquardt::register_python(m);
