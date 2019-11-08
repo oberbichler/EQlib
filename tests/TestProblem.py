@@ -112,8 +112,8 @@ class TestProblem(unittest.TestCase):
         assert_equal(problem.dg_indptr, [0, 2, 4, 6])
         assert_equal(problem.dg_indices, [0, 2, 2, 3, 1, 3])
 
-        assert_equal(problem.hl_indptr, [0, 3, 5, 6, 7])
-        assert_equal(problem.hl_indices, [0, 1, 2, 1, 2, 2, 3])
+        assert_equal(problem.hm_indptr, [0, 3, 5, 6, 7])
+        assert_equal(problem.hm_indices, [0, 1, 2, 1, 2, 2, 3])
 
         assert_almost_equal(problem.equation_multipliers, [3.2, 9.3, 11.6])
         assert_almost_equal(problem.variable_multipliers, [1, 1, 1, 1])
@@ -124,10 +124,10 @@ class TestProblem(unittest.TestCase):
         assert_almost_equal(problem.g, [7, -4, 12])
         assert_almost_equal(problem.df, [6, 42, -1.5, 0])
         assert_almost_equal(problem.dg_values, [5, 4, 1, -1, 1, 1])
-        assert_almost_equal(problem.hl_values, [9.4, 0, 3.2, 6, 0, 6.4, 0])
+        assert_almost_equal(problem.hm_values, [9.4, 0, 3.2, 6, 0, 6.4, 0])
 
         assert_almost_equal(problem.dg.toarray(), [[5, 0, 4, 0], [0, 0, 1, -1], [0, 1, 0, 1]])
-        assert_almost_equal(problem.hl.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [0, 0, 6.4, 0], [0, 0, 0, 0]])
+        assert_almost_equal(problem.hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [0, 0, 6.4, 0], [0, 0, 0, 0]])
 
 if __name__ == '__main__':
     unittest.main()
