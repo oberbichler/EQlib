@@ -59,12 +59,12 @@ private:    // members
 
         index values() const
         {
-            return m_problem->nb_dofs();
+            return m_problem->nb_equations();
         }
 
         index inputs() const
         {
-            return m_problem->nb_dofs();
+            return m_problem->nb_variables();
         }
     };
 
