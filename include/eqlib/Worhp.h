@@ -93,7 +93,7 @@ public:     // methods
         }
     }
 
-    void compute_hl(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    void compute_hm(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
@@ -101,13 +101,13 @@ public:     // methods
 
         m_problem->compute();
 
-        const Sparse hl = m_problem->hl();
+        const Sparse hm = m_problem->hm();
 
         int i = 0;
-        int j = hl.nonZeros() - m_problem->nb_variables();
+        int j = hm.nonZeros() - m_problem->nb_variables();
 
-        for (int k = 0; k < hl.outerSize(); ++k) {
-            for (Sparse::InnerIterator it(hl, k); it; ++it){
+        for (int k = 0; k < hm.outerSize(); ++k) {
+            for (Sparse::InnerIterator it(hm, k); it; ++it){
                 if (it.row() == it.col()) {
                     wsp->HM.val[j++] = it.value();
                 } else {
@@ -171,11 +171,11 @@ public:     // methods
         opt.n = m_problem->nb_variables();
         opt.m = m_problem->nb_equations();
 
-        const int nnz = (m_problem->hl().nonZeros() + opt.n) / 2;
+        const int nnz = (m_problem->hm().nonZeros() + opt.n) / 2;
 
         wsp.DF.nnz = m_problem->nb_variables();
         wsp.DG.nnz = m_problem->dg().nonZeros();
-        wsp.HM.nnz = m_problem->hl().nonZeros();
+        wsp.HM.nnz = m_problem->hm().nonZeros();
 
         Log::info(2, "Initialize Worhp...");
 
@@ -232,15 +232,15 @@ public:     // methods
         }
 
         if (wsp.HM.NeedStructure) {
-            Log::info(2, "Read structure of hl...");
+            Log::info(2, "Read structure of hm...");
 
             int i = 0;
-            int j = m_problem->hl().nonZeros() - m_problem->nb_variables();
+            int j = m_problem->hm().nonZeros() - m_problem->nb_variables();
 
-            const Sparse hl = m_problem->hl();
+            const Sparse hm = m_problem->hm();
 
-            for (int k = 0; k < hl.outerSize(); ++k) {
-                for (Sparse::InnerIterator it(hl, k); it; ++it){
+            for (int k = 0; k < hm.outerSize(); ++k) {
+                for (Sparse::InnerIterator it(hm, k); it; ++it){
                     const int row = it.row() + 1;
                     const int col = it.col() + 1;
 
@@ -288,7 +288,7 @@ public:     // methods
             }
 
             if (GetUserAction(&cnt, evalHM)) {
-                compute_hl(&opt, &wsp, &par, &cnt);
+                compute_hm(&opt, &wsp, &par, &cnt);
                 DoneUserAction(&cnt, evalHM);
             }
 

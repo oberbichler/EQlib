@@ -10,7 +10,7 @@ private:    // variables
     index m_n;
     index m_m;
     index m_nb_nonzeros_dg;
-    index m_nb_nonzeros_hl;
+    index m_nb_nonzeros_hm;
     std::vector<double> m_values;
 
 public:     // variables
@@ -42,14 +42,14 @@ public:     // methods
         m_assemble_time = 0.0;
     }
 
-    void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hl, const index max_element_n, const index max_element_m)
+    void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hm, const index max_element_n, const index max_element_m)
     {
         m_n = n;
         m_m = m;
         m_nb_nonzeros_dg = nb_nonzeros_dg;
-        m_nb_nonzeros_hl = nb_nonzeros_hl;
+        m_nb_nonzeros_hm = nb_nonzeros_hm;
 
-        const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hl;
+        const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hm;
 
         m_values.resize(nb_entries);
 
@@ -142,31 +142,31 @@ public:     // methods
         return m_values.data() + 1 + m_m + m_n;
     }
 
-    double& hl(const index i) noexcept
+    double& hm(const index i) noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_hl);
+        assert(0 <= i && i < m_nb_nonzeros_hm);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
-    double hl(const index i) const noexcept
+    double hm(const index i) const noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_hl);
+        assert(0 <= i && i < m_nb_nonzeros_hm);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
-    const double* const hl_ptr() const noexcept
+    const double* const hm_ptr() const noexcept
     {
         return m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg;
     }
 
-    Map<Vector> hl() noexcept
+    Map<Vector> hm() noexcept
     {
-        return Map<Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hl);
+        return Map<Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
     }
 
-    Map<const Vector> hl() const noexcept
+    Map<const Vector> hm() const noexcept
     {
-        return Map<const Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hl);
+        return Map<const Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
     }
 
     const std::vector<double> values() const

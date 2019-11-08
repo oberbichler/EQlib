@@ -161,10 +161,10 @@ public:     // methods
             Log::task_step("Solving the linear equation system with {}...", m_problem->solver_name());
 
             if (m_damping != 0.0) {
-                m_problem->hl_add_diagonal(m_damping);
+                m_problem->hm_add_diagonal(m_damping);
             }
 
-            Vector delta = m_problem->hl_inv_v(m_residual);
+            Vector delta = m_problem->hm_inv_v(m_residual);
 
             // update system
 
