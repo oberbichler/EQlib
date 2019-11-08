@@ -125,8 +125,10 @@ public:     // methods
     {
         // setup
 
-        Log::info(1, "==> Minimizing nonlinear system...");
-        Log::info(2, "Using LM minimizer");
+        m_rnorm = 0;
+        m_xnorm = 0;
+        m_iterations = 0;
+
 
         Timer timer;
 
