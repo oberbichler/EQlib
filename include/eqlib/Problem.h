@@ -373,7 +373,7 @@ public:     // constructors
 
 private:    // methods: computation
     template <index TOrder>
-    void compute_elements_f(ProblemData& data, const index i)
+    void compute_element_f(ProblemData& data, const index i)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
@@ -429,7 +429,7 @@ private:    // methods: computation
     }
 
     template <index TOrder>
-    void compute_elements_g(ProblemData& data, const index i)
+    void compute_element_g(ProblemData& data, const index i)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
@@ -533,7 +533,7 @@ public:     // methods: computation
             {
                 #pragma omp for schedule(guided, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_elements_f<TOrder>(local_data, i);
+                    compute_element_f<TOrder>(local_data, i);
                 }
 
                 if (sigma() != 1.0) {
@@ -550,7 +550,7 @@ public:     // methods: computation
 
                 #pragma omp for schedule(guided, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_g(); i++) {
-                    compute_elements_g<TOrder>(local_data, i);
+                    compute_element_g<TOrder>(local_data, i);
                 }
 
                 #pragma omp critical
@@ -558,7 +558,7 @@ public:     // methods: computation
             }
         } else {
             for (index i = 0; i < nb_elements_f(); i++) {
-                compute_elements_f<TOrder>(m_data, i);
+                compute_element_f<TOrder>(m_data, i);
             }
 
             if (sigma() != 1.0) {
@@ -574,7 +574,7 @@ public:     // methods: computation
             }
 
             for (index i = 0; i < nb_elements_g(); i++) {
-                compute_elements_g<TOrder>(m_data, i);
+                compute_element_g<TOrder>(m_data, i);
             }
         }
 
