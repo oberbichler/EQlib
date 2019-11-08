@@ -145,8 +145,8 @@ public:     // methods
         
         lm.minimize(x);
 
-        m_iterations = lm.iterations();
         m_rnorm = lm.gnorm();
+        m_iterations = lm.iterations();
 
         Log::task_end("System solved in {:.3f} sec", timer.ellapsed());
     }
