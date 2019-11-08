@@ -78,7 +78,7 @@ private:    // variables
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
     SparseStructure<double, int, true> m_structure_dg;
-    SparseStructure<double, int, true> m_structure_hl;
+    SparseStructure<double, int, true> m_structure_hm;
 
     ProblemData m_data;
 
@@ -309,7 +309,7 @@ public:     // constructors
         const auto m = length(m_equations);
 
         std::vector<std::set<index>> m_pattern_dg(m);
-        std::vector<std::set<index>> m_pattern_hl(n);
+        std::vector<std::set<index>> m_pattern_hm(n);
 
         for (index i = 0; i < length(m_elements_f); i++) {
             const auto& variable_indices = m_element_f_variable_indices[i];
@@ -320,7 +320,7 @@ public:     // constructors
                 for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    m_pattern_hl[row.global].insert(col.global);
+                    m_pattern_hm[row.global].insert(col.global);
                 }
             }
         }
@@ -341,7 +341,7 @@ public:     // constructors
                 for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                     const auto col = variable_indices[col_i];
 
-                    m_pattern_hl[row.global].insert(col.global);
+                    m_pattern_hm[row.global].insert(col.global);
                 }
             }
         }
@@ -350,15 +350,15 @@ public:     // constructors
         Log::task_step("Allocate memory...");
 
         m_structure_dg.set(m, n, m_pattern_dg);
-        m_structure_hl.set(n, n, m_pattern_hl);
+        m_structure_hm.set(n, n, m_pattern_hm);
 
         Log::task_info("The hessian has {} nonzero entries ({:.3f}%)",
-            m_structure_hl.nb_nonzeros(), m_structure_hl.density() * 100.0);
+            m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
 
         Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)",
             m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
 
-        m_data.resize(n, m, m_structure_dg.nb_nonzeros(), m_structure_hl.nb_nonzeros(), m_max_element_n, m_max_element_m);
+        m_data.resize(n, m, m_structure_dg.nb_nonzeros(), m_structure_hm.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
@@ -419,7 +419,7 @@ private:    // methods: computation
                 for (index col_i = row_i; col_i != length(variable_indices); ++col_i) {
                     const auto col = variable_indices[col_i];
 
-                index index = m_structure_hl.get_index(row.global, col.global);
+                index index = m_structure_hm.get_index(row.global, col.global);
 
                 data.hm(index) += h(row.local, col.local);
             }
@@ -501,9 +501,9 @@ private:    // methods: computation
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                    const index hl_value_i = m_structure_hl.get_index(row.global, col.global);
+                    const index hm_value_i = m_structure_hm.get_index(row.global, col.global);
 
-                    data.hm(hl_value_i) += local_h(row.local, col.local);
+                    data.hm(hm_value_i) += local_h(row.local, col.local);
                 }
             }
         }
@@ -664,7 +664,7 @@ public:     // methods: computation
     }
 
 public:     // methods
-    Vector hl_inv_v(Ref<const Vector> v)
+    Vector hm_inv_v(Ref<const Vector> v)
     {
         if (nb_variables() == 0) {
             return Vector(0);
@@ -685,12 +685,12 @@ public:     // methods
         return x;
     }
 
-    Vector hl_v(Ref<const Vector> v) const
+    Vector hm_v(Ref<const Vector> v) const
     {
         return hm().selfadjointView<Eigen::Upper>() * v;
     }
 
-    void hl_add_diagonal(const double value)
+    void hm_add_diagonal(const double value)
     {
         for (index i = 0; i < nb_variables(); i++) {
             hm(i, i) += value;
@@ -1000,27 +1000,27 @@ public:     // methods: output dg
 public:     // methods: output hm
     Map<const Sparse> hm() const noexcept
     {
-        return Map<const Sparse>(m_structure_hl.rows(), m_structure_hl.cols(), m_structure_hl.nb_nonzeros(), m_structure_hl.ia().data(), m_structure_hl.ja().data(), m_data.hm().data());
+        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm().data());
     }
 
-    Ref<Vector> hl_values() noexcept
+    Ref<Vector> hm_values() noexcept
     {
         return m_data.hm();
     }
 
-    Ref<const Vector> hl_values() const noexcept
+    Ref<const Vector> hm_values() const noexcept
     {
         return m_data.hm();
     }
 
-    const std::vector<int>& hl_indptr() const noexcept
+    const std::vector<int>& hm_indptr() const noexcept
     {
-        return m_structure_hl.ia();
+        return m_structure_hm.ia();
     }
 
-    const std::vector<int>& hl_indices() const noexcept
+    const std::vector<int>& hm_indices() const noexcept
     {
-        return m_structure_hl.ja();
+        return m_structure_hm.ja();
     }
 
     double& hm(const index index)
@@ -1035,13 +1035,13 @@ public:     // methods: output hm
 
     double& hm(const index row, const index col)
     {
-        index index = m_structure_hl.get_index(row, col);
+        index index = m_structure_hm.get_index(row, col);
         return m_data.hm(index);
     }
 
     double hm(const index row, const index col) const
     {
-        index index = m_structure_hl.get_index(row, col);
+        index index = m_structure_hm.get_index(row, col);
         return m_data.hm(index);
     }
 
@@ -1079,13 +1079,13 @@ public:     // methods: python
             .def_property_readonly("dg_indices", &Type::dg_indices)
             .def_property_readonly("hm", [=](Type& self) {
                 return csr_matrix(
-                    std::make_tuple(self.hl_values(), self.hl_indices(), self.hl_indptr()),
+                    std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
                     std::make_pair(self.nb_variables(), self.nb_variables())
                 ).release();
             })
-            .def_property_readonly("hl_values", py::overload_cast<>(&Type::hl_values))
-            .def_property_readonly("hl_indptr", &Type::hl_indptr)
-            .def_property_readonly("hl_indices", &Type::hl_indices)
+            .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
+            .def_property_readonly("hm_indptr", &Type::hm_indptr)
+            .def_property_readonly("hm_indices", &Type::hm_indices)
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             .def_property_readonly("values", py::overload_cast<>(&Type::values))
@@ -1105,9 +1105,9 @@ public:     // methods: python
             // methods
             // // .def("clone", &Type::clone)
             .def("compute", &Type::compute<true>, "order"_a=2, py::call_guard<py::gil_scoped_release>())
-            .def("hl_add_diagonal", &Type::hl_add_diagonal, "value"_a)
-            .def("hl_inv_v", &Type::hl_inv_v)
-            .def("hl_v", &Type::hl_v)
+            .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
+            .def("hm_inv_v", &Type::hm_inv_v)
+            .def("hm_v", &Type::hm_v)
             .def("f_of", [](Type& self, Ref<const Vector> x) -> double {
                 self.set_x(x);
                 self.compute<false>(0);
@@ -1131,11 +1131,11 @@ public:     // methods: python
                     std::make_pair(self.nb_equations(), self.nb_variables())
                 ).release();
             }, "x"_a)
-            .def("hl_of", [=](Type& self, Ref<const Vector> x) {
+            .def("hm_of", [=](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(2);
                 return csr_matrix(
-                    std::make_tuple(self.hl_values(), self.hl_indices(), self.hl_indptr()),
+                    std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
                     std::make_pair(self.nb_variables(), self.nb_variables())
                 ).release();
             }, "x"_a)

@@ -93,7 +93,7 @@ public:     // methods
         }
     }
 
-    void compute_hl(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
+    void compute_hm(OptVar* opt, Workspace* wsp, Params* par, Control* cnt)
     {
         m_problem->set_sigma(wsp->ScaleObj);
         m_problem->set_x(opt->X);
@@ -288,7 +288,7 @@ public:     // methods
             }
 
             if (GetUserAction(&cnt, evalHM)) {
-                compute_hl(&opt, &wsp, &par, &cnt);
+                compute_hm(&opt, &wsp, &par, &cnt);
                 DoneUserAction(&cnt, evalHM);
             }
 
