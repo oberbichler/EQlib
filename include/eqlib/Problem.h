@@ -421,7 +421,7 @@ private:    // methods: computation
 
                 index index = m_structure_hl.get_index(row.global, col.global);
 
-                data.hl(index) += h(row.local, col.local);
+                data.hm(index) += h(row.local, col.local);
             }
         }
 
@@ -503,7 +503,7 @@ private:    // methods: computation
 
                     const index hl_value_i = m_structure_hl.get_index(row.global, col.global);
 
-                    data.hl(hl_value_i) += local_h(row.local, col.local);
+                    data.hm(hl_value_i) += local_h(row.local, col.local);
                 }
             }
         }
@@ -544,7 +544,7 @@ public:     // methods: computation
                     }
 
                     if constexpr(TOrder > 1) {
-                        local_data.hl() *= sigma();
+                        local_data.hm() *= sigma();
                     }
                 }
 
@@ -569,7 +569,7 @@ public:     // methods: computation
                 }
 
                 if constexpr(TOrder > 1) {
-                    m_data.hl() *= sigma();
+                    m_data.hm() *= sigma();
                 }
             }
 
@@ -670,15 +670,15 @@ public:     // methods
             return Vector(0);
         }
 
-        Map<const Sparse> hl = this->hl();
+        Map<const Sparse> hm = this->hm();
 
-        if (m_linear_solver->factorize(hl)) {
+        if (m_linear_solver->factorize(hm)) {
             throw std::runtime_error("Factorization failed");
         }
 
         Vector x(nb_variables());
 
-        if (m_linear_solver->solve(hl, v, x)) {
+        if (m_linear_solver->solve(hm, v, x)) {
             throw std::runtime_error("Solve failed");
         }
 
@@ -687,13 +687,13 @@ public:     // methods
 
     Vector hl_v(Ref<const Vector> v) const
     {
-        return hl().selfadjointView<Eigen::Upper>() * v;
+        return hm().selfadjointView<Eigen::Upper>() * v;
     }
 
     void hl_add_diagonal(const double value)
     {
         for (index i = 0; i < nb_variables(); i++) {
-            hl(i, i) += value;
+            hm(i, i) += value;
         }
     }
 
@@ -997,20 +997,20 @@ public:     // methods: output dg
         return m_data.dg(index);
     }
 
-public:     // methods: output hl
-    Map<const Sparse> hl() const noexcept
+public:     // methods: output hm
+    Map<const Sparse> hm() const noexcept
     {
-        return Map<const Sparse>(m_structure_hl.rows(), m_structure_hl.cols(), m_structure_hl.nb_nonzeros(), m_structure_hl.ia().data(), m_structure_hl.ja().data(), m_data.hl().data());
+        return Map<const Sparse>(m_structure_hl.rows(), m_structure_hl.cols(), m_structure_hl.nb_nonzeros(), m_structure_hl.ia().data(), m_structure_hl.ja().data(), m_data.hm().data());
     }
 
     Ref<Vector> hl_values() noexcept
     {
-        return m_data.hl();
+        return m_data.hm();
     }
 
     Ref<const Vector> hl_values() const noexcept
     {
-        return m_data.hl();
+        return m_data.hm();
     }
 
     const std::vector<int>& hl_indptr() const noexcept
@@ -1023,26 +1023,26 @@ public:     // methods: output hl
         return m_structure_hl.ja();
     }
 
-    double& hl(const index index)
+    double& hm(const index index)
     {
-        return m_data.hl(index);
+        return m_data.hm(index);
     }
 
-    double hl(const index index) const
+    double hm(const index index) const
     {
-        return m_data.hl(index);
+        return m_data.hm(index);
     }
 
-    double& hl(const index row, const index col)
+    double& hm(const index row, const index col)
     {
         index index = m_structure_hl.get_index(row, col);
-        return m_data.hl(index);
+        return m_data.hm(index);
     }
 
-    double hl(const index row, const index col) const
+    double hm(const index row, const index col) const
     {
         index index = m_structure_hl.get_index(row, col);
-        return m_data.hl(index);
+        return m_data.hm(index);
     }
 
 public:     // methods: python
@@ -1077,7 +1077,7 @@ public:     // methods: python
             .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
             .def_property_readonly("dg_indptr", &Type::dg_indptr)
             .def_property_readonly("dg_indices", &Type::dg_indices)
-            .def_property_readonly("hl", [=](Type& self) {
+            .def_property_readonly("hm", [=](Type& self) {
                 return csr_matrix(
                     std::make_tuple(self.hl_values(), self.hl_indices(), self.hl_indptr()),
                     std::make_pair(self.nb_variables(), self.nb_variables())

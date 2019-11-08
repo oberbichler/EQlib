@@ -142,13 +142,13 @@ public:     // methods
         return m_values.data() + 1 + m_m + m_n;
     }
 
-    double& hl(const index i) noexcept
+    double& hm(const index i) noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_hl);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
-    double hl(const index i) const noexcept
+    double hm(const index i) const noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_hl);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
@@ -159,12 +159,12 @@ public:     // methods
         return m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg;
     }
 
-    Map<Vector> hl() noexcept
+    Map<Vector> hm() noexcept
     {
         return Map<Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hl);
     }
 
-    Map<const Vector> hl() const noexcept
+    Map<const Vector> hm() const noexcept
     {
         return Map<const Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hl);
     }
