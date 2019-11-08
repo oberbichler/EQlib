@@ -129,6 +129,7 @@ public:     // methods
         m_xnorm = 0;
         m_iterations = 0;
 
+        Log::task_begin("Solving nonlinear system using Levenberg-Marquardt...");
 
         Timer timer;
 
@@ -147,7 +148,7 @@ public:     // methods
         m_iterations = lm.iterations();
         m_rnorm = lm.gnorm();
 
-        Log::info(1, "System minimized in {:.3f} sec", timer.ellapsed());
+        Log::task_end("System solved in {:.3f} sec", timer.ellapsed());
     }
 
 public:     // python
