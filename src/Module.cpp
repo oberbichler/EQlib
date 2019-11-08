@@ -16,6 +16,7 @@
 
 #include <eqlib/GradientDescent.h>
 #include <eqlib/LBfgs.h>
+#include <eqlib/LevenbergMarquardt.h>
 #include <eqlib/NewtonRaphson.h>
 #ifdef EQLIB_USE_WORHP
 #include <eqlib/Worhp.h>
@@ -91,6 +92,9 @@ PYBIND11_MODULE(eqlib, m) {
 
     // GradientDescent
     eqlib::GradientDescent::register_python(m);
+
+    // LevenbergMarquardt
+    eqlib::LevenbergMarquardt::register_python(m);
 
     // NewtonRaphson
     eqlib::NewtonRaphson::register_python(m);
