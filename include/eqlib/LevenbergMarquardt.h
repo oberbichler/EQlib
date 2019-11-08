@@ -71,12 +71,12 @@ private:    // members
 public:     // constructor
     LevenbergMarquardt(const std::shared_ptr<Problem>& problem)
     : m_problem(problem)
-    , m_iterations(0)
-    , m_maxiter(0)
+    , m_rtol(1e-6)
+    , m_xtol(1e-6)
+    , m_maxiter(100)
     , m_rnorm(0)
     , m_xnorm(0)
-    , m_rtol(0)
-    , m_xtol(0)
+    , m_iterations(0)
     {
     }
 
