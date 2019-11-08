@@ -801,6 +801,26 @@ public:     // methods: input
         m_sigma = value;
     }
 
+    std::vector<std::pair<double, double>> equation_bounds() const {
+        std::vector<std::pair<double, double>> bounds(nb_equations());
+
+        for (index i = 0; i < nb_equations(); i++) {
+            bounds[i] = {equation(i)->lower_bound(), equation(i)->upper_bound()};
+        }
+
+        return bounds;
+    }
+
+    std::vector<std::pair<double, double>> variable_bounds() const {
+        std::vector<std::pair<double, double>> bounds(nb_variables());
+
+        for (index i = 0; i < nb_variables(); i++) {
+            bounds[i] = {variable(i)->lower_bound(), variable(i)->upper_bound()};
+        }
+
+        return bounds;
+    }
+
 public:     // methods: output values
     Ref<Vector> values() noexcept
     {
@@ -1005,6 +1025,8 @@ public:     // methods: python
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             .def_property_readonly("values", py::overload_cast<>(&Type::values))
+            .def_property_readonly("equation_bounds", &Type::equation_bounds)
+            .def_property_readonly("variable_bounds", &Type::variable_bounds)
             // properties
             .def_property("f", &Type::f, &Type::set_f)
             .def_property("nb_threats", &Type::nb_threats, &Type::set_nb_threats)
@@ -1053,13 +1075,6 @@ public:     // methods: python
                     std::make_pair(self.nb_variables(), self.nb_variables())
                 ).release();
             }, "x"_a)
-            .def("bounds", [](Type& self) {
-                std::vector<std::pair<double, double>> bounds(self.nb_variables());
-                for (index i = 0; i < self.nb_variables(); i++) {
-                    bounds[i] = {self.variable(i)->lower_bound(), self.variable(i)->upper_bound()};
-                }
-                return bounds;
-            })
         ;
     }
 };
