@@ -77,8 +77,8 @@ private:    // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
-    SparseStructure<double, int, true> m_dg_structure;
-    SparseStructure<double, int, true> m_hl_structure;
+    SparseStructure<double, int, true> m_structure_dg;
+    SparseStructure<double, int, true> m_structure_hl;
 
     ProblemData m_data;
 
@@ -349,16 +349,16 @@ public:     // constructors
 
         Log::task_step("Allocate memory...");
 
-        m_dg_structure.set(m, n, m_pattern_dg);
-        m_hl_structure.set(n, n, m_pattern_hl);
+        m_structure_dg.set(m, n, m_pattern_dg);
+        m_structure_hl.set(n, n, m_pattern_hl);
 
         Log::task_info("The hessian has {} nonzero entries ({:.3f}%)",
-            m_hl_structure.nb_nonzeros(), m_hl_structure.density() * 100.0);
+            m_structure_hl.nb_nonzeros(), m_structure_hl.density() * 100.0);
 
         Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)",
-            m_dg_structure.nb_nonzeros(), m_dg_structure.density() * 100.0);
+            m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
 
-        m_data.resize(n, m, m_dg_structure.nb_nonzeros(), m_hl_structure.nb_nonzeros(), m_max_element_n, m_max_element_m);
+        m_data.resize(n, m, m_structure_dg.nb_nonzeros(), m_structure_hl.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
@@ -419,7 +419,7 @@ private:    // methods: computation
                 for (index col_i = row_i; col_i != length(variable_indices); ++col_i) {
                     const auto col = variable_indices[col_i];
 
-                index index = m_hl_structure.get_index(row.global, col.global);
+                index index = m_structure_hl.get_index(row.global, col.global);
 
                 data.hl(index) += h(row.local, col.local);
             }
@@ -490,7 +490,7 @@ private:    // methods: computation
                 for (index row_i = 0; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    const index dg_value_i = m_dg_structure.get_index(equation_index.global, row.global);
+                    const index dg_value_i = m_structure_dg.get_index(equation_index.global, row.global);
 
                     data.dg(dg_value_i) += local_g(row.local);
 
@@ -501,7 +501,7 @@ private:    // methods: computation
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                    const index hl_value_i = m_hl_structure.get_index(row.global, col.global);
+                    const index hl_value_i = m_structure_hl.get_index(row.global, col.global);
 
                     data.hl(hl_value_i) += local_h(row.local, col.local);
                 }
@@ -952,7 +952,7 @@ public:     // methods: output df
 public:     // methods: output dg
     Map<const Sparse> dg() const noexcept
     {
-        return Map<const Sparse>(nb_equations(), nb_variables(), m_dg_structure.nb_nonzeros(), m_dg_structure.ia().data(), m_dg_structure.ja().data(), m_data.dg().data());
+        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
     }
 
     Ref<Vector> dg_values() noexcept
@@ -967,12 +967,12 @@ public:     // methods: output dg
 
     const std::vector<int>& dg_indptr() const noexcept
     {
-        return m_dg_structure.ia();
+        return m_structure_dg.ia();
     }
 
     const std::vector<int>& dg_indices() const noexcept
     {
-        return m_dg_structure.ja();
+        return m_structure_dg.ja();
     }
 
     double& dg(const index index)
@@ -987,20 +987,20 @@ public:     // methods: output dg
 
     double& dg(const index row, const index col)
     {
-        const index index = m_dg_structure.get_index(row, col);
+        const index index = m_structure_dg.get_index(row, col);
         return m_data.dg(index);
     }
 
     double dg(const index row, const index col) const
     {
-        const index index = m_dg_structure.get_index(row, col);
+        const index index = m_structure_dg.get_index(row, col);
         return m_data.dg(index);
     }
 
 public:     // methods: output hl
     Map<const Sparse> hl() const noexcept
     {
-        return Map<const Sparse>(m_hl_structure.rows(), m_hl_structure.cols(), m_hl_structure.nb_nonzeros(), m_hl_structure.ia().data(), m_hl_structure.ja().data(), m_data.hl().data());
+        return Map<const Sparse>(m_structure_hl.rows(), m_structure_hl.cols(), m_structure_hl.nb_nonzeros(), m_structure_hl.ia().data(), m_structure_hl.ja().data(), m_data.hl().data());
     }
 
     Ref<Vector> hl_values() noexcept
@@ -1015,12 +1015,12 @@ public:     // methods: output hl
 
     const std::vector<int>& hl_indptr() const noexcept
     {
-        return m_hl_structure.ia();
+        return m_structure_hl.ia();
     }
 
     const std::vector<int>& hl_indices() const noexcept
     {
-        return m_hl_structure.ja();
+        return m_structure_hl.ja();
     }
 
     double& hl(const index index)
@@ -1035,13 +1035,13 @@ public:     // methods: output hl
 
     double& hl(const index row, const index col)
     {
-        index index = m_hl_structure.get_index(row, col);
+        index index = m_structure_hl.get_index(row, col);
         return m_data.hl(index);
     }
 
     double hl(const index row, const index col) const
     {
-        index index = m_hl_structure.get_index(row, col);
+        index index = m_structure_hl.get_index(row, col);
         return m_data.hl(index);
     }
 
