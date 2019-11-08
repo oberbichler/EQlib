@@ -512,7 +512,7 @@ private:    // methods: computation
     }
 
 public:     // methods: computation
-    template <bool TInfo, index TOrder>
+    template <bool TParallel, bool TInfo, index TOrder>
     void compute()
     {
         static_assert(0 <= TOrder && TOrder <= 2);
@@ -525,35 +525,57 @@ public:     // methods: computation
 
         m_data.set_zero();
 
-        ProblemData local_data(m_data);
+        if constexpr(TParallel) {
+            ProblemData local_data(m_data);
 
-        // FIXME: use private(m_data) when msvc supports omp private with member variables
-        #pragma omp parallel if(m_nb_threats != 1) num_threads(m_nb_threats) firstprivate(local_data)
-        {
-            #pragma omp for schedule(guided, m_grainsize) nowait
+            // FIXME: use private(m_data) when msvc supports omp private with member variables
+            #pragma omp parallel if(m_nb_threats != 1) num_threads(m_nb_threats) firstprivate(local_data)
+            {
+                #pragma omp for schedule(guided, m_grainsize) nowait
+                for (index i = 0; i < nb_elements_f(); i++) {
+                    compute_elements_f<TOrder>(local_data, i);
+                }
+
+                if (sigma() != 1.0) {
+                    local_data.f() *= sigma();
+
+                    if constexpr(TOrder > 0) {
+                        local_data.df() *= sigma();
+                    }
+
+                    if constexpr(TOrder > 1) {
+                        local_data.hl() *= sigma();
+                    }
+                }
+
+                #pragma omp for schedule(guided, m_grainsize) nowait
+                for (index i = 0; i < nb_elements_g(); i++) {
+                    compute_elements_g<TOrder>(local_data, i);
+                }
+
+                #pragma omp critical
+                m_data += local_data;
+            }
+        } else {
             for (index i = 0; i < nb_elements_f(); i++) {
-                compute_elements_f<TOrder>(local_data, i);
+                compute_elements_f<TOrder>(m_data, i);
             }
 
             if (sigma() != 1.0) {
-                local_data.f() *= sigma();
+                m_data.f() *= sigma();
 
                 if constexpr(TOrder > 0) {
-                    local_data.df() *= sigma();
+                    m_data.df() *= sigma();
                 }
 
                 if constexpr(TOrder > 1) {
-                    local_data.hl() *= sigma();
+                    m_data.hl() *= sigma();
                 }
             }
 
-            #pragma omp for schedule(guided, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g(); i++) {
-                compute_elements_g<TOrder>(local_data, i);
+                compute_elements_g<TOrder>(m_data, i);
             }
-
-            #pragma omp critical
-            m_data += local_data;
         }
 
         if constexpr(TInfo) {
@@ -564,38 +586,80 @@ public:     // methods: computation
         }
     }
 
+    template <bool TInfo, index TOrder>
+    void compute()
+    {
+        if (m_nb_threats == 1) {
+            compute<false, TInfo, TOrder>();
+        } else {
+            compute<true, TInfo, TOrder>();
+        }
+    }
+
     template <bool TInfo>
     void compute(const index order = 2)
     {
-        switch (order) {
-        case 0:
-            compute<TInfo, 0>();
-            break;
-        case 1:
-            compute<TInfo, 1>();
-            break;
-        case 2:
-            compute<TInfo, 2>();
-            break;
-        default:
-            throw std::invalid_argument("order");
+        if (m_nb_threats == 1) {
+            switch (order) {
+            case 0:
+                compute<false, TInfo, 0>();
+                break;
+            case 1:
+                compute<false, TInfo, 1>();
+                break;
+            case 2:
+                compute<false, TInfo, 2>();
+                break;
+            default:
+                throw std::invalid_argument("order");
+            }
+        } else {
+            switch (order) {
+            case 0:
+                compute<true, TInfo, 0>();
+                break;
+            case 1:
+                compute<true, TInfo, 1>();
+                break;
+            case 2:
+                compute<true, TInfo, 2>();
+                break;
+            default:
+                throw std::invalid_argument("order");
+            }
         }
     }
 
     void compute(const index order = 2)
     {
-        switch (order) {
-        case 0:
-            compute<true, 0>();
-            break;
-        case 1:
-            compute<true, 1>();
-            break;
-        case 2:
-            compute<true, 2>();
-            break;
-        default:
-            throw std::invalid_argument("order");
+        if (m_nb_threats == 1) {
+            switch (order) {
+            case 0:
+                compute<false, true, 0>();
+                break;
+            case 1:
+                compute<false, true, 1>();
+                break;
+            case 2:
+                compute<false, true, 2>();
+                break;
+            default:
+                throw std::invalid_argument("order");
+            }
+        } else {
+            switch (order) {
+            case 0:
+                compute<true, true, 0>();
+                break;
+            case 1:
+                compute<true, true, 1>();
+                break;
+            case 2:
+                compute<true, true, 2>();
+                break;
+            default:
+                throw std::invalid_argument("order");
+            }
         }
     }
 
