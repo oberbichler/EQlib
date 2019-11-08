@@ -27,7 +27,7 @@ private:    // members
         using Index = index;
         using InputType = Vector;
         using ValueType = Vector;
-        using JacobianType = Sparse;
+        using JacobianType = Eigen::SparseMatrix<double, Eigen::ColMajor>;
         using QRSolver = Eigen::SparseQR<JacobianType, Eigen::COLAMDOrdering<int>>;
 
         enum {
@@ -49,11 +49,11 @@ private:    // members
             return 0;
         }
 
-        int df(const Vector& x, Sparse& fjac) const
+        int df(const Vector& x, JacobianType& fjac) const
         {
             m_problem->set_x(x);
             m_problem->compute<false, 1>();
-            fjac = m_problem->dg();
+            fjac = m_problem->dg().transpose();
             return 0;
         }
 
