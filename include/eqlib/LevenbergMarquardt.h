@@ -5,7 +5,7 @@
 
 #include <unsupported/Eigen/LevenbergMarquardt>
 
-namespace EQlib {
+namespace eqlib {
 
 class LevenbergMarquardt
 {
@@ -169,4 +169,4 @@ public:     // python
     }
 };
 
-} // namespace EQlib
+} // namespace eqlib
