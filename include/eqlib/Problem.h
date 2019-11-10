@@ -670,7 +670,7 @@ public:     // methods
             return Vector(0);
         }
 
-        Map<const Sparse> hm = this->hm();
+        Ref<const Sparse> hm = this->hm();
 
         if (m_linear_solver->factorize(hm)) {
             throw std::runtime_error("Factorization failed");
@@ -908,12 +908,12 @@ public:     // methods: output f
     }
 
 public:     // methods: output g
-    Map<Vector> g() noexcept
+    Ref<Vector> g() noexcept
     {
         return m_data.g();
     }
 
-    Map<const Vector> g() const noexcept
+    Ref<const Vector> g() const noexcept
     {
         return m_data.g();
     }
@@ -929,12 +929,12 @@ public:     // methods: output g
     }
 
 public:     // methods: output df
-    Map<Vector> df() noexcept
+    Ref<Vector> df() noexcept
     {
         return m_data.df();
     }
 
-    Map<const Vector> df() const noexcept
+    Ref<const Vector> df() const noexcept
     {
         return m_data.df();
     }
@@ -950,7 +950,7 @@ public:     // methods: output df
     }
 
 public:     // methods: output dg
-    Map<const Sparse> dg() const noexcept
+    Ref<const Sparse> dg() const noexcept
     {
         return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
     }
@@ -1000,7 +1000,7 @@ public:     // methods: output dg
 public:     // methods: output hm
     Map<const Sparse> hm() const noexcept
     {
-        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm().data());
+        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm_ptr());
     }
 
     Ref<Vector> hm_values() noexcept
