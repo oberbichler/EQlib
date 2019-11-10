@@ -121,24 +121,24 @@ public:     // methods
         return m_values.segment(1 + m_m, m_n);
     }
 
-    double& dg(const index i) noexcept
+    double& dg_value(const index i) noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_dg);
         return m_values[1 + m_m + m_n + i];
     }
 
-    double dg(const index i) const noexcept
+    double dg_value(const index i) const noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_dg);
         return m_values[1 + m_m + m_n + i];
     }
 
-    Ref<Vector> dg() noexcept
+    Ref<Vector> dg_values() noexcept
     {
         return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
     }
 
-    Ref<const Vector> dg() const noexcept
+    Ref<const Vector> dg_values() const noexcept
     {
         return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
     }
@@ -148,13 +148,13 @@ public:     // methods
         return m_values.data() + 1 + m_m + m_n;
     }
 
-    double& hm(const index i) noexcept
+    double& hm_value(const index i) noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_hm);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
-    double hm(const index i) const noexcept
+    double hm_value(const index i) const noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_hm);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
@@ -165,12 +165,12 @@ public:     // methods
         return m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg;
     }
 
-    Ref<Vector> hm() noexcept
+    Ref<Vector> hm_values() noexcept
     {
         return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
     }
 
-    Ref<const Vector> hm() const noexcept
+    Ref<const Vector> hm_values() const noexcept
     {
         return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
     }

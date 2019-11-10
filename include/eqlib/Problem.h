@@ -421,7 +421,7 @@ private:    // methods: computation
 
                 index index = m_structure_hm.get_index(row.global, col.global);
 
-                data.hm(index) += h(row.local, col.local);
+                data.hm_value(index) += h(row.local, col.local);
             }
         }
 
@@ -492,7 +492,7 @@ private:    // methods: computation
 
                     const index dg_value_i = m_structure_dg.get_index(equation_index.global, row.global);
 
-                    data.dg(dg_value_i) += local_g(row.local);
+                    data.dg_value(dg_value_i) += local_g(row.local);
 
                 if constexpr(TOrder < 2) {
                     return;
@@ -503,7 +503,7 @@ private:    // methods: computation
 
                     const index hm_value_i = m_structure_hm.get_index(row.global, col.global);
 
-                    data.hm(hm_value_i) += local_h(row.local, col.local);
+                    data.hm_value(hm_value_i) += local_h(row.local, col.local);
                 }
             }
         }
@@ -544,7 +544,7 @@ public:     // methods: computation
                     }
 
                     if constexpr(TOrder > 1) {
-                        local_data.hm() *= sigma();
+                        local_data.hm_values() *= sigma();
                     }
                 }
 
@@ -569,7 +569,7 @@ public:     // methods: computation
                 }
 
                 if constexpr(TOrder > 1) {
-                    m_data.hm() *= sigma();
+                    m_data.hm_values() *= sigma();
                 }
             }
 
@@ -670,15 +670,13 @@ public:     // methods
             return Vector(0);
         }
 
-        Ref<const Sparse> hm = this->hm();
-
-        if (m_linear_solver->factorize(hm)) {
+        if (m_linear_solver->factorize(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm_values())) {
             throw std::runtime_error("Factorization failed");
         }
 
         Vector x(nb_variables());
 
-        if (m_linear_solver->solve(hm, v, x)) {
+        if (m_linear_solver->solve(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm_values(), v, x)) {
             throw std::runtime_error("Solve failed");
         }
 
@@ -952,17 +950,17 @@ public:     // methods: output df
 public:     // methods: output dg
     Ref<const Sparse> dg() const noexcept
     {
-        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
+        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg_ptr());
     }
 
     Ref<Vector> dg_values() noexcept
     {
-        return m_data.dg();
+        return m_data.dg_values();
     }
 
     Ref<const Vector> dg_values() const noexcept
     {
-        return m_data.dg();
+        return m_data.dg_values();
     }
 
     const std::vector<int>& dg_indptr() const noexcept
@@ -977,24 +975,24 @@ public:     // methods: output dg
 
     double& dg(const index index)
     {
-        return m_data.dg(index);
+        return m_data.dg_value(index);
     }
 
     double dg(const index index) const
     {
-        return m_data.dg(index);
+        return m_data.dg_value(index);
     }
 
     double& dg(const index row, const index col)
     {
         const index index = m_structure_dg.get_index(row, col);
-        return m_data.dg(index);
+        return m_data.dg_value(index);
     }
 
     double dg(const index row, const index col) const
     {
         const index index = m_structure_dg.get_index(row, col);
-        return m_data.dg(index);
+        return m_data.dg_value(index);
     }
 
 public:     // methods: output hm
@@ -1005,12 +1003,12 @@ public:     // methods: output hm
 
     Ref<Vector> hm_values() noexcept
     {
-        return m_data.hm();
+        return m_data.hm_values();
     }
 
     Ref<const Vector> hm_values() const noexcept
     {
-        return m_data.hm();
+        return m_data.hm_values();
     }
 
     const std::vector<int>& hm_indptr() const noexcept
@@ -1025,24 +1023,24 @@ public:     // methods: output hm
 
     double& hm(const index index)
     {
-        return m_data.hm(index);
+        return m_data.hm_value(index);
     }
 
     double hm(const index index) const
     {
-        return m_data.hm(index);
+        return m_data.hm_value(index);
     }
 
     double& hm(const index row, const index col)
     {
         index index = m_structure_hm.get_index(row, col);
-        return m_data.hm(index);
+        return m_data.hm_value(index);
     }
 
     double hm(const index row, const index col) const
     {
         index index = m_structure_hm.get_index(row, col);
-        return m_data.hm(index);
+        return m_data.hm_value(index);
     }
 
 public:     // methods: python

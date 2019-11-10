@@ -29,13 +29,13 @@ public:     // methods
         return "Eigen Simplicial LDLT";
     }
 
-    bool analyze(Ref<const Sparse> a) override
+    bool analyze(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) override
     {
         if (m_is_analyzed) {
             return false;
         }
 
-        Map<const ColMajorSparse> m(a.rows(), a.cols(), a.nonZeros(), a.outerIndexPtr(), a.innerIndexPtr(), a.valuePtr());
+        Map<const ColMajorSparse> m(ia.size() - 1, ia.size() - 1, ja.size(), ia.data(), ja.data(), a.data());
 
         m_solver.analyzePattern(m);
 
@@ -48,13 +48,13 @@ public:     // methods
         return !success;
     }
 
-    bool factorize(Ref<const Sparse> a) override
+    bool factorize(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) override
     {
-        if (analyze(a)) {
+        if (analyze(ia, ja, a)) {
             return true;
         }
 
-        Map<const ColMajorSparse> m(a.rows(), a.cols(), a.nonZeros(), a.outerIndexPtr(), a.innerIndexPtr(), a.valuePtr());
+        Map<const ColMajorSparse> m(ia.size() - 1, ia.size() - 1, ja.size(), ia.data(), ja.data(), a.data());
 
         m_solver.factorize(m);
 
@@ -63,7 +63,7 @@ public:     // methods
         return !success;
     }
 
-    bool solve(Ref<const Sparse> a, Ref<const Vector> b, Ref<Vector> x) override
+    bool solve(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a, Ref<const Vector> b, Ref<Vector> x) override
     {
         x = m_solver.solve(b);
 
