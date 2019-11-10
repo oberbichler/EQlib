@@ -31,6 +31,16 @@ public:     // methods
         return m_variables[i];
     }
 
+    const index nb_equations() const
+    {
+        return length(m_equations);
+    }
+
+    const index nb_variables() const
+    {
+        return length(m_variables);
+    }
+
     const std::vector<Pointer<Equation>>& equations() const
     {
         return m_equations;
@@ -94,6 +104,9 @@ public:     // python
         py::class_<Type, Trampoline, Holder>(m, "Constraint")
             // constructors
             .def(py::init<>())
+            // read-only properties
+            .def_property_readonly("nb_equations", &Type::nb_equations)
+            .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
             .def_property("equations", &Type::equations, &Type::set_equations)
             .def_property("is_active", &Type::is_active, &Type::set_active)
