@@ -743,6 +743,96 @@ public:     // methods
         return m_linear_solver->solver_name();
     }
 
+    void remove_inactive_elements()
+    {
+        index nb_active_elements_f = 0;
+
+        for (const auto& element : m_elements_f) {
+            if (element->is_active()) {
+                nb_active_elements_f += 1;
+            }
+        }
+
+        index nb_active_elements_g = 0;
+
+        for (const auto& element : m_elements_g) {
+            if (element->is_active()) {
+                nb_active_elements_g += 1;
+            }
+        }
+
+        ElementsF elements_f(nb_active_elements_f);
+        ElementsG elements_g(nb_active_elements_g);
+
+        std::vector<index> element_f_nb_variables(nb_active_elements_f);
+        std::vector<index> element_g_nb_variables(nb_active_elements_g);
+        std::vector<index> element_g_nb_equations(nb_active_elements_g);
+        
+        std::vector<std::vector<Index>> element_f_variable_indices(nb_active_elements_f);
+        std::vector<std::vector<Index>> element_g_equation_indices(nb_active_elements_g);
+        std::vector<std::vector<Index>> element_g_variable_indices(nb_active_elements_g);
+
+        index max_element_n = 0;
+        index max_element_m = 0;
+
+        {
+            index j = 0;
+
+            for (index i = 0; i < length(m_elements_f); i++) {
+                if (!m_elements_f[i]->is_active()) {
+                    continue;
+                }
+
+                max_element_n = std::max(max_element_n, m_elements_f[i]->nb_variables());
+
+                element_f_nb_variables[j] = m_element_f_nb_variables[i];
+
+                element_f_variable_indices[j] = std::move(m_element_f_variable_indices[i]);
+
+                elements_f[j] = std::move(m_elements_f[i]);
+
+                j += 1;
+            }
+        }
+        
+        {
+            index j = 0;
+
+            for (index i = 0; i < length(m_elements_g); i++) {
+                if (!m_elements_g[i]->is_active()) {
+                    continue;
+                }
+
+                max_element_n = std::max(max_element_n, m_elements_g[i]->nb_variables());
+                max_element_m = std::max(max_element_m, m_elements_g[i]->nb_equations());
+
+                element_g_nb_variables[j] = element_g_nb_variables[i];
+
+                element_g_nb_equations[j] = element_g_nb_equations[i];
+                element_g_variable_indices[j] = std::move(element_g_variable_indices[i]);
+                element_g_equation_indices[j] = std::move(element_g_equation_indices[i]);
+
+                elements_g[j] = std::move(m_elements_g[i]);
+
+                j += 1;
+            }
+        }
+
+        m_max_element_n = max_element_n;
+        m_max_element_m = max_element_m;
+
+        m_element_f_nb_variables = std::move(element_f_nb_variables);
+        m_element_g_nb_equations = std::move(element_g_nb_equations);
+        m_element_g_nb_variables = std::move(element_g_nb_variables);
+
+        m_element_f_variable_indices = std::move(element_f_variable_indices);
+        m_element_g_equation_indices = std::move(element_g_equation_indices);
+        m_element_g_variable_indices = std::move(element_g_variable_indices);
+
+        m_elements_f = std::move(elements_f);
+        m_elements_g = std::move(elements_g);
+    }
+
 public:     // methods: model properties
     int nb_threads() const noexcept
     {
@@ -1141,6 +1231,7 @@ public:     // methods: python
                 py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
             .def("clone", &Type::clone)
+            .def("remove_inactive_elements", &Type::remove_inactive_elements)
             .def("compute", &Type::compute<true>, "order"_a=2, py::call_guard<py::gil_scoped_release>())
             .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
             .def("hm_inv_v", &Type::hm_inv_v)
