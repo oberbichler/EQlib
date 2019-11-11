@@ -82,9 +82,13 @@ private:    // variables
 
     ProblemData m_data;
 
-    std::unique_ptr<LinearSolver> m_linear_solver;
+    Pointer<LinearSolver> m_linear_solver;
 
 public:     // constructors
+    Problem()
+    {
+    }
+
     Problem(ElementsF elements_f, ElementsG elements_g, const index nb_threads=1)
     : m_elements_f(std::move(elements_f))
     , m_elements_g(std::move(elements_g))
