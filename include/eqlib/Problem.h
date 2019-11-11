@@ -115,17 +115,10 @@ public:     // constructors
         m_element_g_nb_variables.resize(nb_elements_g);
         m_element_g_nb_equations.resize(nb_elements_g);
 
-        std::vector<Variables> variables_f(nb_elements_f);
-
-        std::vector<Equations> equations_g(nb_elements_g);
-        std::vector<Variables> variables_g(nb_elements_g);
-
         for (index i = 0; i < nb_elements_f; i++) {
             const auto& element = *m_elements_f[i];
 
-            variables_f[i] = element.variables();
-
-            const index nb_variables = length(variables_f[i]);
+            const index nb_variables = element.nb_variables();
 
             m_element_f_nb_variables[i] = nb_variables;
             m_max_element_n = std::max(m_max_element_n, nb_variables);
@@ -134,11 +127,8 @@ public:     // constructors
         for (index i = 0; i < nb_elements_g; i++) {
             const auto& element = *m_elements_g[i];
 
-            equations_g[i] = element.equations();
-            variables_g[i] = element.variables();
-
-            const index nb_equations = length(equations_g[i]);
-            const index nb_variables = length(variables_g[i]);
+            const index nb_equations = element.nb_equations();
+            const index nb_variables = element.nb_variables();
 
             m_element_g_nb_variables[i] = nb_variables;
             m_element_g_nb_equations[i] = nb_equations;
@@ -152,8 +142,8 @@ public:     // constructors
 
         tsl::robin_set<Pointer<Equation>> equation_set;
 
-        for (const auto& equations : equations_g) {
-            for (const auto& equation : equations) {
+        for (const auto& element : m_elements_g) {
+            for (const auto& equation : element->equations()) {
                 if (!equation->is_active()) {
                     continue;
                 }
@@ -171,8 +161,8 @@ public:     // constructors
 
         tsl::robin_set<Pointer<Variable>> variable_set;
 
-        for (const auto& variables : variables_f) {
-            for (const auto& variable : variables) {
+        for (const auto& element : m_elements_f) {
+            for (const auto& variable : element->variables()) {
                 if (!variable->is_active()) {
                     continue;
                 }
@@ -185,8 +175,8 @@ public:     // constructors
             }
         }
 
-        for (const auto& variables : variables_g) {
-            for (const auto& variable : variables) {
+        for (const auto& element : m_elements_g) {
+            for (const auto& variable : element->variables()) {
                 if (!variable->is_active()) {
                     continue;
                 }
@@ -237,7 +227,7 @@ public:     // constructors
         {
             #pragma omp for schedule(guided, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f; i++) {
-                const auto& variables = variables_f[i];
+                const auto& variables = m_elements_f[i]->variables();
 
                 std::vector<Index> variable_indices;
                 variable_indices.reserve(variables.size());
@@ -263,7 +253,7 @@ public:     // constructors
 
             #pragma omp for schedule(guided, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g; i++) {
-                const auto& equations = equations_g[i];
+                const auto& equations = m_elements_g[i]->equations();
 
                 std::vector<Index> equation_indices;
                 equation_indices.reserve(equations.size());
@@ -287,7 +277,7 @@ public:     // constructors
 
             #pragma omp for schedule(guided, m_grainsize)
             for (index i = 0; i < nb_elements_g; i++) {
-                const auto& variables = variables_g[i];
+                const auto& variables = m_elements_g[i]->variables();
 
                 std::vector<Index> variable_indices;
                 variable_indices.reserve(variables.size());
