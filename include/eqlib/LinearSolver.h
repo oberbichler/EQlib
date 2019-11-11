@@ -8,6 +8,9 @@ namespace eqlib {
 
 class LinearSolver
 {
+public:     // constructors
+    virtual ~LinearSolver() = default;
+
 public:     // methods
     virtual std::string solver_name() const = 0;
 
