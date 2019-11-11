@@ -10,7 +10,7 @@ namespace eqlib {
 
 class Constraint
 {
-private:    // variables
+protected:  // variables
     bool m_is_active;
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
