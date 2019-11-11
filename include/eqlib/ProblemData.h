@@ -11,12 +11,12 @@ private:    // variables
     index m_m;
     index m_nb_nonzeros_dg;
     index m_nb_nonzeros_hm;
-    std::vector<double> m_values;
+    Vector m_values;
 
 public:     // variables
     double m_computation_time;
     double m_assemble_time;
-    std::vector<double> m_buffer;
+    Vector m_buffer;
 
 public:     // constructor
     ProblemData() : m_computation_time(0), m_assemble_time(0)
@@ -36,13 +36,19 @@ public:     // methods
 
     void set_zero()
     {
-        std::fill(m_values.begin(), m_values.end(), 0);
-        std::fill(m_buffer.begin(), m_buffer.end(), 0);
+        m_values.setZero();
+        m_buffer.setZero();
         m_computation_time = 0.0;
         m_assemble_time = 0.0;
     }
 
-    void resize(const index n, const index m, const index nb_nonzeros_dg, const index nb_nonzeros_hm, const index max_element_n, const index max_element_m)
+    void resize(
+        const index n,
+        const index m,
+        const index nb_nonzeros_dg,
+        const index nb_nonzeros_hm,
+        const index max_element_n,
+        const index max_element_m)
     {
         m_n = n;
         m_m = m;
@@ -83,14 +89,14 @@ public:     // methods
         return m_values[1 + i];
     }
 
-    Map<Vector> g() noexcept
+    Ref<Vector> g() noexcept
     {
-        return Map<Vector>(m_values.data() + 1, m_m);
+        return m_values.segment(1, m_m);
     }
 
-    Map<const Vector> g() const noexcept
+    Ref<const Vector> g() const noexcept
     {
-        return Map<const Vector>(m_values.data() + 1, m_m);
+        return m_values.segment(1, m_m);
     }
 
     double& df(const index i) noexcept
@@ -105,36 +111,36 @@ public:     // methods
         return m_values[1 + m_m + i];
     }
 
-    Map<Vector> df() noexcept
+    Ref<Vector> df() noexcept
     {
-        return Map<Vector>(m_values.data() + 1 + m_m, m_n);
+        return m_values.segment(1 + m_m, m_n);
     }
 
-    Map<const Vector> df() const noexcept
+    Ref<const Vector> df() const noexcept
     {
-        return Map<const Vector>(m_values.data() + 1 + m_m, m_n);
+        return m_values.segment(1 + m_m, m_n);
     }
 
-    double& dg(const index i) noexcept
+    double& dg_value(const index i) noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_dg);
         return m_values[1 + m_m + m_n + i];
     }
 
-    double dg(const index i) const noexcept
+    double dg_value(const index i) const noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_dg);
         return m_values[1 + m_m + m_n + i];
     }
 
-    Map<Vector> dg() noexcept
+    Ref<Vector> dg_values() noexcept
     {
-        return Map<Vector>(m_values.data() + 1 + m_m + m_n, m_nb_nonzeros_dg);
+        return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
     }
 
-    Map<const Vector> dg() const noexcept
+    Ref<const Vector> dg_values() const noexcept
     {
-        return Map<const Vector>(m_values.data() + 1 + m_m + m_n, m_nb_nonzeros_dg);
+        return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
     }
 
     const double* dg_ptr() const noexcept
@@ -142,13 +148,13 @@ public:     // methods
         return m_values.data() + 1 + m_m + m_n;
     }
 
-    double& hm(const index i) noexcept
+    double& hm_value(const index i) noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_hm);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
     }
 
-    double hm(const index i) const noexcept
+    double hm_value(const index i) const noexcept
     {
         assert(0 <= i && i < m_nb_nonzeros_hm);
         return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
@@ -159,17 +165,22 @@ public:     // methods
         return m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg;
     }
 
-    Map<Vector> hm() noexcept
+    Ref<Vector> hm_values() noexcept
     {
-        return Map<Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
+        return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
     }
 
-    Map<const Vector> hm() const noexcept
+    Ref<const Vector> hm_values() const noexcept
     {
-        return Map<const Vector>(m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
+        return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
     }
 
-    const std::vector<double> values() const
+    Ref<Vector> values()
+    {
+        return m_values;
+    }
+
+    Ref<const Vector> values() const
     {
         return m_values;
     }
@@ -188,9 +199,7 @@ public:     // methods
     {
         assert(length(m_values) == length(rhs.m_values));
 
-        for (index i = 0; i < length(m_values); i++) {
-            m_values[i] += rhs.m_values[i];
-        }
+        m_values += rhs.m_values;
 
         m_computation_time += rhs.m_computation_time;
         m_assemble_time += rhs.m_assemble_time;

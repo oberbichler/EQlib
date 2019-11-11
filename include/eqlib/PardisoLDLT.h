@@ -87,13 +87,13 @@ public:     // methods
         return "MKL Pardiso";
     }
 
-    bool analyze(Ref<const Sparse> a) override
+    bool analyze(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) override
     {
         if (m_is_analyzed) {
             return false;
         }
 
-        m_n = a.rows();
+        m_n = ia.size() - 1;
         m_perm.resize(m_n);
 
         MKL_INT error = pardiso(
@@ -103,9 +103,9 @@ public:     // methods
             m_mtype,            // mtype
             11,                 // phase
             m_n,                // n
-            a.valuePtr(),       // a
-            a.outerIndexPtr(),  // ia
-            a.innerIndexPtr(),  // ja
+            a.data(),           // a
+            ia.data(),          // ia
+            ja.data(),          // ja
             m_perm.data(),      // perm
             0,                  // nrhs
             m_iparm.data(),     // iparm
@@ -119,9 +119,9 @@ public:     // methods
         return (error != 0);
     }
 
-    bool factorize(Ref<const Sparse> a) override
+    bool factorize(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) override
     {
-        if (analyze(a)) {
+        if (analyze(ia, ja, a)) {
             return true;
         }
 
@@ -132,9 +132,9 @@ public:     // methods
             m_mtype,            // mtype
             22,                 // phase
             m_n,                // n
-            a.valuePtr(),       // a
-            a.outerIndexPtr(),  // ia
-            a.innerIndexPtr(),  // ja
+            a.data(),           // a
+            ia.data(),          // ia
+            ja.data(),          // ja
             m_perm.data(),      // perm
             0,                  // nrhs
             m_iparm.data(),     // iparm
@@ -146,7 +146,7 @@ public:     // methods
         return (error != 0);
     }
 
-    bool solve(Ref<const Sparse> a, Ref<const Vector> b, Ref<Vector> x) override
+    bool solve(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a, Ref<const Vector> b, Ref<Vector> x) override
     {
         MKL_INT error = pardiso(
             const_cast<_MKL_DSS_HANDLE_t*>(m_pt.data()),    // pt
@@ -155,9 +155,9 @@ public:     // methods
             m_mtype,                                        // mtype
             33,                                             // phase
             m_n,                                            // n
-            a.valuePtr(),                                   // a
-            a.outerIndexPtr(),                              // ia
-            a.innerIndexPtr(),                              // ja
+            a.data(),                                       // a
+            ia.data(),                                      // ia
+            ja.data(),                                      // ja
             const_cast<MKL_INT*>(m_perm.data()),            // perm
             1,                                              // nrhs
             const_cast<MKL_INT*>(m_iparm.data()),           // iparm
