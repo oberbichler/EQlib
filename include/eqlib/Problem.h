@@ -226,80 +226,84 @@ public:     // constructors
         // variable indices f
 
         m_element_f_variable_indices.resize(nb_elements_f);
-
-        for (index i = 0; i < nb_elements_f; i++) {
-            const auto& variables = variables_f[i];
-
-            std::vector<Index> variable_indices;
-            variable_indices.reserve(variables.size());
-
-            for (index local = 0; local < length(variables); local++) {
-                const auto& variable = variables[local];
-
-                if (!variable->is_active()) {
-                    continue;
-                }
-
-                const auto global = m_variable_indices[variable];
-
-                variable_indices.emplace_back(local, global);
-            }
-
-            std::sort(variable_indices.begin(), variable_indices.end());
-
-            m_element_f_variable_indices[i] = std::move(variable_indices);
-        }
-
-        // equation indices g
-
         m_element_g_equation_indices.resize(nb_elements_g);
-
-        for (index i = 0; i < nb_elements_g; i++) {
-            const auto& equations = equations_g[i];
-
-            std::vector<Index> equation_indices;
-            equation_indices.reserve(equations.size());
-
-            for (index local = 0; local < length(equations); local++) {
-                const auto& equation = equations[local];
-
-                if (!equation->is_active()) {
-                    continue;
-                }
-
-                const auto global = m_equation_indices[equation];
-
-                equation_indices.emplace_back(local, global);
-            }
-
-            m_element_g_equation_indices[i] = std::move(equation_indices);
-        }
-
-        // variable indices g
-
         m_element_g_variable_indices.resize(nb_elements_g);
 
-        for (index i = 0; i < nb_elements_g; i++) {
-            const auto& variables = variables_g[i];
+        #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads)
+        {
+            #pragma omp for schedule(guided, m_grainsize) nowait
+            for (index i = 0; i < nb_elements_f; i++) {
+                const auto& variables = variables_f[i];
 
-            std::vector<Index> variable_indices;
-            variable_indices.reserve(variables.size());
+                std::vector<Index> variable_indices;
+                variable_indices.reserve(variables.size());
 
-            for (index local = 0; local < length(variables); local++) {
-                const auto& variable = variables[local];
+                for (index local = 0; local < length(variables); local++) {
+                    const auto& variable = variables[local];
 
-                if (!variable->is_active()) {
-                    continue;
+                    if (!variable->is_active()) {
+                        continue;
+                    }
+
+                    const auto global = m_variable_indices[variable];
+
+                    variable_indices.emplace_back(local, global);
                 }
 
-                const auto global = m_variable_indices[variable];
+                std::sort(variable_indices.begin(), variable_indices.end());
 
-                variable_indices.emplace_back(local, global);
+                m_element_f_variable_indices[i] = std::move(variable_indices);
             }
 
-            std::sort(variable_indices.begin(), variable_indices.end());
+            // equation indices g
 
-            m_element_g_variable_indices[i] = std::move(variable_indices);
+            #pragma omp for schedule(guided, m_grainsize) nowait
+            for (index i = 0; i < nb_elements_g; i++) {
+                const auto& equations = equations_g[i];
+
+                std::vector<Index> equation_indices;
+                equation_indices.reserve(equations.size());
+
+                for (index local = 0; local < length(equations); local++) {
+                    const auto& equation = equations[local];
+
+                    if (!equation->is_active()) {
+                        continue;
+                    }
+
+                    const auto global = m_equation_indices[equation];
+
+                    equation_indices.emplace_back(local, global);
+                }
+
+                m_element_g_equation_indices[i] = std::move(equation_indices);
+            }
+
+            // variable indices g
+
+            #pragma omp for schedule(guided, m_grainsize)
+            for (index i = 0; i < nb_elements_g; i++) {
+                const auto& variables = variables_g[i];
+
+                std::vector<Index> variable_indices;
+                variable_indices.reserve(variables.size());
+
+                for (index local = 0; local < length(variables); local++) {
+                    const auto& variable = variables[local];
+
+                    if (!variable->is_active()) {
+                        continue;
+                    }
+
+                    const auto global = m_variable_indices[variable];
+
+                    variable_indices.emplace_back(local, global);
+                }
+
+                std::sort(variable_indices.begin(), variable_indices.end());
+
+                m_element_g_variable_indices[i] = std::move(variable_indices);
+            }
         }
 
 
