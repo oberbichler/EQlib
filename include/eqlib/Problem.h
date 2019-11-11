@@ -311,37 +311,59 @@ public:     // constructors
         std::vector<std::set<index>> m_pattern_dg(m);
         std::vector<std::set<index>> m_pattern_hm(n);
 
-        for (index i = 0; i < length(m_elements_f); i++) {
-            const auto& variable_indices = m_element_f_variable_indices[i];
+        #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads)
+        {
+            std::vector<tsl::robin_set<index>> pattern_dg(m);
+            std::vector<tsl::robin_set<index>> pattern_hm(n);
 
-            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                const auto row = variable_indices[row_i];
+            #pragma omp for schedule(guided, m_grainsize) nowait
+            for (index i = 0; i < length(m_elements_f); i++) {
+                const auto& variable_indices = m_element_f_variable_indices[i];
 
-                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                    const auto col = variable_indices[col_i];
+                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                    const auto row = variable_indices[row_i];
 
-                    m_pattern_hm[row.global].insert(col.global);
-                }
-            }
-        }
+                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                        const auto col = variable_indices[col_i];
 
-        for (index i = 0; i < length(m_elements_g); i++) {
-            const auto& equation_indices = m_element_g_equation_indices[i];
-            const auto& variable_indices = m_element_g_variable_indices[i];
-
-            for (const auto row : equation_indices) {
-                for (const auto col : variable_indices) {
-                    m_pattern_dg[row.global].insert(col.global);
+                        pattern_hm[row.global].insert(col.global);
+                    }
                 }
             }
 
-            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                const auto row = variable_indices[row_i];
+            #pragma omp for schedule(guided, m_grainsize) nowait
+            for (index i = 0; i < length(m_elements_g); i++) {
+                const auto& equation_indices = m_element_g_equation_indices[i];
+                const auto& variable_indices = m_element_g_variable_indices[i];
 
-                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                    const auto col = variable_indices[col_i];
+                for (const auto row : equation_indices) {
+                    for (const auto col : variable_indices) {
+                        pattern_dg[row.global].insert(col.global);
+                    }
+                }
 
-                    m_pattern_hm[row.global].insert(col.global);
+                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                    const auto row = variable_indices[row_i];
+
+                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                        const auto col = variable_indices[col_i];
+
+                        pattern_hm[row.global].insert(col.global);
+                    }
+                }
+            }
+
+            #pragma omp critical
+            for (index i = 0; i < pattern_hm.size(); i++) {
+                for (const auto j : pattern_hm[i]) {
+                    m_pattern_hm[i].insert(j);
+                }
+            }
+
+            #pragma omp critical
+            for (index i = 0; i < pattern_dg.size(); i++) {
+                for (const auto j : pattern_dg[i]) {
+                    m_pattern_dg[i].insert(j);
                 }
             }
         }
