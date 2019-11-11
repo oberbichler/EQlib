@@ -8,6 +8,8 @@
 
 #include <eqlib/Constraint.h>
 #include <eqlib/Equation.h>
+#include <eqlib/LambdaConstraint.h>
+#include <eqlib/LambdaObjective.h>
 #include <eqlib/Log.h>
 #include <eqlib/Objective.h>
 #include <eqlib/Problem.h>
@@ -60,11 +62,29 @@ PYBIND11_MODULE(eqlib, m) {
 
     // --- core
 
+    // Equation
+    eqlib::Equation::register_python(m);
+
+    // Variable
+    eqlib::Variable::register_python(m);
+
+
     // Constraint
     eqlib::Constraint::register_python(m);
 
-    // Equation
-    eqlib::Equation::register_python(m);
+    // Objective
+    eqlib::Objective::register_python(m);
+
+    // LambdaConstraint
+    eqlib::LambdaConstraint::register_python(m);
+
+    // LambdaObjective
+    eqlib::LambdaObjective::register_python(m);
+
+
+    // Problem
+    eqlib::Problem::register_python(m);
+
 
     // Log
     eqlib::Log::register_python(m);
@@ -72,17 +92,8 @@ PYBIND11_MODULE(eqlib, m) {
     // Node
     eqlib::Node::register_python(m);
 
-    // Objective
-    eqlib::Objective::register_python(m);
-
-    // Problem
-    eqlib::Problem::register_python(m);
-
     // Timer
     eqlib::Timer::register_python(m);
-
-    // Variable
-    eqlib::Variable::register_python(m);
 
 
     // --- solver
