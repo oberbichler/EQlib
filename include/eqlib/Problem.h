@@ -82,9 +82,13 @@ private:    // variables
 
     ProblemData m_data;
 
-    std::unique_ptr<LinearSolver> m_linear_solver;
+    Pointer<LinearSolver> m_linear_solver;
 
 public:     // constructors
+    Problem()
+    {
+    }
+
     Problem(ElementsF elements_f, ElementsG elements_g, const index nb_threads=1)
     : m_elements_f(std::move(elements_f))
     , m_elements_g(std::move(elements_g))
@@ -433,17 +437,17 @@ private:    // methods: computation
             return;
         }
 
-            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                const auto row = variable_indices[row_i];
+        for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+            const auto row = variable_indices[row_i];
 
-                data.df(row.global) += g(row.local);
+            data.df(row.global) += g(row.local);
 
             if constexpr(TOrder < 2) {
                 return;
             }
 
-                for (index col_i = row_i; col_i != length(variable_indices); ++col_i) {
-                    const auto col = variable_indices[col_i];
+            for (index col_i = row_i; col_i != length(variable_indices); ++col_i) {
+                const auto col = variable_indices[col_i];
 
                 index index = m_structure_hm.get_index(row.global, col.global);
 
@@ -513,19 +517,19 @@ private:    // methods: computation
 
             local_h *= equation->multiplier();
 
-                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                const auto row = variable_indices[row_i];
 
-                    const index dg_value_i = m_structure_dg.get_index(equation_index.global, row.global);
+                const index dg_value_i = m_structure_dg.get_index(equation_index.global, row.global);
 
-                    data.dg_value(dg_value_i) += local_g(row.local);
+                data.dg_value(dg_value_i) += local_g(row.local);
 
                 if constexpr(TOrder < 2) {
                     return;
                 }
 
-                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                        const auto col = variable_indices[col_i];
+                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                    const auto col = variable_indices[col_i];
 
                     const index hm_value_i = m_structure_hm.get_index(row.global, col.global);
 
@@ -721,10 +725,18 @@ public:     // methods
         }
     }
 
-    // Pointer<Problem> clone() const
-    // {
-    //     return new_<Problem>(*this);
-    // }
+    Pointer<Problem> clone() const
+    {
+        auto new_problem = new_<Problem>(*this);
+
+        #ifdef EQLIB_USE_MKL
+        new_problem->m_linear_solver = new_<PardisoLDLT>();
+        #else
+        new_problem->m_linear_solver = new_<SimplicialLDLT>();
+        #endif
+
+        return new_problem;
+    }
 
     std::string solver_name() const
     {
@@ -1128,7 +1140,7 @@ public:     // methods: python
             .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_),
                 py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
-            // // .def("clone", &Type::clone)
+            .def("clone", &Type::clone)
             .def("compute", &Type::compute<true>, "order"_a=2, py::call_guard<py::gil_scoped_release>())
             .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
             .def("hm_inv_v", &Type::hm_inv_v)
