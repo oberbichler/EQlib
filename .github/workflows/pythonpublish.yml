@@ -29,8 +29,10 @@ jobs:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
+        $env:MKL_ROOT=python -c "from sysconfig import get_paths as gp; print(gp()['data'])"
         python setup.py bdist_wheel
         twine upload dist/*.whl
+      shell: pwsh
   deploy_linux:
     name: Build package on python ${{ matrix.python-version }} and ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
