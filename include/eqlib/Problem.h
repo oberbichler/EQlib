@@ -405,6 +405,10 @@ private:    // methods: computation
 
         const auto& variable_indices = m_element_f_variable_indices[i];
 
+        if (variable_indices.empty()) {
+            return;
+        }
+
         const auto n = m_element_f_nb_variables[i];
 
         index size_g = TOrder > 0 ? n : 0;
@@ -462,12 +466,12 @@ private:    // methods: computation
         const auto& equation_indices = m_element_g_equation_indices[i];
         const auto& variable_indices = m_element_g_variable_indices[i];
 
-        const auto m = m_element_g_nb_equations[i];
-        const auto n = m_element_g_nb_variables[i];
-
-        if (n == 0 || m == 0) { // FIXME: check reduces counts
+        if (equation_indices.empty() || variable_indices.empty()) {
             return;
         }
+
+        const auto m = m_element_g_nb_equations[i];
+        const auto n = m_element_g_nb_variables[i];
 
         Timer timer_element_allocate;
 
@@ -746,7 +750,7 @@ public:     // methods
         ElementsF elements_f(nb_active_elements_f);
 
         std::vector<index> element_f_nb_variables(nb_active_elements_f);
-        
+
         std::vector<std::vector<Index>> element_f_variable_indices(nb_active_elements_f);
 
         index max_element_n = 0;
@@ -792,7 +796,7 @@ public:     // methods
 
         std::vector<index> element_g_nb_variables(nb_active_elements_g);
         std::vector<index> element_g_nb_equations(nb_active_elements_g);
-        
+
         std::vector<std::vector<Index>> element_g_equation_indices(nb_active_elements_g);
         std::vector<std::vector<Index>> element_g_variable_indices(nb_active_elements_g);
 
