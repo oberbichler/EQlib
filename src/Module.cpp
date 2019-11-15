@@ -24,6 +24,7 @@
 #include <eqlib/Worhp.h>
 #endif
 
+#include <eqlib/objectives/IgaPointSupport.h>
 #include <eqlib/objectives/IgaPointSupportAD.h>
 #include <eqlib/objectives/IgaShell3PAD.h>
 #include <eqlib/objectives/IgaShell3PRefAD.h>
@@ -117,6 +118,9 @@ PYBIND11_MODULE(eqlib, m) {
 
 
     // --- objectives
+
+    // IgaPointSupport
+    eqlib::IgaPointSupport::register_python(m);
 
     // IgaShell3PAD
     eqlib::IgaShell3PAD::register_python(m);
