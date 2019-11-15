@@ -275,8 +275,8 @@ public:     // constructor
                 }
             }
 
-            const Vector3D N_ca = dm * e_ca;
-            const Vector3D M_ca = db * k_ca;
+            const Vector3D n_ca = dm * e_ca;
+            const Vector3D m_ca = db * k_ca;
 
             for(index r = 0; r < nb_dofs; r++) {
                 const Vector3D dN_ca = dm * s_de_ca[r];
@@ -285,20 +285,20 @@ public:     // constructor
                 if constexpr(TOrder > 1) {
                     for (index s = 0; s < nb_dofs; s++) {
                         // membrane stiffness
-                        const double S_kem = dN_ca.dot(s_de_ca[s]) + N_ca.dot(s_dde_ca[r * nb_dofs + s]);
+                        const double S_kem = dN_ca.dot(s_de_ca[s]) + n_ca.dot(s_dde_ca[r * nb_dofs + s]);
 
                         // bending stiffness
-                        const double S_keb = dM_ca.dot(s_dk_ca[s]) + M_ca.dot(s_ddk_ca[r * nb_dofs + s]);
+                        const double S_keb = dM_ca.dot(s_dk_ca[s]) + m_ca.dot(s_ddk_ca[r * nb_dofs + s]);
 
-                        h(r, s) = (S_kem + S_keb) * weight;
+                        h(r, s) += (S_kem + S_keb) * weight;
 
                         // symmetry
-                        h(s, r) = h(r, s);
+                        h(s, r) += (S_kem + S_keb) * weight;
                     }
                 }
 
                 if constexpr(TOrder > 0) {
-                    g[r] = weight * (N_ca.dot(s_de_ca[r]) + M_ca.dot(s_dk_ca[r]));
+                    g[r] += weight * (n_ca.dot(s_de_ca[r]) + m_ca.dot(s_dk_ca[r]));
                 }
             }
         }
