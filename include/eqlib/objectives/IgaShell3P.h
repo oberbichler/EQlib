@@ -226,7 +226,7 @@ public:     // constructor
                 const index node_index_r = r / 3;
                 const index dof_type_r = r % 3;
 
-                for (index s = 0; s <= r; s++) {
+                for (index s = r; s < nb_dofs; s++) {
                     const index node_index_s = s / 3;
                     const index dof_type_s = s % 3;
 
