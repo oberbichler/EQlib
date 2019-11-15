@@ -196,11 +196,9 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = eqlib::NewtonRaphson;
-
         py::class_<Type>(m, "NewtonRaphson")
             .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
-            .def("run", &Type::run)
+            .def("run", &Type::run, py::call_guard<py::gil_scoped_release>())
             // properties
             .def_property("damping", &Type::damping, &Type::set_damping)
             .def_property("maxiter", &Type::maxiter, &Type::set_maxiter)
