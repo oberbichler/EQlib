@@ -289,11 +289,11 @@ public:     // constructor
                 const Vector3D dm_ca = db * s_dk_ca[r];
 
                 if constexpr(TOrder > 0) {
-                    g[r] += weight * (n_ca.dot(s_de_ca[r]) + m_ca.dot(s_dk_ca[r]));
+                    g[r] += (n_ca.dot(s_de_ca[r]) + m_ca.dot(s_dk_ca[r])) * weight;
                 }
 
                 if constexpr(TOrder > 1) {
-                    for (index s = 0; s < nb_dofs; s++) {
+                    for (index s = r; s < nb_dofs; s++) {
                         // membrane stiffness
                         const double s_kem = dn_ca.dot(s_de_ca[s]) + n_ca.dot(s_dde_ca[r * nb_dofs + s]);
 
