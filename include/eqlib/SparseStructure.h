@@ -2,7 +2,7 @@
 
 #include "Define.h"
 
-#include <tsl/robin_map.h>
+#include <sparsehash/dense_hash_map>
 
 #include <vector>
 
@@ -16,7 +16,7 @@ private:    // variables
     TIndex m_cols;
     std::vector<TIndex> m_ia;
     std::vector<TIndex> m_ja;
-    std::vector<tsl::robin_map<TIndex, index>> m_indices;
+    std::vector<google::dense_hash_map<TIndex, index>> m_indices;
 
 public:     // methods
     TIndex rows() const noexcept
@@ -133,7 +133,8 @@ public:     // methods
             m_indices.resize(TRowMajor ? rows : cols);
 
             for (index i = 0; i < (TRowMajor ? rows : cols); i++) {
-                m_indices[i].reserve(m_ia[i + 1] - m_ia[i]);
+                m_indices[i].set_empty_key(-1);
+                m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
                 for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
                     const index j = m_ja[k];
                     m_indices[i][j] = k;
