@@ -31,7 +31,6 @@ jobs:
       run: |
         $env:MKL_ROOT=python -c "from sysconfig import get_paths as gp; print(gp()['data'])"
         python setup.py bdist_wheel
-        python -c "import eqlib; print(eqlib._USE_MKL)"
         twine upload dist/*.whl
       shell: pwsh
   deploy_linux:
