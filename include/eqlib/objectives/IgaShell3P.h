@@ -290,16 +290,19 @@ public:     // constructor
                         // bending stiffness
                         const double s_keb = dm_ca.dot(s_dk_ca[s]) + m_ca.dot(s_ddk_ca[r * nb_dofs + s]);
 
-                        h(r, s) += (s_kem + s_keb) * weight;
-
-                        // symmetry
-                        h(s, r) += (s_kem + s_keb) * weight;
+                        h(r, s) += (s_kem + s_keb) * weight;;
                     }
                 }
 
                 if constexpr(TOrder > 0) {
                     g[r] += weight * (n_ca.dot(s_de_ca[r]) + m_ca.dot(s_dk_ca[r]));
                 }
+            }
+        }
+        
+        for (index r = 0; r < nb_dofs; r++) {
+            for (index s = 0; s < r; s++) {
+                h(r, s) = h(s, r);
             }
         }
 
