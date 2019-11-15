@@ -20,18 +20,18 @@ private:    // types
     {
         Configuration(const Vector3D& a1, const Vector3D& a2, const Vector3D& a1_1, const Vector3D& a1_2, const Vector3D& a2_2)
         {
-            this->a11 = a1.dot(a1);
-            this->a12 = a1.dot(a2);
-            this->a22 = a2.dot(a2);
+            a11 = a1.dot(a1);
+            a12 = a1.dot(a2);
+            a22 = a2.dot(a2);
 
             a1_x_a2 = a1.cross(a2);
             da = a1.cross(a2).norm();
 
             a3 = a1_x_a2 / da;
 
-            this->b22 = a1_1.dot(a3);
-            this->b22 = a1_2.dot(a3);
-            this->b22 = a2_2.dot(a3);
+            b22 = a1_1.dot(a3);
+            b22 = a1_2.dot(a3);
+            b22 = a2_2.dot(a3);
 
             const Vector3D e1 = a1.normalized();
             const Vector3D e2 = (a2 - a2.dot(e1) * e1).normalized();
