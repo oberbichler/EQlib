@@ -290,7 +290,7 @@ public:     // constructor
                         // bending stiffness
                         const double s_keb = dm_ca.dot(s_dk_ca[s]) + m_ca.dot(s_ddk_ca[r * nb_dofs + s]);
 
-                        h(r, s) += (s_kem + s_keb) * weight;;
+                        h(r, s) += (s_kem + s_keb) * weight;
                     }
                 }
 
