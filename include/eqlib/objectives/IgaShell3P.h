@@ -192,11 +192,11 @@ public:     // constructor
                 const index node_index_r = r / 3;
                 const index dof_type_r = r % 3;
 
-                Vector3D S_dg_1 = Vector3D::Zero();
-                Vector3D S_dg_2 = Vector3D::Zero();
+                Vector3D s_dg_1 = Vector3D::Zero();
+                Vector3D s_dg_2 = Vector3D::Zero();
 
-                S_dg_1[dof_type_r] = shape_functions(1, node_index_r);
-                S_dg_2[dof_type_r] = shape_functions(2, node_index_r);
+                s_dg_1[dof_type_r] = shape_functions(1, node_index_r);
+                s_dg_2[dof_type_r] = shape_functions(2, node_index_r);
 
                 // strain
                 Vector3D de_cu;
@@ -207,19 +207,19 @@ public:     // constructor
                 s_de_ca[r] = ref.tm * de_cu;
 
                 // curvature
-                s_dg3[r] = S_dg_1.cross(act_a2) + act_a1.cross(S_dg_2);
+                s_dg3[r] = s_dg_1.cross(act_a2) + act_a1.cross(s_dg_2);
 
                 s_g3dg3[r] = ref.a1_x_a2.dot(s_dg3[r]);
                 s_g3dg3lg3_3[r] = s_g3dg3[r] / std::pow(ref.da, 3);
 
                 s_dn[r] = s_dg3[r] / ref.da - ref.a1_x_a2 * s_g3dg3lg3_3[r];
 
-                Vector3D dK_cu;
-                dK_cu[0] = shape_functions(3, node_index_r) * act.a3[dof_type_r] + act_a1_1.dot(s_dn[r]);
-                dK_cu[1] = shape_functions(4, node_index_r) * act.a3[dof_type_r] + act_a1_2.dot(s_dn[r]);
-                dK_cu[2] = shape_functions(5, node_index_r) * act.a3[dof_type_r] + act_a2_2.dot(s_dn[r]);
+                Vector3D dk_cu;
+                dk_cu[0] = shape_functions(3, node_index_r) * act.a3[dof_type_r] + act_a1_1.dot(s_dn[r]);
+                dk_cu[1] = shape_functions(4, node_index_r) * act.a3[dof_type_r] + act_a1_2.dot(s_dn[r]);
+                dk_cu[2] = shape_functions(5, node_index_r) * act.a3[dof_type_r] + act_a2_2.dot(s_dn[r]);
 
-                s_dk_ca[r] = ref.tm * dK_cu;
+                s_dk_ca[r] = ref.tm * dk_cu;
             }
 
             for (index r = 0; r < nb_dofs; r++) {
@@ -233,13 +233,13 @@ public:     // constructor
                     // strain
 
                     if (dof_type_r == dof_type_s) {
-                        Vector3D ddE_cu;
+                        Vector3D dde_cu;
 
-                        ddE_cu[0] = shape_functions(1, node_index_r) * shape_functions(1, node_index_s);
-                        ddE_cu[1] = shape_functions(2, node_index_r) * shape_functions(2, node_index_s);
-                        ddE_cu[2] = 0.5 * (shape_functions(1, node_index_r) * shape_functions(2, node_index_s) + shape_functions(2, node_index_r) * shape_functions(1, node_index_s));
+                        dde_cu[0] = shape_functions(1, node_index_r) * shape_functions(1, node_index_s);
+                        dde_cu[1] = shape_functions(2, node_index_r) * shape_functions(2, node_index_s);
+                        dde_cu[2] = 0.5 * (shape_functions(1, node_index_r) * shape_functions(2, node_index_s) + shape_functions(2, node_index_r) * shape_functions(1, node_index_s));
 
-                        s_dde_ca[r * nb_dofs + s] = ref.tm * ddE_cu;
+                        s_dde_ca[r * nb_dofs + s] = ref.tm * dde_cu;
                     } else {
                         s_dde_ca[r * nb_dofs + s].setZero();
                     }
@@ -266,12 +266,12 @@ public:     // constructor
 
                     const Vector3D ddn = ddg3 / ref.da - s_g3dg3lg3_3[s] * s_dg3[r] - s_g3dg3lg3_3[r] * s_dg3[s] + (c + d) * ref.a1_x_a2;
 
-                    Vector3D ddK_cu;
-                    ddK_cu[0] = shape_functions(3, node_index_r) * s_dn[s][dof_type_r] + shape_functions(3, node_index_s) * s_dn[r][dof_type_s] + act_a1_1[0] * ddn[0] + act_a1_1[1] * ddn[1] + act_a1_1[2] * ddn[2];
-                    ddK_cu[1] = shape_functions(4, node_index_r) * s_dn[s][dof_type_r] + shape_functions(4, node_index_s) * s_dn[r][dof_type_s] + act_a1_2[0] * ddn[0] + act_a1_2[1] * ddn[1] + act_a1_2[2] * ddn[2];
-                    ddK_cu[2] = shape_functions(5, node_index_r) * s_dn[s][dof_type_r] + shape_functions(5, node_index_s) * s_dn[r][dof_type_s] + act_a2_2[0] * ddn[0] + act_a2_2[1] * ddn[1] + act_a2_2[2] * ddn[2];
+                    Vector3D ddk_cu;
+                    ddk_cu[0] = shape_functions(3, node_index_r) * s_dn[s][dof_type_r] + shape_functions(3, node_index_s) * s_dn[r][dof_type_s] + act_a1_1[0] * ddn[0] + act_a1_1[1] * ddn[1] + act_a1_1[2] * ddn[2];
+                    ddk_cu[1] = shape_functions(4, node_index_r) * s_dn[s][dof_type_r] + shape_functions(4, node_index_s) * s_dn[r][dof_type_s] + act_a1_2[0] * ddn[0] + act_a1_2[1] * ddn[1] + act_a1_2[2] * ddn[2];
+                    ddk_cu[2] = shape_functions(5, node_index_r) * s_dn[s][dof_type_r] + shape_functions(5, node_index_s) * s_dn[r][dof_type_s] + act_a2_2[0] * ddn[0] + act_a2_2[1] * ddn[1] + act_a2_2[2] * ddn[2];
 
-                    s_ddk_ca[r * nb_dofs + s] = ref.tm * ddK_cu;
+                    s_ddk_ca[r * nb_dofs + s] = ref.tm * ddk_cu;
                 }
             }
 
