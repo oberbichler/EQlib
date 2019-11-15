@@ -58,15 +58,9 @@ public:     // constructor
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
-        double f;
-    
-        if (g.size() != 0) {
+        double f = 0;
             g.setZero();
-        }
-
-        if (h.size() != 0) {
             h.setZero();
-        }
 
         for (const auto& [shape_functions, target] : m_data) {
             const Vector3D act_x = act_geometry(0, shape_functions);
