@@ -552,7 +552,6 @@ public:     // methods: computation
         if constexpr(TParallel) {
             ProblemData local_data(m_data);
 
-            // FIXME: use private(m_data) when msvc supports omp private with member variables
             #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(local_data)
             {
                 #pragma omp for schedule(guided, m_grainsize) nowait
