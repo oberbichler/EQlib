@@ -62,8 +62,8 @@ public:     // constructor
         static_assert(0 <= TOrder && TOrder <= 2);
 
         double f = 0;
-            g.setZero();
-            h.setZero();
+        g.setZero();
+        h.setZero();
 
         for (const auto& [shape_functions, target] : m_data) {
             const Vector3D act_x = act_geometry(0, shape_functions);
@@ -73,27 +73,26 @@ public:     // constructor
             f += delta.dot(delta) * m_weight / 2;
 
             if constexpr(TOrder > 0) {
-            for (index i = 0; i < length(m_nodes); i++) {
-                g(i * 3 + 0) += delta[0] * shape_functions(0, i) * m_weight;
-                g(i * 3 + 1) += delta[1] * shape_functions(0, i) * m_weight;
-                g(i * 3 + 2) += delta[2] * shape_functions(0, i) * m_weight;
-            }
+                for (index i = 0; i < length(m_nodes); i++) {
+                    g(i * 3 + 0) += delta[0] * shape_functions(0, i) * m_weight;
+                    g(i * 3 + 1) += delta[1] * shape_functions(0, i) * m_weight;
+                    g(i * 3 + 2) += delta[2] * shape_functions(0, i) * m_weight;
+                }
             }
 
             if constexpr(TOrder > 1) {
-            for (index i = 0; i < length(m_nodes); i++) {
-                for (index j = 0; j < length(m_nodes); j++) {
-                    h(i * 3 + 0, j * 3 + 0) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
-                    h(i * 3 + 1, j * 3 + 1) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
-                    h(i * 3 + 2, j * 3 + 2) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                for (index i = 0; i < length(m_nodes); i++) {
+                    for (index j = 0; j < length(m_nodes); j++) {
+                        h(i * 3 + 0, j * 3 + 0) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                        h(i * 3 + 1, j * 3 + 1) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                        h(i * 3 + 2, j * 3 + 2) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                    }
                 }
             }
         }
-        }
-        
+
         return f;
     }
-
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
