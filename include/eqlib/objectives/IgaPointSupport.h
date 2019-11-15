@@ -65,7 +65,7 @@ public:     // constructor
         for (const auto& [shape_functions, target] : m_data) {
             const Vector3D act_x = act_geometry(0, shape_functions);
 
-            const Vector3D delta = target - act_x;
+            const Vector3D delta = act_x - target;
 
             f += delta.dot(delta) * m_weight / 2;
 
