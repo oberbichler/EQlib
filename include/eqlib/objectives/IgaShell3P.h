@@ -199,12 +199,12 @@ public:     // constructor
                 S_dg_2[dof_type_r] = shape_functions(2, node_index_r);
 
                 // strain
-                Vector3D dE_cu;
-                dE_cu[0] = shape_functions(1, node_index_r) * act_a1[dof_type_r];
-                dE_cu[1] = shape_functions(2, node_index_r) * act_a2[dof_type_r];
-                dE_cu[2] = 0.5 * (shape_functions(1, node_index_r) * act_a2[dof_type_r] + shape_functions(2, node_index_r) * act_a1[dof_type_r]);
+                Vector3D de_cu;
+                de_cu[0] = shape_functions(1, node_index_r) * act_a1[dof_type_r];
+                de_cu[1] = shape_functions(2, node_index_r) * act_a2[dof_type_r];
+                de_cu[2] = 0.5 * (shape_functions(1, node_index_r) * act_a2[dof_type_r] + shape_functions(2, node_index_r) * act_a1[dof_type_r]);
 
-                s_de_ca[r] = ref.tm * dE_cu;
+                s_de_ca[r] = ref.tm * de_cu;
 
                 // curvature
                 s_dg3[r] = S_dg_1.cross(act_a2) + act_a1.cross(S_dg_2);
