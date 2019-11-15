@@ -278,7 +278,7 @@ public:     // constructor
             const Vector3D n_ca = dm * e_ca;
             const Vector3D m_ca = db * k_ca;
 
-            for(index r = 0; r < nb_dofs; r++) {
+            for (index r = 0; r < nb_dofs; r++) {
                 const Vector3D dn_ca = dm * s_de_ca[r];
                 const Vector3D dm_ca = db * s_dk_ca[r];
 
