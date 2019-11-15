@@ -26,6 +26,7 @@
 
 #include <eqlib/objectives/IgaPointSupport.h>
 #include <eqlib/objectives/IgaPointSupportAD.h>
+#include <eqlib/objectives/IgaShell3P.h>
 #include <eqlib/objectives/IgaShell3PAD.h>
 #include <eqlib/objectives/IgaShell3PRefAD.h>
 #include <eqlib/objectives/IgaShell3PLoadAD.h>
@@ -122,6 +123,9 @@ PYBIND11_MODULE(eqlib, m) {
     // IgaPointSupport
     eqlib::IgaPointSupport::register_python(m);
 
+    // IgaShell3P
+    eqlib::IgaShell3P::register_python(m);
+
     // IgaShell3PAD
     eqlib::IgaShell3PAD::register_python(m);
 
@@ -130,7 +134,6 @@ PYBIND11_MODULE(eqlib, m) {
 
     // IgaShell3PLoadAD
     eqlib::IgaShell3PLoadAD::register_python(m);
-
     // IgaShell3PLoadRefAD
     eqlib::IgaShell3PLoadRefAD::register_python(m);
 
