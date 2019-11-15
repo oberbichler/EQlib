@@ -34,16 +34,17 @@
 
 #include <eqlib/Info.h>
 
-PYBIND11_MODULE(eqlib, m) {
+PYBIND11_MODULE(eqlib, m)
+{
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
     m.doc() = "eqlib by Thomas Oberbichler";
     m.attr("__author__") = "Thomas Oberbichler";
     m.attr("__copyright__") = "Copyright (c) 2018-2019, Thomas Oberbichler";
     m.attr("__version__") = eqlib::Info::version();
     m.attr("__email__") = "thomas.oberbichler@gmail.com";
     m.attr("__status__") = "Development";
-
-    namespace py = pybind11;
-    using namespace pybind11::literals;
 
     m.attr("_GIT_COMMIT_HASH") = eqlib::Info::git_commit_hash();
     m.attr("_USE_BLAS") = eqlib::Info::use_blas();
