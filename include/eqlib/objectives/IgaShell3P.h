@@ -187,6 +187,8 @@ public:     // constructor
 
             const Vector3D e_ca = ref.tm * e_cu;
             const Vector3D k_ca = ref.tm * k_cu;
+
+            f += (e_ca.dot(dm * e_ca) + k_ca.dot(db * k_ca)) * weight / 2;
     
             for (index r = 0; r < nb_dofs; r++) {
                 const index node_index_r = r / 3;
