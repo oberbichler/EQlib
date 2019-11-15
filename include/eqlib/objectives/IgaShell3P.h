@@ -190,90 +190,94 @@ public:     // constructor
 
             f += (e_ca.dot(dm * e_ca) + k_ca.dot(db * k_ca)) * weight / 2;
 
-            for (index r = 0; r < nb_dofs; r++) {
-                const index node_index_r = r / 3;
-                const index dof_type_r = r % 3;
+            if constexpr(TOrder > 0) {
+                for (index r = 0; r < nb_dofs; r++) {
+                    const index node_index_r = r / 3;
+                    const index dof_type_r = r % 3;
 
-                Vector3D s_dg_1 = Vector3D::Zero();
-                Vector3D s_dg_2 = Vector3D::Zero();
+                    Vector3D s_dg_1 = Vector3D::Zero();
+                    Vector3D s_dg_2 = Vector3D::Zero();
 
-                s_dg_1[dof_type_r] = shape_functions(1, node_index_r);
-                s_dg_2[dof_type_r] = shape_functions(2, node_index_r);
-
-                // strain
-                Vector3D de_cu;
-                de_cu[0] = shape_functions(1, node_index_r) * act_a1[dof_type_r];
-                de_cu[1] = shape_functions(2, node_index_r) * act_a2[dof_type_r];
-                de_cu[2] = 0.5 * (shape_functions(1, node_index_r) * act_a2[dof_type_r] + shape_functions(2, node_index_r) * act_a1[dof_type_r]);
-
-                s_de_ca[r] = ref.tm * de_cu;
-
-                // curvature
-                s_dg3[r] = s_dg_1.cross(act_a2) + act_a1.cross(s_dg_2);
-
-                s_g3dg3[r] = act.a1_x_a2.dot(s_dg3[r]);
-                s_g3dg3lg3_3[r] = s_g3dg3[r] / std::pow(ref.da, 3);
-
-                s_dn[r] = s_dg3[r] / ref.da - act.a1_x_a2 * s_g3dg3lg3_3[r];
-
-                Vector3D dk_cu;
-                dk_cu[0] = shape_functions(3, node_index_r) * act.a3[dof_type_r] + act_a1_1.dot(s_dn[r]);
-                dk_cu[1] = shape_functions(4, node_index_r) * act.a3[dof_type_r] + act_a1_2.dot(s_dn[r]);
-                dk_cu[2] = shape_functions(5, node_index_r) * act.a3[dof_type_r] + act_a2_2.dot(s_dn[r]);
-
-                s_dk_ca[r] = ref.tm * dk_cu;
-            }
-
-            for (index r = 0; r < nb_dofs; r++) {
-                const index node_index_r = r / 3;
-                const index dof_type_r = r % 3;
-
-                for (index s = r; s < nb_dofs; s++) {
-                    const index node_index_s = s / 3;
-                    const index dof_type_s = s % 3;
+                    s_dg_1[dof_type_r] = shape_functions(1, node_index_r);
+                    s_dg_2[dof_type_r] = shape_functions(2, node_index_r);
 
                     // strain
+                    Vector3D de_cu;
+                    de_cu[0] = shape_functions(1, node_index_r) * act_a1[dof_type_r];
+                    de_cu[1] = shape_functions(2, node_index_r) * act_a2[dof_type_r];
+                    de_cu[2] = 0.5 * (shape_functions(1, node_index_r) * act_a2[dof_type_r] + shape_functions(2, node_index_r) * act_a1[dof_type_r]);
 
-                    if (dof_type_r == dof_type_s) {
-                        Vector3D dde_cu;
-
-                        dde_cu[0] = shape_functions(1, node_index_r) * shape_functions(1, node_index_s);
-                        dde_cu[1] = shape_functions(2, node_index_r) * shape_functions(2, node_index_s);
-                        dde_cu[2] = 0.5 * (shape_functions(1, node_index_r) * shape_functions(2, node_index_s) + shape_functions(2, node_index_r) * shape_functions(1, node_index_s));
-
-                        s_dde_ca[r * nb_dofs + s] = ref.tm * dde_cu;
-                    } else {
-                        s_dde_ca[r * nb_dofs + s].setZero();
-                    }
+                    s_de_ca[r] = ref.tm * de_cu;
 
                     // curvature
+                    s_dg3[r] = s_dg_1.cross(act_a2) + act_a1.cross(s_dg_2);
 
-                    Vector3D ddg3 = Vector3D::Zero();
+                    s_g3dg3[r] = act.a1_x_a2.dot(s_dg3[r]);
+                    s_g3dg3lg3_3[r] = s_g3dg3[r] / std::pow(ref.da, 3);
 
-                    if (dof_type_r != dof_type_s) {
-                        const index ddg3_i = 3 - dof_type_r - dof_type_s;
+                    s_dn[r] = s_dg3[r] / ref.da - act.a1_x_a2 * s_g3dg3lg3_3[r];
 
-                        const double ddg3_value = shape_functions(1, node_index_r) * shape_functions(2, node_index_s) - shape_functions(1, node_index_s) * shape_functions(2, node_index_r);
+                    Vector3D dk_cu;
+                    dk_cu[0] = shape_functions(3, node_index_r) * act.a3[dof_type_r] + act_a1_1.dot(s_dn[r]);
+                    dk_cu[1] = shape_functions(4, node_index_r) * act.a3[dof_type_r] + act_a1_2.dot(s_dn[r]);
+                    dk_cu[2] = shape_functions(5, node_index_r) * act.a3[dof_type_r] + act_a2_2.dot(s_dn[r]);
 
-                        if ((dof_type_s == dof_type_r + 1) || (dof_type_r == dof_type_s + 2)) {
-                            ddg3[ddg3_i] = ddg3_value;
+                    s_dk_ca[r] = ref.tm * dk_cu;
+                }
+            }
+
+            if constexpr(TOrder > 1) {
+                for (index r = 0; r < nb_dofs; r++) {
+                    const index node_index_r = r / 3;
+                    const index dof_type_r = r % 3;
+
+                    for (index s = r; s < nb_dofs; s++) {
+                        const index node_index_s = s / 3;
+                        const index dof_type_s = s % 3;
+
+                        // strain
+
+                        if (dof_type_r == dof_type_s) {
+                            Vector3D dde_cu;
+
+                            dde_cu[0] = shape_functions(1, node_index_r) * shape_functions(1, node_index_s);
+                            dde_cu[1] = shape_functions(2, node_index_r) * shape_functions(2, node_index_s);
+                            dde_cu[2] = 0.5 * (shape_functions(1, node_index_r) * shape_functions(2, node_index_s) + shape_functions(2, node_index_r) * shape_functions(1, node_index_s));
+
+                            s_dde_ca[r * nb_dofs + s] = ref.tm * dde_cu;
                         } else {
-                            ddg3[ddg3_i] = -ddg3_value;
+                            s_dde_ca[r * nb_dofs + s].setZero();
                         }
+
+                        // curvature
+
+                        Vector3D ddg3 = Vector3D::Zero();
+
+                        if (dof_type_r != dof_type_s) {
+                            const index ddg3_i = 3 - dof_type_r - dof_type_s;
+
+                            const double ddg3_value = shape_functions(1, node_index_r) * shape_functions(2, node_index_s) - shape_functions(1, node_index_s) * shape_functions(2, node_index_r);
+
+                            if ((dof_type_s == dof_type_r + 1) || (dof_type_r == dof_type_s + 2)) {
+                                ddg3[ddg3_i] = ddg3_value;
+                            } else {
+                                ddg3[ddg3_i] = -ddg3_value;
+                            }
+                        }
+
+                        const double c = -(ddg3.dot(act.a1_x_a2) + s_dg3[r].dot(s_dg3[s])) / std::pow(ref.da, 3);
+
+                        const double d = 3.0 * s_g3dg3[r] * s_g3dg3[s] / std::pow(ref.da, 5);
+
+                        const Vector3D ddn = ddg3 / ref.da - s_g3dg3lg3_3[s] * s_dg3[r] - s_g3dg3lg3_3[r] * s_dg3[s] + (c + d) * act.a1_x_a2;
+
+                        Vector3D ddk_cu;
+                        ddk_cu[0] = shape_functions(3, node_index_r) * s_dn[s][dof_type_r] + shape_functions(3, node_index_s) * s_dn[r][dof_type_s] + act_a1_1[0] * ddn[0] + act_a1_1[1] * ddn[1] + act_a1_1[2] * ddn[2];
+                        ddk_cu[1] = shape_functions(4, node_index_r) * s_dn[s][dof_type_r] + shape_functions(4, node_index_s) * s_dn[r][dof_type_s] + act_a1_2[0] * ddn[0] + act_a1_2[1] * ddn[1] + act_a1_2[2] * ddn[2];
+                        ddk_cu[2] = shape_functions(5, node_index_r) * s_dn[s][dof_type_r] + shape_functions(5, node_index_s) * s_dn[r][dof_type_s] + act_a2_2[0] * ddn[0] + act_a2_2[1] * ddn[1] + act_a2_2[2] * ddn[2];
+
+                        s_ddk_ca[r * nb_dofs + s] = ref.tm * ddk_cu;
                     }
-
-                    const double c = -(ddg3.dot(act.a1_x_a2) + s_dg3[r].dot(s_dg3[s])) / std::pow(ref.da, 3);
-
-                    const double d = 3.0 * s_g3dg3[r] * s_g3dg3[s] / std::pow(ref.da, 5);
-
-                    const Vector3D ddn = ddg3 / ref.da - s_g3dg3lg3_3[s] * s_dg3[r] - s_g3dg3lg3_3[r] * s_dg3[s] + (c + d) * act.a1_x_a2;
-
-                    Vector3D ddk_cu;
-                    ddk_cu[0] = shape_functions(3, node_index_r) * s_dn[s][dof_type_r] + shape_functions(3, node_index_s) * s_dn[r][dof_type_s] + act_a1_1[0] * ddn[0] + act_a1_1[1] * ddn[1] + act_a1_1[2] * ddn[2];
-                    ddk_cu[1] = shape_functions(4, node_index_r) * s_dn[s][dof_type_r] + shape_functions(4, node_index_s) * s_dn[r][dof_type_s] + act_a1_2[0] * ddn[0] + act_a1_2[1] * ddn[1] + act_a1_2[2] * ddn[2];
-                    ddk_cu[2] = shape_functions(5, node_index_r) * s_dn[s][dof_type_r] + shape_functions(5, node_index_s) * s_dn[r][dof_type_s] + act_a2_2[0] * ddn[0] + act_a2_2[1] * ddn[1] + act_a2_2[2] * ddn[2];
-
-                    s_ddk_ca[r * nb_dofs + s] = ref.tm * ddk_cu;
                 }
             }
 
