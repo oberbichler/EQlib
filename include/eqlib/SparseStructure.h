@@ -2,11 +2,13 @@
 
 #include "Define.h"
 
+#include <tsl/robin_map.h>
+
 #include <vector>
 
 namespace eqlib {
 
-template <typename TScalar = double, typename TIndex = int, bool TRowMajor = false>
+template <typename TScalar = double, typename TIndex = int, bool TRowMajor = false, bool TIndexMap = true>
 class SparseStructure
 {
 private:    // variables
@@ -14,6 +16,7 @@ private:    // variables
     TIndex m_cols;
     std::vector<TIndex> m_ia;
     std::vector<TIndex> m_ja;
+    std::vector<tsl::robin_map<TIndex, index>> m_indices;
 
 public:     // methods
     TIndex rows() const noexcept
@@ -70,21 +73,29 @@ public:     // methods
         const auto i = static_cast<TIndex>(TRowMajor ? row : col);
         const auto j = static_cast<TIndex>(TRowMajor ? col : row);
 
-        const auto lower = m_ja.begin() + m_ia[i];
-        const auto upper = m_ja.begin() + m_ia[i + 1];
+        if (TIndexMap) {
+            const auto it = m_indices[i].find(j);
 
-        const auto it = std::lower_bound(lower, upper, j);
+            assert(it != m_indices[i].end());
 
-        if (*it != j || it == upper) {
-            assert(false);
-            return -1;
+            return it->second;
+        } else {
+            const auto lower = m_ja.begin() + m_ia[i];
+            const auto upper = m_ja.begin() + m_ia[i + 1];
+
+            const auto it = std::lower_bound(lower, upper, j);
+
+            if (*it != j || it == upper) {
+                assert(false);
+                return -1;
+            }
+
+            const index value_index = std::distance(m_ja.begin(), it);
+
+            assert(value_index < nb_nonzeros());
+
+            return value_index;
         }
-
-        const index value_index = std::distance(m_ja.begin(), it);
-
-        assert(value_index < nb_nonzeros());
-
-        return value_index;
     }
 
     template <typename TPattern>
@@ -115,6 +126,18 @@ public:     // methods
             for (const auto j : pattern[i]) {
                 assert(j < (TRowMajor ? m_cols : m_rows));
                 *ja_it++ = static_cast<TIndex>(j);
+            }
+        }
+
+        if (TIndexMap) {
+            m_indices.resize(TRowMajor ? rows : cols);
+
+            for (index i = 0; i < (TRowMajor ? rows : cols); i++) {
+                m_indices[i].reserve(m_ia[i + 1] - m_ia[i]);
+                for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
+                    const index j = m_ja[k];
+                    m_indices[i][j] = k;
+                }
             }
         }
     }
