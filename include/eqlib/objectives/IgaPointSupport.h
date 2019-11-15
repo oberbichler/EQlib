@@ -11,11 +11,12 @@ namespace eqlib {
 class IgaPointSupport : public Objective
 {
 private:    // types
+    using Type = IgaPointSupport;
+    using Data = std::tuple<Matrix, Vector3D, double>;
 
 private:    // variables
     std::vector<Pointer<Node>> m_nodes;
-    std::vector<std::tuple<Matrix, Vector3D>> m_data;
-    double m_weight;
+    std::vector<Data> m_data;
 
     Vector3D ref_geometry(index i, Ref<const Matrix> shape_functions) const
     {
@@ -42,11 +43,9 @@ private:    // variables
 public:     // constructor
     IgaPointSupport(
         std::vector<Pointer<Node>> nodes,
-        std::vector<std::tuple<Matrix, Vector3D>> shape_functions,
-        double weight)
-    : m_data(shape_functions)
-    , m_nodes(nodes)
-    , m_weight(weight)
+        std::vector<Data> data)
+    : m_nodes(nodes)
+    , m_data(data)
     {
         m_variables.resize(length(nodes) * 3);
         for (index i = 0; i < length(nodes); i++) {
@@ -65,27 +64,27 @@ public:     // constructor
         g.setZero();
         h.setZero();
 
-        for (const auto& [shape_functions, target] : m_data) {
+        for (const auto& [shape_functions, target, weight] : m_data) {
             const Vector3D act_x = act_geometry(0, shape_functions);
 
             const Vector3D delta = act_x - target;
 
-            f += delta.dot(delta) * m_weight / 2;
+            f += delta.dot(delta) * weight / 2;
 
             if constexpr(TOrder > 0) {
                 for (index i = 0; i < length(m_nodes); i++) {
-                    g(i * 3 + 0) += delta[0] * shape_functions(0, i) * m_weight;
-                    g(i * 3 + 1) += delta[1] * shape_functions(0, i) * m_weight;
-                    g(i * 3 + 2) += delta[2] * shape_functions(0, i) * m_weight;
+                    g(i * 3 + 0) += delta[0] * shape_functions(0, i) * weight;
+                    g(i * 3 + 1) += delta[1] * shape_functions(0, i) * weight;
+                    g(i * 3 + 2) += delta[2] * shape_functions(0, i) * weight;
                 }
             }
 
             if constexpr(TOrder > 1) {
                 for (index i = 0; i < length(m_nodes); i++) {
                     for (index j = 0; j < length(m_nodes); j++) {
-                        h(i * 3 + 0, j * 3 + 0) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
-                        h(i * 3 + 1, j * 3 + 1) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
-                        h(i * 3 + 2, j * 3 + 2) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                        h(i * 3 + 0, j * 3 + 0) += shape_functions(0, i) * shape_functions(0, j) * weight;
+                        h(i * 3 + 1, j * 3 + 1) += shape_functions(0, i) * shape_functions(0, j) * weight;
+                        h(i * 3 + 2, j * 3 + 2) += shape_functions(0, i) * shape_functions(0, j) * weight;
                     }
                 }
             }
@@ -112,12 +111,11 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = IgaPointSupport;
         using Holder = Pointer<Type>;
         using Base = Objective;
 
         py::class_<Type, Base, Holder>(m, "IgaPointSupport")
-            .def(py::init<std::vector<Pointer<Node>>, std::vector<std::tuple<Matrix, Vector3D>>, double>())
+            .def(py::init<std::vector<Pointer<Node>>, std::vector<Data>>(), "nodes"_a, "data"_a)
         ;
     }
 };
