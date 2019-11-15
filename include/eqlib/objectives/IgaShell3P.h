@@ -279,21 +279,21 @@ public:     // constructor
             const Vector3D m_ca = db * k_ca;
 
             for(index r = 0; r < nb_dofs; r++) {
-                const Vector3D dN_ca = dm * s_de_ca[r];
-                const Vector3D dM_ca = db * s_dk_ca[r];
+                const Vector3D dn_ca = dm * s_de_ca[r];
+                const Vector3D dm_ca = db * s_dk_ca[r];
 
                 if constexpr(TOrder > 1) {
                     for (index s = 0; s < nb_dofs; s++) {
                         // membrane stiffness
-                        const double S_kem = dN_ca.dot(s_de_ca[s]) + n_ca.dot(s_dde_ca[r * nb_dofs + s]);
+                        const double s_kem = dn_ca.dot(s_de_ca[s]) + n_ca.dot(s_dde_ca[r * nb_dofs + s]);
 
                         // bending stiffness
-                        const double S_keb = dM_ca.dot(s_dk_ca[s]) + m_ca.dot(s_ddk_ca[r * nb_dofs + s]);
+                        const double s_keb = dm_ca.dot(s_dk_ca[s]) + m_ca.dot(s_ddk_ca[r * nb_dofs + s]);
 
-                        h(r, s) += (S_kem + S_keb) * weight;
+                        h(r, s) += (s_kem + s_keb) * weight;
 
                         // symmetry
-                        h(s, r) += (S_kem + S_keb) * weight;
+                        h(s, r) += (s_kem + s_keb) * weight;
                     }
                 }
 
