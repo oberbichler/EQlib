@@ -14,27 +14,26 @@ private:    // types
 
 private:    // variables
     std::vector<Pointer<Node>> m_nodes;
-    Matrix m_shape_functions;
+    std::vector<std::tuple<Matrix, Vector3D>> m_data;
     double m_weight;
-    Vector3D m_target;
 
-    Vector3D ref_geometry(index i) const
+    Vector3D ref_geometry(index i, Ref<const Matrix> shape_functions) const
     {
         Vector3D value = Vector3D::Zero();
 
         for (index j = 0; j < length(m_nodes); j++) {
-            value += m_nodes[j]->ref_location() * m_shape_functions(i, j);
+            value += m_nodes[j]->ref_location() * shape_functions(i, j);
         }
 
         return value;
     }
 
-    Vector3D act_geometry(index i) const
+    Vector3D act_geometry(index i, Ref<const Matrix> shape_functions) const
     {
         Vector3D value = Vector3D::Zero();
 
         for (index j = 0; j < length(m_nodes); j++) {
-            value += m_nodes[j]->act_location() * m_shape_functions(i, j);
+            value += m_nodes[j]->act_location() * shape_functions(i, j);
         }
 
         return value;
@@ -43,12 +42,10 @@ private:    // variables
 public:     // constructor
     IgaPointSupport(
         std::vector<Pointer<Node>> nodes,
-        Matrix shape_functions,
-        Vector3D target,
+        std::vector<std::tuple<Matrix, Vector3D>> shape_functions,
         double weight)
-    : m_shape_functions(shape_functions)
+    : m_data(shape_functions)
     , m_nodes(nodes)
-    , m_target(target)
     , m_weight(weight)
     {
         m_variables.resize(length(nodes) * 3);
@@ -61,35 +58,35 @@ public:     // constructor
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
-        const Vector3D act_x = act_geometry(0);
-
-        const Vector3D delta = m_target - act_x;
-
-        const double f = delta.dot(delta) * m_weight / 2;
-
-        if (g.size() == 0) {
-            return f;
+        double f;
+    
+        if (g.size() != 0) {
+            g.setZero();
         }
 
-        g.setZero();
-
-        for (index i = 0; i < length(m_nodes); i++) {
-            g(i * 3 + 0) = delta[0] * m_shape_functions(0, i) * m_weight;
-            g(i * 3 + 1) = delta[1] * m_shape_functions(0, i) * m_weight;
-            g(i * 3 + 2) = delta[2] * m_shape_functions(0, i) * m_weight;
+        if (h.size() != 0) {
+            h.setZero();
         }
 
-        if (h.size() == 0) {
-            return f;
-        }
-        
-        h.setZero();
+        for (const auto& [shape_functions, target] : m_data) {
+            const Vector3D act_x = act_geometry(0, shape_functions);
 
-        for (index i = 0; i < length(m_nodes); i++) {
-            for (index j = 0; j < length(m_nodes); j++) {
-                h(i * 3 + 0, j * 3 + 0) = m_shape_functions(0, i) * m_shape_functions(0, j) * m_weight;
-                h(i * 3 + 1, j * 3 + 1) = m_shape_functions(0, i) * m_shape_functions(0, j) * m_weight;
-                h(i * 3 + 2, j * 3 + 2) = m_shape_functions(0, i) * m_shape_functions(0, j) * m_weight;
+            const Vector3D delta = target - act_x;
+
+            f += delta.dot(delta) * m_weight / 2;
+
+            for (index i = 0; i < length(m_nodes); i++) {
+                g(i * 3 + 0) += delta[0] * shape_functions(0, i) * m_weight;
+                g(i * 3 + 1) += delta[1] * shape_functions(0, i) * m_weight;
+                g(i * 3 + 2) += delta[2] * shape_functions(0, i) * m_weight;
+            }
+
+            for (index i = 0; i < length(m_nodes); i++) {
+                for (index j = 0; j < length(m_nodes); j++) {
+                    h(i * 3 + 0, j * 3 + 0) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                    h(i * 3 + 1, j * 3 + 1) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                    h(i * 3 + 2, j * 3 + 2) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
+                }
             }
         }
         
@@ -108,7 +105,7 @@ public:     // python
         using Base = Objective;
 
         py::class_<Type, Base, Holder>(m, "IgaPointSupport")
-            .def(py::init<std::vector<Pointer<Node>>, Matrix, Vector3D, double>())
+            .def(py::init<std::vector<Pointer<Node>>, std::vector<std::tuple<Matrix, Vector3D>>, double>())
         ;
     }
 };
