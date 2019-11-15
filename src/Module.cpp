@@ -32,34 +32,23 @@
 #include <eqlib/objectives/IgaShell3PLoadAD.h>
 #include <eqlib/objectives/IgaShell3PLoadRefAD.h>
 
-#include <eqlib/Version.h>
+#include <eqlib/Info.h>
 
-PYBIND11_MODULE(eqlib, m) {
-    m.doc() = "eqlib by Thomas Oberbichler";
-    m.attr("__author__") = "Thomas Oberbichler";
-    m.attr("__copyright__") = "Copyright (c) 2018-2019, Thomas Oberbichler";
-    m.attr("__version__") = eqlib::version();
-    m.attr("__email__") = "thomas.oberbichler@gmail.com";
-    m.attr("__status__") = "Development";
-
+PYBIND11_MODULE(eqlib, m)
+{
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-#if defined(GIT_COMMIT_HASH)
-    m.attr("GIT_COMMIT_HASH") = GIT_COMMIT_HASH;
-#endif // GIT_COMMIT_HASH
+    m.doc() = "eqlib by Thomas Oberbichler";
+    m.attr("__author__") = "Thomas Oberbichler";
+    m.attr("__copyright__") = "Copyright (c) 2018-2019, Thomas Oberbichler";
+    m.attr("__version__") = eqlib::Info::version();
+    m.attr("__email__") = "thomas.oberbichler@gmail.com";
+    m.attr("__status__") = "Development";
 
-#if defined(EIGEN_USE_BLAS)
-    m.attr("USE_BLAS") = true;
-#else
-    m.attr("USE_BLAS") = false;
-#endif // EIGEN_USE_BLAS
-
-#if defined(EIGEN_USE_MKL_ALL)
-    m.attr("USE_MKL") = true;
-#else
-    m.attr("USE_MKL") = false;
-#endif // EIGEN_USE_MKL_ALL
+    m.attr("_GIT_COMMIT_HASH") = eqlib::Info::git_commit_hash();
+    m.attr("_USE_BLAS") = eqlib::Info::use_blas();
+    m.attr("_USE_MKL") = eqlib::Info::use_mkl();
 
 
     // --- core

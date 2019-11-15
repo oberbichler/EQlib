@@ -1,0 +1,36 @@
+#pragma once
+
+#include <string>
+
+namespace eqlib {
+
+static std::string version()
+{
+    return "@EQLIB_VERSION@ <@GIT_COMMIT_HASH@>";
+}
+
+class Info
+{
+public:     // static methods
+    static std::string version()
+    {
+        return "@EQLIB_VERSION@";
+    }
+
+    static std::string git_commit_hash()
+    {
+        return "@GIT_COMMIT_HASH@";
+    }
+
+    static bool use_blas()
+    {
+        return "@EQLIB_USE_BLAS@";
+    }
+
+    static bool use_mkl()
+    {
+        return "@EQLIB_USE_MKL@";
+    }
+};
+
+} // namespace eqlib

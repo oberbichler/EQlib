@@ -12,11 +12,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 project(eqlib-py)
 
-configure_file(
-  ${CMAKE_SOURCE_DIR}/include/eqlib/Version.h.in
-  ${CMAKE_BINARY_DIR}/generated/eqlib/Version.h
-)
-
 include_directories(
     "include"
     ${CMAKE_BINARY_DIR}/generated
@@ -90,6 +85,12 @@ endif()
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(eqlib PUBLIC -fsized-deallocation)
 endif()
+
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/include/eqlib/Info.h.in
+  ${CMAKE_BINARY_DIR}/generated/eqlib/Info.h
+)
 
 
 install(TARGETS eqlib DESTINATION bin)

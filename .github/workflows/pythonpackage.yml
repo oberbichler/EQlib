@@ -25,7 +25,7 @@ jobs:
         pip install pytest
         pytest
       shell: cmd
-      
+
   build_linux:
     name: build (${{ matrix.os }}, conda)
     runs-on: ${{ matrix.os }}
@@ -76,7 +76,7 @@ jobs:
       run: |
         $env:MKL_ROOT=python -c "from sysconfig import get_paths as gp; print(gp()['data'])"
         pip install .
-        python -c "import eqlib; print(eqlib.USE_MKL)"
+        python -c "import eqlib; print(eqlib._USE_MKL)"
       shell: pwsh
     - name: Test with pytest
       run: |
