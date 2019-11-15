@@ -11,6 +11,7 @@ namespace eqlib {
 class NewtonRaphson
 {
 private:    // types
+    using Type = eqlib::NewtonRaphson;
 
 private:    // members
     Pointer<Problem> m_problem;
