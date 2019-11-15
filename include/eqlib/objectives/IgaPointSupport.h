@@ -56,8 +56,11 @@ public:     // constructor
         }
     }
 
-    double compute(Ref<Vector> g, Ref<Matrix> h) const override
+    template <int TOrder>
+    double compute(Ref<Vector> g, Ref<Matrix> h) const
     {
+        static_assert(0 <= TOrder && TOrder <= 2);
+
         double f = 0;
             g.setZero();
             h.setZero();
@@ -69,12 +72,15 @@ public:     // constructor
 
             f += delta.dot(delta) * m_weight / 2;
 
+            if constexpr(TOrder > 0) {
             for (index i = 0; i < length(m_nodes); i++) {
                 g(i * 3 + 0) += delta[0] * shape_functions(0, i) * m_weight;
                 g(i * 3 + 1) += delta[1] * shape_functions(0, i) * m_weight;
                 g(i * 3 + 2) += delta[2] * shape_functions(0, i) * m_weight;
             }
+            }
 
+            if constexpr(TOrder > 1) {
             for (index i = 0; i < length(m_nodes); i++) {
                 for (index j = 0; j < length(m_nodes); j++) {
                     h(i * 3 + 0, j * 3 + 0) += shape_functions(0, i) * shape_functions(0, j) * m_weight;
@@ -83,8 +89,21 @@ public:     // constructor
                 }
             }
         }
+        }
         
         return f;
+    }
+
+
+    double compute(Ref<Vector> g, Ref<Matrix> h) const override
+    {
+        if (g.size() == 0) {
+            return compute<0>(g, h);
+        } else if (h.size() == 0) {
+            return compute<1>(g, h);
+        } else {
+            return compute<2>(g, h);
+        }
     }
 
 public:     // python
