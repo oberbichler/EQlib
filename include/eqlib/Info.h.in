@@ -4,11 +4,6 @@
 
 namespace eqlib {
 
-static std::string version()
-{
-    return "@EQLIB_VERSION@ <@GIT_COMMIT_HASH@>";
-}
-
 class Info
 {
 public:     // static methods
@@ -24,12 +19,20 @@ public:     // static methods
 
     static bool use_blas()
     {
-        return "@EQLIB_USE_BLAS@";
+        #ifdef EQLIB_USE_BLAS
+        return true;
+        #else
+        return false;
+        #endif
     }
 
     static bool use_mkl()
     {
-        return "@EQLIB_USE_MKL@";
+        #ifdef EQLIB_USE_MKL
+        return true;
+        #else
+        return false;
+        #endif
     }
 };
 
