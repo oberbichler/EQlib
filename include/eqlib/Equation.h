@@ -24,93 +24,38 @@ public:     // constructors
         const double lower_bound,
         const double upper_bound,
         const double multiplier,
-        const std::string name) noexcept
-    : m_lower_bound(lower_bound)
-    , m_upper_bound(upper_bound)
-    , m_is_active(true)
-    , m_multiplier(multiplier)
-    , m_name(name)
-    { }
+        const std::string name) noexcept;
 
-    Equation() noexcept
-    : Equation(-infinity, infinity, 0.0, "")
-    { }
+    Equation() noexcept;
 
 public:     // getters and setters
-    bool is_active() const noexcept
-    {
-        return m_is_active;
-    }
+    bool is_active() const noexcept;
 
-    void set_active(const bool value) noexcept
-    {
-        m_is_active = value;
-    }
+    void set_active(const bool value) noexcept;
 
-    double lower_bound() const noexcept
-    {
-        return m_lower_bound;
-    }
+    double lower_bound() const noexcept;
 
-    void set_lower_bound(const double value) noexcept
-    {
-        m_lower_bound = value;
-    }
+    void set_lower_bound(const double value) noexcept;
 
-    double upper_bound() const noexcept
-    {
-        return m_upper_bound;
-    }
+    double upper_bound() const noexcept;
 
-    void set_upper_bound(const double value) noexcept
-    {
-        m_upper_bound = value;
-    }
+    void set_upper_bound(const double value) noexcept;
 
-    double multiplier() const noexcept
-    {
-        return m_multiplier;
-    }
+    double multiplier() const noexcept;
 
-    void set_multiplier(const double value) noexcept
-    {
-        m_multiplier = value;
-    }
+    void set_multiplier(const double value) noexcept;
 
-    std::string name() const noexcept
-    {
-        return m_name;
-    }
+    const std::string& name() const noexcept;
 
-    void set_name(const std::string& value) noexcept
-    {
-        m_name = value;
-    }
+    void set_name(const std::string& value) noexcept;
 
 public:     // methods
-    std::string to_string() const noexcept
-    {
-        if (m_name.empty()) {
-            return format(
-                "<Equation bounds=({}, {}) at {:#x}>", lower_bound(),
-                    upper_bound(), size_t(this));
-        } else {
-            return format(
-                "<Equation '{}' bounds=({}, {}) at {:#x}>", name(),
-                    lower_bound(), upper_bound(), size_t(this));
-        }
-    }
+    std::string to_string() const noexcept;
 
 public:     // comparison
-    bool operator==(const Equation& other) const noexcept
-    {
-        return this == &other;
-    }
+    bool operator==(const Equation& other) const noexcept;
 
-    size_t hash() const noexcept
-    {
-        return (size_t)this;
-    }
+    size_t hash() const noexcept;
 
 public:     // operators
 

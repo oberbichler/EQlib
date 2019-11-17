@@ -34,7 +34,10 @@ add_definitions(
     -DSPDLOG_FMT_EXTERNAL
 )
 
-pybind11_add_module(eqlib src/Module.cpp)
+pybind11_add_module(eqlib
+    src/Module.cpp
+    src/Equation.cpp
+)
 
 if (DEFINED ENV{CONDA_PREFIX})
     message("-- Found Anaconda: $ENV{CONDA_PREFIX}")
