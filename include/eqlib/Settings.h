@@ -6,8 +6,7 @@
 
 namespace eqlib {
 
-using Settings = std::unordered_map<std::string, std::variant<int, double,
-    std::string>>;
+using Settings = std::unordered_map<std::string, std::variant<int, double, std::string>>;
 
 std::string get_or_default(const Settings& options, const std::string key,
     const std::string default_value)
