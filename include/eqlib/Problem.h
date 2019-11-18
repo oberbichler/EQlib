@@ -17,6 +17,7 @@
 
 #include <tsl/robin_set.h>
 
+#include <mutex>
 #include <set>
 #include <tuple>
 #include <utility>
@@ -309,6 +310,9 @@ public:     // constructors
         std::vector<std::set<index>> m_pattern_dg(m);
         std::vector<std::set<index>> m_pattern_hm(n);
 
+        std::vector<std::mutex> lock_pattern_dg(m);
+        std::vector<std::mutex> lock_pattern_hm(n);
+
         #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads)
         {
             std::vector<tsl::robin_set<index>> pattern_dg(m);
@@ -351,18 +355,16 @@ public:     // constructors
                 }
             }
 
-            #pragma omp critical
             for (index i = 0; i < pattern_hm.size(); i++) {
-                for (const auto j : pattern_hm[i]) {
-                    m_pattern_hm[i].insert(j);
-                }
+                lock_pattern_hm[i].lock();
+                m_pattern_hm[i].insert(pattern_hm[i].begin(), pattern_hm[i].end());
+                lock_pattern_hm[i].unlock();
             }
 
-            #pragma omp critical
             for (index i = 0; i < pattern_dg.size(); i++) {
-                for (const auto j : pattern_dg[i]) {
-                    m_pattern_dg[i].insert(j);
-                }
+                lock_pattern_dg[i].lock();
+                m_pattern_dg[i].insert(pattern_dg[i].begin(), pattern_dg[i].end());
+                lock_pattern_dg[i].unlock();
             }
         }
 
