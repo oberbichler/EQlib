@@ -77,7 +77,7 @@ public:     // getters and setters
         m_multiplier = value;
     }
 
-    std::string name() const noexcept
+    const std::string& name() const noexcept
     {
         return m_name;
     }

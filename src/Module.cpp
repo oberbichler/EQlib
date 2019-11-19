@@ -24,8 +24,10 @@
 #include <eqlib/Worhp.h>
 #endif
 
+#include <eqlib/objectives/IgaDisplacementCouplingAD.h>
 #include <eqlib/objectives/IgaPointSupport.h>
 #include <eqlib/objectives/IgaPointSupportAD.h>
+#include <eqlib/objectives/IgaRotationCouplingAD.h>
 #include <eqlib/objectives/IgaShell3P.h>
 #include <eqlib/objectives/IgaShell3PAD.h>
 #include <eqlib/objectives/IgaShell3PRefAD.h>
@@ -107,10 +109,19 @@ PYBIND11_MODULE(eqlib, m)
     #endif
 
 
-    // --- objectives
+    // --- objectives: iga
+
+    // IgaDisplacementCouplingAD
+    eqlib::IgaDisplacementCouplingAD::register_python(m);
 
     // IgaPointSupport
     eqlib::IgaPointSupport::register_python(m);
+
+    // IgaPointSupportAD
+    eqlib::IgaPointSupportAD::register_python(m);
+
+    // IgaRotationCouplingAD
+    eqlib::IgaRotationCouplingAD::register_python(m);
 
     // IgaShell3P
     eqlib::IgaShell3P::register_python(m);
@@ -118,14 +129,15 @@ PYBIND11_MODULE(eqlib, m)
     // IgaShell3PAD
     eqlib::IgaShell3PAD::register_python(m);
 
+    // IgaShell3PLoadAD
+    eqlib::IgaShell3PLoadAD::register_python(m);
+
+
+    // --- objectives: iga cutting pattern
+
     // IgaShell3PRefAD
     eqlib::IgaShell3PRefAD::register_python(m);
 
-    // IgaShell3PLoadAD
-    eqlib::IgaShell3PLoadAD::register_python(m);
     // IgaShell3PLoadRefAD
     eqlib::IgaShell3PLoadRefAD::register_python(m);
-
-    // IgaPointSupportAD
-    eqlib::IgaPointSupportAD::register_python(m);
 }
