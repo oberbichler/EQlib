@@ -226,7 +226,7 @@ public:     // constructors
 
         #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads)
         {
-            #pragma omp for schedule(guided, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f; i++) {
                 const auto& variables = m_elements_f[i]->variables();
 
@@ -252,7 +252,7 @@ public:     // constructors
 
             // equation indices g
 
-            #pragma omp for schedule(guided, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& equations = m_elements_g[i]->equations();
 
@@ -276,7 +276,7 @@ public:     // constructors
 
             // variable indices g
 
-            #pragma omp for schedule(guided, m_grainsize)
+            #pragma omp for schedule(dynamic, m_grainsize)
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& variables = m_elements_g[i]->variables();
 
@@ -318,7 +318,7 @@ public:     // constructors
             std::vector<tsl::robin_set<index>> pattern_dg(m);
             std::vector<tsl::robin_set<index>> pattern_hm(n);
 
-            #pragma omp for schedule(guided, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_f); i++) {
                 const auto& variable_indices = m_element_f_variable_indices[i];
 
@@ -333,7 +333,7 @@ public:     // constructors
                 }
             }
 
-            #pragma omp for schedule(guided, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_g); i++) {
                 const auto& equation_indices = m_element_g_equation_indices[i];
                 const auto& variable_indices = m_element_g_variable_indices[i];
@@ -556,7 +556,7 @@ public:     // methods: computation
 
             #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(local_data)
             {
-                #pragma omp for schedule(guided, m_grainsize) nowait
+                #pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_f(); i++) {
                     compute_element_f<TOrder>(local_data, i);
                 }
@@ -573,7 +573,7 @@ public:     // methods: computation
                     }
                 }
 
-                #pragma omp for schedule(guided, m_grainsize) nowait
+                #pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_g(); i++) {
                     compute_element_g<TOrder>(local_data, i);
                 }
