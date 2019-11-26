@@ -12,7 +12,7 @@ jobs:
       max-parallel: 4
       matrix:
         os: [windows-latest, macOS-latest]
-        python-version: [3.5, 3.6, 3.7]
+        python-version: [3.5, 3.6, 3.7, 3.8]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: [cp35-cp35m, cp36-cp36m, cp37-cp37m]
+        python-version: [cp35-cp35m, cp36-cp36m, cp37-cp37m, cp38-cp38]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
