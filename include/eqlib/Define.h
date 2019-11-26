@@ -7,6 +7,7 @@
 
 #include <pybind11/pybind11.h>
 
+#include <limits>
 #include <string>
 #include <variant>
 
@@ -61,12 +62,14 @@ std::string format(Args&&... args)
 
 template <typename T>
 std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
-  if ( !v.empty() ) {
-    out << '[';
-    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
-    out << "\b\b]";
-  }
-  return out;
+    if ( !v.empty() ) {
+        out << '[';
+        std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
+        out << "\b\b]";
+    }
+    return out;
 }
+
+const double infinity = std::numeric_limits<double>::infinity();
 
 } // namespace
