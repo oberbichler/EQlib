@@ -53,7 +53,7 @@ private:    // members
         {
             m_problem->set_x(x);
             m_problem->compute<false, 1>();
-            fjac = m_problem->dg().transpose();
+            fjac = m_problem->dg();
             return 0;
         }
 
