@@ -121,7 +121,7 @@ public:     // methods
         m_xtol = value;
     }
 
-    void run(const index maxiter, const double rtol, const double xtol)
+    void run()
     {
         // setup
 
