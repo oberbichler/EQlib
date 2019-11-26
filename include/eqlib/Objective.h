@@ -108,6 +108,13 @@ public:     // python
             .def_property("variables", &Type::variables, &Type::set_variables)
             // methods
             .def("compute", &Type::compute, "g"_a, "h"_a)
+            .def("compute_all", [](const Type& self) {
+                Vector g(self.nb_variables());
+                Matrix h(self.nb_variables(), self.nb_variables());
+                const double f = self.compute(g, h);
+                return std::make_tuple(f, g, h);
+            })
+            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal)
         ;
     }
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Define.h"
+#include "Equation.h"
 #include "Variable.h"
 
 #include <tsl/robin_map.h>
