@@ -356,12 +356,18 @@ public:     // constructors
             }
 
             for (index i = 0; i < pattern_hm.size(); i++) {
+                if (pattern_hm[i].empty()) {
+                    continue;
+                }
                 lock_pattern_hm[i].lock();
                 m_pattern_hm[i].insert(pattern_hm[i].begin(), pattern_hm[i].end());
                 lock_pattern_hm[i].unlock();
             }
 
             for (index i = 0; i < pattern_dg.size(); i++) {
+                if (pattern_dg[i].empty()) {
+                    continue;
+                }
                 lock_pattern_dg[i].lock();
                 m_pattern_dg[i].insert(pattern_dg[i].begin(), pattern_dg[i].end());
                 lock_pattern_dg[i].unlock();
