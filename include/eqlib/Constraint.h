@@ -22,6 +22,11 @@ public:     // constructors
     {
     }
 
+    Constraint(const index nb_equations, const index nb_variables)
+    : m_equations(nb_equations), m_variables(nb_variables), m_is_active(true), m_name("")
+    {
+    }
+
     virtual ~Constraint() = default;
 
 public:     // methods
@@ -116,6 +121,7 @@ public:     // python
         py::class_<Type, Trampoline, Holder>(m, "Constraint")
             // constructors
             .def(py::init<>())
+            .def(py::init<index, index>(), "nb_equations"_a, "nb_variables"_a)
             // read-only properties
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)

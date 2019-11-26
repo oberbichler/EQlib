@@ -20,6 +20,11 @@ public:     // constructors
     {
     }
 
+    Objective(const index nb_variables)
+    : m_variables(nb_variables), m_is_active(true), m_name("")
+    {
+    }
+
     virtual ~Objective() = default;
 
 public:     // methods
@@ -94,6 +99,7 @@ public:     // python
         py::class_<Type, Trampoline, Holder>(m, "Objective")
             // constructors
             .def(py::init<>())
+            .def(py::init<index>(), "nb_variables"_a)
             // read-only properties
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
