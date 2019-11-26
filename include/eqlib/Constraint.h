@@ -55,8 +55,7 @@ public:     // methods
         return m_variables;
     }
 
-    virtual void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs,
-        const std::vector<Ref<Matrix>>& hs) const = 0;
+    virtual void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs, const std::vector<Ref<Matrix>>& hs) const = 0;
 
     bool is_active() const noexcept
     {
@@ -97,8 +96,7 @@ public:     // python
         using T::T;
 
     public:     // methods
-        void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs,
-            const std::vector<Ref<Matrix>>& hs) const override
+        void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs, const std::vector<Ref<Matrix>>& hs) const override
         {
             pybind11::gil_scoped_acquire acquire;
             PYBIND11_OVERLOAD_PURE(void, T, compute, rs, gs, hs);
