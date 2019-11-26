@@ -4,6 +4,7 @@
 #include "Equation.h"
 #include "Variable.h"
 
+#include <string>
 #include <vector>
 
 namespace eqlib {
@@ -11,12 +12,20 @@ namespace eqlib {
 class Constraint
 {
 protected:  // variables
+    std::string m_name;
     bool m_is_active;
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
 
 public:     // constructors
-    Constraint() : m_is_active(true) { }
+    Constraint() : m_is_active(true), m_name("")
+    {
+    }
+
+    Constraint(const index nb_equations, const index nb_variables)
+    : m_equations(nb_equations), m_variables(nb_variables), m_is_active(true), m_name("")
+    {
+    }
 
     virtual ~Constraint() = default;
 
@@ -51,8 +60,7 @@ public:     // methods
         return m_variables;
     }
 
-    virtual void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs,
-        const std::vector<Ref<Matrix>>& hs) const = 0;
+    virtual void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs, const std::vector<Ref<Matrix>>& hs) const = 0;
 
     bool is_active() const noexcept
     {
@@ -62,6 +70,16 @@ public:     // methods
     void set_active(const bool value) noexcept
     {
         m_is_active = value;
+    }
+
+    const std::string& name() const
+    {
+        return m_name;
+    }
+
+    void set_name(const std::string& value)
+    {
+        m_name = value;
     }
 
 protected:  // methods
@@ -83,8 +101,7 @@ public:     // python
         using T::T;
 
     public:     // methods
-        void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs,
-            const std::vector<Ref<Matrix>>& hs) const override
+        void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs, const std::vector<Ref<Matrix>>& hs) const override
         {
             pybind11::gil_scoped_acquire acquire;
             PYBIND11_OVERLOAD_PURE(void, T, compute, rs, gs, hs);
@@ -104,12 +121,14 @@ public:     // python
         py::class_<Type, Trampoline, Holder>(m, "Constraint")
             // constructors
             .def(py::init<>())
+            .def(py::init<index, index>(), "nb_equations"_a, "nb_variables"_a)
             // read-only properties
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
             .def_property("equations", &Type::equations, &Type::set_equations)
             .def_property("is_active", &Type::is_active, &Type::set_active)
+            .def_property("name", &Type::name, &Type::set_name)
             .def_property("variables", &Type::variables, &Type::set_variables)
             // methods
             .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)

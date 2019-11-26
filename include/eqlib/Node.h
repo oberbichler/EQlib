@@ -3,15 +3,17 @@
 #include "Define.h"
 #include "Variable.h"
 
-#include <memory>
+#include <tsl/robin_map.h>
+
 #include <string>
-#include <unordered_map>
 
 namespace eqlib {
 
 class Node
 {
 private:    // variables
+    std::string m_name;
+
     Pointer<Variable> m_ref_x;
     Pointer<Variable> m_ref_y;
     Pointer<Variable> m_ref_z;
@@ -19,7 +21,8 @@ private:    // variables
     Pointer<Variable> m_act_y;
     Pointer<Variable> m_act_z;
 
-    std::unordered_map<std::string, Pointer<Variable>> m_variables;
+    tsl::robin_map<std::string, Pointer<Equation>> m_equations;
+    tsl::robin_map<std::string, Pointer<Variable>> m_variables;
 
 public:     // constructors
     Node(const double x, const double y, const double z) noexcept
@@ -29,6 +32,7 @@ public:     // constructors
     , m_act_x(new_<Variable>(x))
     , m_act_y(new_<Variable>(y))
     , m_act_z(new_<Variable>(z))
+    , m_name("")
     {
     }
 
@@ -102,6 +106,26 @@ public:     // methods
         set_act_location(ref_location() + value);
     }
 
+    const std::string& name() const
+    {
+        return m_name;
+    }
+
+    void set_name(const std::string& value)
+    {
+        m_name = value;
+    }
+
+    Pointer<Equation> equation(const std::string& name) noexcept
+    {
+        return m_equations[name];
+    }
+
+    bool has_equation(const std::string& name) noexcept
+    {
+        return m_equations.find(name) != m_equations.end();
+    }
+
     Pointer<Variable> variable(const std::string& name) noexcept
     {
         if (name == "x") {
@@ -126,7 +150,6 @@ public:     // methods
         return m_variables[name];
     }
 
-public:     // methods
     bool has_variable(const std::string& name) noexcept
     {
         return m_variables.find(name) != m_variables.end();
@@ -154,15 +177,14 @@ public:     // python
             .def_property_readonly("ref_y", &Type::ref_y)
             .def_property_readonly("ref_z", &Type::ref_z)
             // properties
-            .def_property("ref_location", &Type::ref_location,
-                &Type::set_ref_location)
-            .def_property("act_location", &Type::act_location,
-                &Type::set_act_location)
-            .def_property("displacements", &Type::displacements,
-                &Type::set_displacements)
+            .def_property("ref_location", &Type::ref_location, &Type::set_ref_location)
+            .def_property("act_location", &Type::act_location, &Type::set_act_location)
+            .def_property("displacements", &Type::displacements, &Type::set_displacements)
+            .def_property("name", &Type::name, &Type::set_name)
             // methods
-            .def("variable", &Type::variable, "name"_a,
-                py::return_value_policy::reference_internal)
+            .def("equation", &Type::equation, "name"_a, py::return_value_policy::reference_internal)
+            .def("variable", &Type::variable, "name"_a, py::return_value_policy::reference_internal)
+            .def("has_equation", &Type::has_equation, "name"_a)
             .def("has_variable", &Type::has_variable, "name"_a)
         ;
     }

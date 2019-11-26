@@ -2,16 +2,12 @@
 
 #include "Define.h"
 
-#include <limits>
 #include <string>
 
 namespace eqlib {
 
 class Equation
 {
-private:    // static variables
-    const static inline auto infinity = std::numeric_limits<double>::infinity();
-
 private:    // variables
     double m_lower_bound;
     double m_upper_bound;
