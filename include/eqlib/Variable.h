@@ -155,7 +155,7 @@ public:     // python
 
         py::class_<Type, Holder>(m, "Variable")
             .def(py::init<double, double, double, bool, double, std::string>(),
-                "value"_a, "lower_bound"_a=-infinity,
+                "value"_a=0.0, "lower_bound"_a=-infinity,
                 "upper_bound"_a=infinity, "is_active"_a=true,
                 "multiplier"_a=1.0, "name"_a="")
             .def(py::init<>())
