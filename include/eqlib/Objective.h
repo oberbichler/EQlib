@@ -16,7 +16,9 @@ protected:  // variables
     std::vector<Pointer<Variable>> m_variables;
 
 public:     // constructors
-    Objective() : m_is_active(true) { }
+    Objective() : m_is_active(true), m_name("")
+    {
+    }
 
     virtual ~Objective() = default;
 

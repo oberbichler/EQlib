@@ -18,7 +18,9 @@ protected:  // variables
     std::vector<Pointer<Variable>> m_variables;
 
 public:     // constructors
-    Constraint() : m_is_active(true) { }
+    Constraint() : m_is_active(true), m_name("")
+    {
+    }
 
     virtual ~Constraint() = default;
 

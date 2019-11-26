@@ -30,6 +30,7 @@ public:     // constructors
     , m_act_x(new_<Variable>(x))
     , m_act_y(new_<Variable>(y))
     , m_act_z(new_<Variable>(z))
+    , m_name("")
     {
     }
 
