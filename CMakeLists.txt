@@ -66,22 +66,6 @@ else()
 endif()
 
 
-if(DEFINED WORHP_ROOT)
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${WORHP_ROOT}/bin")
-endif()
-
-find_library(WORHP_LIBRARY worhp)
-
-if(WORHP_LIBRARY)
-    message("-- Found WORHP: ${WORHP_LIBRARY}")
-    add_definitions(-DEQLIB_USE_WORHP)
-    target_include_directories(eqlib SYSTEM PRIVATE "${WORHP_ROOT}/include")
-    target_link_libraries(eqlib PRIVATE ${WORHP_LIBRARY})
-else()
-    message("-- WORHP not found")
-endif()
-
-
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(eqlib PUBLIC -fsized-deallocation)
 endif()
