@@ -11,28 +11,12 @@
 #include <eqlib/LambdaConstraint.h>
 #include <eqlib/LambdaObjective.h>
 #include <eqlib/Log.h>
+#include <eqlib/NewtonRaphson.h>
+#include <eqlib/Node.h>
 #include <eqlib/Objective.h>
 #include <eqlib/Problem.h>
-#include <eqlib/Node.h>
 #include <eqlib/Variable.h>
 
-#include <eqlib/GradientDescent.h>
-#include <eqlib/LBfgs.h>
-#include <eqlib/LevenbergMarquardt.h>
-#include <eqlib/NewtonRaphson.h>
-#ifdef EQLIB_USE_WORHP
-#include <eqlib/Worhp.h>
-#endif
-
-#include <eqlib/objectives/IgaDisplacementCouplingAD.h>
-#include <eqlib/objectives/IgaPointSupport.h>
-#include <eqlib/objectives/IgaPointSupportAD.h>
-#include <eqlib/objectives/IgaRotationCouplingAD.h>
-#include <eqlib/objectives/IgaShell3P.h>
-#include <eqlib/objectives/IgaShell3PAD.h>
-#include <eqlib/objectives/IgaShell3PRefAD.h>
-#include <eqlib/objectives/IgaShell3PLoadAD.h>
-#include <eqlib/objectives/IgaShell3PLoadRefAD.h>
 
 #include <eqlib/Info.h>
 
@@ -88,56 +72,7 @@ PYBIND11_MODULE(eqlib, m)
     // Timer
     eqlib::Timer::register_python(m);
 
-
-    // --- solver
-
-    // GradientDescent
-    eqlib::GradientDescent::register_python(m);
-
-    // LBfgs
-    eqlib::LBfgs::register_python(m);
-
-    // LevenbergMarquardt
-    eqlib::LevenbergMarquardt::register_python(m);
-
     // NewtonRaphson
     eqlib::NewtonRaphson::register_python(m);
 
-    // Worhp
-    #ifdef EQLIB_USE_WORHP
-    eqlib::Worhp::register_python(m);
-    #endif
-
-
-    // --- objectives: iga
-
-    // IgaDisplacementCouplingAD
-    eqlib::IgaDisplacementCouplingAD::register_python(m);
-
-    // IgaPointSupport
-    eqlib::IgaPointSupport::register_python(m);
-
-    // IgaPointSupportAD
-    eqlib::IgaPointSupportAD::register_python(m);
-
-    // IgaRotationCouplingAD
-    eqlib::IgaRotationCouplingAD::register_python(m);
-
-    // IgaShell3P
-    eqlib::IgaShell3P::register_python(m);
-
-    // IgaShell3PAD
-    eqlib::IgaShell3PAD::register_python(m);
-
-    // IgaShell3PLoadAD
-    eqlib::IgaShell3PLoadAD::register_python(m);
-
-
-    // --- objectives: iga cutting pattern
-
-    // IgaShell3PRefAD
-    eqlib::IgaShell3PRefAD::register_python(m);
-
-    // IgaShell3PLoadRefAD
-    eqlib::IgaShell3PLoadRefAD::register_python(m);
 }
