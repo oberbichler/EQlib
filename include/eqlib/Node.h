@@ -3,8 +3,9 @@
 #include "Define.h"
 #include "Variable.h"
 
+#include <tsl/robin_map.h>
+
 #include <string>
-#include <unordered_map>
 
 namespace eqlib {
 
@@ -20,7 +21,8 @@ private:    // variables
     Pointer<Variable> m_act_y;
     Pointer<Variable> m_act_z;
 
-    std::unordered_map<std::string, Pointer<Variable>> m_variables;
+    tsl::robin_map<std::string, Pointer<Equation>> m_equations;
+    tsl::robin_map<std::string, Pointer<Variable>> m_variables;
 
 public:     // constructors
     Node(const double x, const double y, const double z) noexcept
@@ -114,6 +116,16 @@ public:     // methods
         m_name = value;
     }
 
+    Pointer<Equation> equation(const std::string& name) noexcept
+    {
+        return m_equations[name];
+    }
+
+    bool has_equation(const std::string& name) noexcept
+    {
+        return m_equations.find(name) != m_equations.end();
+    }
+
     Pointer<Variable> variable(const std::string& name) noexcept
     {
         if (name == "x") {
@@ -138,7 +150,6 @@ public:     // methods
         return m_variables[name];
     }
 
-public:     // methods
     bool has_variable(const std::string& name) noexcept
     {
         return m_variables.find(name) != m_variables.end();
@@ -171,7 +182,9 @@ public:     // python
             .def_property("displacements", &Type::displacements, &Type::set_displacements)
             .def_property("name", &Type::name, &Type::set_name)
             // methods
+            .def("equation", &Type::equation, "name"_a, py::return_value_policy::reference_internal)
             .def("variable", &Type::variable, "name"_a, py::return_value_policy::reference_internal)
+            .def("has_equation", &Type::has_equation, "name"_a)
             .def("has_variable", &Type::has_variable, "name"_a)
         ;
     }
