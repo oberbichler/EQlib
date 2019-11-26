@@ -27,7 +27,6 @@ private:    // variables
     std::vector<Pointer<Node>> m_nodes_a;
     std::vector<Pointer<Node>> m_nodes_b;
     std::vector<Data> m_data;
-    double m_weight;
 
     template <int TOrder>
     auto ref_geometry(const std::vector<Pointer<Node>>& nodes, Ref<const Matrix> shape_functions, const index i) const
@@ -172,7 +171,7 @@ public:     // constructor
 
             const auto ab = point_b - point_a;
 
-            const auto p = ab.dot(ab) * m_weight / 2;
+            const auto p = ab.dot(ab) * weight / 2;
 
             f += hyperjet::explode_add(p, g, h);
         }
