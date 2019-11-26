@@ -165,16 +165,12 @@ public:     // python
             .def_property_readonly("ref_y", &Type::ref_y)
             .def_property_readonly("ref_z", &Type::ref_z)
             // properties
-            .def_property("ref_location", &Type::ref_location,
-                &Type::set_ref_location)
-            .def_property("act_location", &Type::act_location,
-                &Type::set_act_location)
-            .def_property("displacements", &Type::displacements,
-                &Type::set_displacements)
+            .def_property("ref_location", &Type::ref_location, &Type::set_ref_location)
+            .def_property("act_location", &Type::act_location, &Type::set_act_location)
+            .def_property("displacements", &Type::displacements, &Type::set_displacements)
             .def_property("name", &Type::name, &Type::set_name)
             // methods
-            .def("variable", &Type::variable, "name"_a,
-                py::return_value_policy::reference_internal)
+            .def("variable", &Type::variable, "name"_a, py::return_value_policy::reference_internal)
             .def("has_variable", &Type::has_variable, "name"_a)
         ;
     }
