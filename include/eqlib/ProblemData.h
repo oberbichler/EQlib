@@ -60,9 +60,8 @@ public:     // methods
         m_values.resize(nb_entries);
 
         m_buffer.resize(
-            std::max(max_element_m, max_element_n) +
-            max_element_m * max_element_n +
-            max_element_n * max_element_n);
+            std::max(index{1}, max_element_m) * max_element_n +
+            std::max(index{1}, max_element_m) * max_element_m * max_element_n * max_element_n);
 
         set_zero();
     }
