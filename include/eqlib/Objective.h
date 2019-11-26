@@ -3,6 +3,7 @@
 #include "Define.h"
 #include "Variable.h"
 
+#include <string>
 #include <vector>
 
 namespace eqlib {
@@ -10,6 +11,7 @@ namespace eqlib {
 class Objective
 {
 protected:  // variables
+    std::string m_name;
     bool m_is_active;
     std::vector<Pointer<Variable>> m_variables;
 
@@ -44,6 +46,16 @@ public:     // methods
     void set_active(const bool value) noexcept
     {
         m_is_active = value;
+    }
+
+    const std::string& name() const
+    {
+        return m_name;
+    }
+
+    void set_name(const std::string& value)
+    {
+        m_name = value;
     }
 
 protected:  // methods
@@ -84,6 +96,7 @@ public:     // python
             .def_property_readonly("nb_variables", &Type::nb_variables)
             // properties
             .def_property("is_active", &Type::is_active, &Type::set_active)
+            .def_property("name", &Type::name, &Type::set_name)
             .def_property("variables", &Type::variables, &Type::set_variables)
             // methods
             .def("compute", &Type::compute, "g"_a, "h"_a)

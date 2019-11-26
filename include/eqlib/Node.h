@@ -12,6 +12,8 @@ namespace eqlib {
 class Node
 {
 private:    // variables
+    std::string m_name;
+
     Pointer<Variable> m_ref_x;
     Pointer<Variable> m_ref_y;
     Pointer<Variable> m_ref_z;
@@ -102,6 +104,16 @@ public:     // methods
         set_act_location(ref_location() + value);
     }
 
+    const std::string& name() const
+    {
+        return m_name;
+    }
+
+    void set_name(const std::string& value)
+    {
+        m_name = value;
+    }
+
     Pointer<Variable> variable(const std::string& name) noexcept
     {
         if (name == "x") {
@@ -160,6 +172,7 @@ public:     // python
                 &Type::set_act_location)
             .def_property("displacements", &Type::displacements,
                 &Type::set_displacements)
+            .def_property("name", &Type::name, &Type::set_name)
             // methods
             .def("variable", &Type::variable, "name"_a,
                 py::return_value_policy::reference_internal)

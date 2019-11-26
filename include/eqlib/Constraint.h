@@ -4,6 +4,7 @@
 #include "Equation.h"
 #include "Variable.h"
 
+#include <string>
 #include <vector>
 
 namespace eqlib {
@@ -11,6 +12,7 @@ namespace eqlib {
 class Constraint
 {
 protected:  // variables
+    std::string m_name;
     bool m_is_active;
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
@@ -64,6 +66,16 @@ public:     // methods
         m_is_active = value;
     }
 
+    const std::string& name() const
+    {
+        return m_name;
+    }
+
+    void set_name(const std::string& value)
+    {
+        m_name = value;
+    }
+
 protected:  // methods
     void set_equations(const std::vector<Pointer<Equation>>& value)
     {
@@ -110,6 +122,7 @@ public:     // python
             // properties
             .def_property("equations", &Type::equations, &Type::set_equations)
             .def_property("is_active", &Type::is_active, &Type::set_active)
+            .def_property("name", &Type::name, &Type::set_name)
             .def_property("variables", &Type::variables, &Type::set_variables)
             // methods
             .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
