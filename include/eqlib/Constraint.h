@@ -132,6 +132,8 @@ public:     // python
             .def_property("variables", &Type::variables, &Type::set_variables)
             // methods
             .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
+            .def("equation", &Type::equation, "index"_a, py::return_value_policy::reference_internal)
+            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal)
         ;
     }
 };

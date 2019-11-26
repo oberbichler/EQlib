@@ -114,6 +114,7 @@ public:     // python
                 const double f = self.compute(g, h);
                 return std::make_tuple(f, g, h);
             })
+            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal)
         ;
     }
 };
