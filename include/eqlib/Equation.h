@@ -6,33 +6,33 @@
 
 namespace eqlib {
 
-class Equation
-{
-private:    // variables
+class Equation {
+private: // types
+    using Type = Equation;
+
+private: // variables
     double m_lower_bound;
     double m_upper_bound;
     bool m_is_active;
     double m_multiplier;
     std::string m_name;
 
-public:     // constructors
-    Equation(
-        const double lower_bound,
-        const double upper_bound,
-        const double multiplier,
-        const std::string name) noexcept
-    : m_lower_bound(lower_bound)
-    , m_upper_bound(upper_bound)
-    , m_is_active(true)
-    , m_multiplier(multiplier)
-    , m_name(name)
-    { }
+public: // constructors
+    Equation(const double lower_bound, const double upper_bound, const double multiplier, const std::string name) noexcept
+        : m_lower_bound(lower_bound)
+        , m_upper_bound(upper_bound)
+        , m_is_active(true)
+        , m_multiplier(multiplier)
+        , m_name(name)
+    {
+    }
 
     Equation() noexcept
-    : Equation(-infinity, infinity, 0.0, "")
-    { }
+        : Equation(-infinity, infinity, 0.0, "")
+    {
+    }
 
-public:     // getters and setters
+public: // methods
     bool is_active() const noexcept
     {
         return m_is_active;
@@ -83,21 +83,16 @@ public:     // getters and setters
         m_name = value;
     }
 
-public:     // methods
     std::string to_string() const noexcept
     {
         if (m_name.empty()) {
-            return format(
-                "<Equation bounds=({}, {}) at {:#x}>", lower_bound(),
-                    upper_bound(), size_t(this));
+            return format("<Equation bounds=({}, {}) at {:#x}>", lower_bound(), upper_bound(), size_t(this));
         } else {
-            return format(
-                "<Equation '{}' bounds=({}, {}) at {:#x}>", name(),
-                    lower_bound(), upper_bound(), size_t(this));
+            return format("<Equation '{}' bounds=({}, {}) at {:#x}>", name(), lower_bound(), upper_bound(), size_t(this));
         }
     }
 
-public:     // comparison
+public: // comparison
     bool operator==(const Equation& other) const noexcept
     {
         return this == &other;
@@ -108,33 +103,24 @@ public:     // comparison
         return (size_t)this;
     }
 
-public:     // operators
-
-public:     // python
+public: // python
     template <typename TModule>
     static void register_python(TModule& m)
     {
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = Equation;
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, "Equation")
-            .def(py::init<double, double, double, std::string>(),
-                "lower_bound"_a=-infinity, "upper_bound"_a=infinity,
-                "multiplier"_a=0.0, "name"_a="")
+            .def(py::init<double, double, double, std::string>(), "lower_bound"_a = -infinity, "upper_bound"_a = infinity, "multiplier"_a = 0.0, "name"_a = "")
             .def(py::init<>())
             .def_property("is_active", &Type::is_active, &Type::set_active)
-            .def_property("lower_bound", &Type::lower_bound,
-                &Type::set_lower_bound)
-            .def_property("upper_bound", &Type::upper_bound,
-                &Type::set_upper_bound)
+            .def_property("lower_bound", &Type::lower_bound, &Type::set_lower_bound)
+            .def_property("upper_bound", &Type::upper_bound, &Type::set_upper_bound)
             .def_property("name", &Type::name, &Type::set_name)
-            .def_property("multiplier", &Type::multiplier,
-                &Type::set_multiplier)
-            .def("__repr__", &Type::to_string)
-        ;
+            .def_property("multiplier", &Type::multiplier, &Type::set_multiplier)
+            .def("__repr__", &Type::to_string);
     }
 };
 
