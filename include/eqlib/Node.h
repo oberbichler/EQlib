@@ -148,6 +148,10 @@ public:     // methods
             return m_ref_z;
         }
 
+        if (m_variables.find(name) == m_variables.end()) {
+            m_variables[name] = new_<Variable>();
+        }
+
         return m_variables[name];
     }
 
