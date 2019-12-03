@@ -6,9 +6,11 @@
 
 namespace eqlib {
 
-class Variable
-{
-private:    // variables
+class Variable {
+private: // types
+    using Type = Variable;
+
+private: // variables
     double m_act_value;
     double m_lower_bound;
     double m_upper_bound;
@@ -16,7 +18,7 @@ private:    // variables
     double m_multiplier;
     std::string m_name;
 
-public:     // constructors
+public: // constructors
     Variable(
         const double value,
         const double lower_bound,
@@ -24,17 +26,19 @@ public:     // constructors
         const bool is_active,
         const double multiplier,
         const std::string name) noexcept
-    : m_act_value(value)
-    , m_lower_bound(lower_bound)
-    , m_upper_bound(upper_bound)
-    , m_is_active(is_active)
-    , m_multiplier(multiplier)
-    , m_name(name)
-    { }
+        : m_act_value(value)
+        , m_lower_bound(lower_bound)
+        , m_upper_bound(upper_bound)
+        , m_is_active(is_active)
+        , m_multiplier(multiplier)
+        , m_name(name)
+    {
+    }
 
     Variable() noexcept
-    : Variable(0.0, -infinity, infinity, true, 1.0, "")
-    { }
+        : Variable(0.0, -infinity, infinity, true, 1.0, "")
+    {
+    }
 
     Variable(
         const double value,
@@ -42,15 +46,17 @@ public:     // constructors
         const double upper_bound,
         const bool is_active,
         const std::string name) noexcept
-    : Variable(value, lower_bound, upper_bound, is_active, 1.0, name)
-    { }
+        : Variable(value, lower_bound, upper_bound, is_active, 1.0, name)
+    {
+    }
 
     Variable(
         const double value) noexcept
-    : Variable(value, -infinity, infinity, true, 1.0, "")
-    { }
+        : Variable(value, -infinity, infinity, true, 1.0, "")
+    {
+    }
 
-public:     // methods
+public: // methods
     double value() const noexcept
     {
         return m_act_value;
@@ -126,7 +132,7 @@ public:     // methods
         }
     }
 
-public:     // comparison
+public: // comparison
     bool operator==(const Variable& other) const noexcept
     {
         return this == &other;
@@ -137,25 +143,24 @@ public:     // comparison
         return (size_t)this;
     }
 
-public:     // operators
+public: // operators
     operator double()
     {
         return value();
     }
 
-public:     // python
+public: // python
     template <typename TModule>
     static void register_python(TModule& m)
     {
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = Variable;
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, "Variable")
-            .def(py::init<double, double, double, bool, double, std::string>(), "value"_a=0.0, "lower_bound"_a=-infinity,
-                "upper_bound"_a=infinity, "is_active"_a=true, "multiplier"_a=1.0, "name"_a="")
+            .def(py::init<double, double, double, bool, double, std::string>(), "value"_a = 0.0, "lower_bound"_a = -infinity,
+                "upper_bound"_a = infinity, "is_active"_a = true, "multiplier"_a = 1.0, "name"_a = "")
             .def(py::init<>())
             .def_property("value", &Type::value, &Type::set_value)
             .def_property("lower_bound", &Type::lower_bound,
@@ -166,8 +171,7 @@ public:     // python
             .def_property("multiplier", &Type::multiplier,
                 &Type::set_multiplier)
             .def_property("name", &Type::name, &Type::set_name)
-            .def("__float__", &Type::operator double)
-        ;
+            .def("__float__", &Type::operator double);
     }
 };
 

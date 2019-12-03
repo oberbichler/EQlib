@@ -6,12 +6,11 @@
 
 namespace eqlib {
 
-class LinearSolver
-{
-public:     // constructors
+class LinearSolver {
+public: // constructors
     virtual ~LinearSolver() = default;
 
-public:     // methods
+public: // methods
     virtual std::string solver_name() const = 0;
 
     virtual bool analyze(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) = 0;

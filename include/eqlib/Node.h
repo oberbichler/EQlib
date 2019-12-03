@@ -10,9 +10,11 @@
 
 namespace eqlib {
 
-class Node
-{
-private:    // variables
+class Node {
+private: // types
+    using Type = eqlib::Node;
+
+private: // variables
     std::string m_name;
 
     Pointer<Variable> m_ref_x;
@@ -25,24 +27,24 @@ private:    // variables
     tsl::robin_map<std::string, Pointer<Equation>> m_equations;
     tsl::robin_map<std::string, Pointer<Variable>> m_variables;
 
-public:     // constructors
+public: // constructors
     Node(const double x, const double y, const double z) noexcept
-    : m_ref_x(new_<Variable>(x))
-    , m_ref_y(new_<Variable>(y))
-    , m_ref_z(new_<Variable>(z))
-    , m_act_x(new_<Variable>(x))
-    , m_act_y(new_<Variable>(y))
-    , m_act_z(new_<Variable>(z))
-    , m_name("")
+        : m_ref_x(new_<Variable>(x))
+        , m_ref_y(new_<Variable>(y))
+        , m_ref_z(new_<Variable>(z))
+        , m_act_x(new_<Variable>(x))
+        , m_act_y(new_<Variable>(y))
+        , m_act_z(new_<Variable>(z))
+        , m_name("")
     {
     }
 
     Node() noexcept
-    : Node(0, 0, 0)
+        : Node(0, 0, 0)
     {
     }
 
-public:     // methods
+public: // methods
     Pointer<Variable> ref_x() noexcept
     {
         return m_ref_x;
@@ -148,6 +150,10 @@ public:     // methods
             return m_ref_z;
         }
 
+        if (m_variables.find(name) == m_variables.end()) {
+            m_variables[name] = new_<Variable>();
+        }
+
         return m_variables[name];
     }
 
@@ -156,20 +162,19 @@ public:     // methods
         return m_variables.find(name) != m_variables.end();
     }
 
-public:     // python
+public: // python
     template <typename TModule>
     static void register_python(TModule& m)
     {
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = eqlib::Node;
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
             // constructors
             .def(py::init<>())
-            .def(py::init<double, double, double>(), "x"_a=0, "y"_a=0, "z"_a=0)
+            .def(py::init<double, double, double>(), "x"_a = 0, "y"_a = 0, "z"_a = 0)
             // readonly properties
             .def_property_readonly("x", &Type::x)
             .def_property_readonly("y", &Type::y)
@@ -186,8 +191,7 @@ public:     // python
             .def("equation", &Type::equation, "name"_a, py::return_value_policy::reference_internal)
             .def("variable", &Type::variable, "name"_a, py::return_value_policy::reference_internal)
             .def("has_equation", &Type::has_equation, "name"_a)
-            .def("has_variable", &Type::has_variable, "name"_a)
-        ;
+            .def("has_variable", &Type::has_variable, "name"_a);
     }
 };
 

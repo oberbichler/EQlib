@@ -4,28 +4,28 @@
 
 namespace eqlib {
 
-class Timer
-{
-private:    // types
+class Timer {
+private: // types
+    using Type = Timer;
     using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
     using Duration = std::chrono::duration<double>;
 
-private:    // variables
+private: // variables
     Time m_start;
 
-private:    // methods
+private: // methods
     static Time now() noexcept
     {
         return std::chrono::high_resolution_clock::now();
     }
 
-public:     // constructors
+public: // constructors
     Timer() noexcept
-    : m_start(now())
+        : m_start(now())
     {
     }
 
-public:     // methods
+public: // methods
     void start() noexcept
     {
         m_start = now();
@@ -37,20 +37,17 @@ public:     // methods
         return duration.count();
     }
 
-public:     // python
+public: // python
     template <typename TModule>
     static void register_python(TModule& m)
     {
         namespace py = pybind11;
         using namespace py::literals;
 
-        using Type = Timer;
-
         py::class_<Type>(m, "Timer")
             .def(py::init<>())
             .def("start", &Type::start)
-            .def_property_readonly("ellapsed", &Type::ellapsed)
-        ;
+            .def_property_readonly("ellapsed", &Type::ellapsed);
     }
 };
 

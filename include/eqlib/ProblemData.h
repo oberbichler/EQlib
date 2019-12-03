@@ -4,26 +4,27 @@
 
 namespace eqlib {
 
-class ProblemData
-{
-private:    // variables
+class ProblemData {
+private: // variables
     index m_n;
     index m_m;
     index m_nb_nonzeros_dg;
     index m_nb_nonzeros_hm;
     Vector m_values;
 
-public:     // variables
+public: // variables
     double m_computation_time;
     double m_assemble_time;
     Vector m_buffer;
 
-public:     // constructor
-    ProblemData() : m_computation_time(0), m_assemble_time(0)
+public: // constructor
+    ProblemData()
+        : m_computation_time(0)
+        , m_assemble_time(0)
     {
     }
 
-public:     // methods
+public: // methods
     double& computation_time()
     {
         return m_computation_time;
@@ -60,8 +61,7 @@ public:     // methods
         m_values.resize(nb_entries);
 
         m_buffer.resize(
-            std::max(index{1}, max_element_m) * max_element_n +
-            std::max(index{1}, max_element_m) * max_element_n * max_element_n);
+            std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
 
         set_zero();
     }
