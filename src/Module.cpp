@@ -1,8 +1,8 @@
-#include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
@@ -16,7 +16,6 @@
 #include <eqlib/Objective.h>
 #include <eqlib/Problem.h>
 #include <eqlib/Variable.h>
-
 
 #include <eqlib/Info.h>
 
@@ -36,7 +35,6 @@ PYBIND11_MODULE(eqlib, m)
     m.attr("_USE_BLAS") = eqlib::Info::use_blas();
     m.attr("_USE_MKL") = eqlib::Info::use_mkl();
 
-
     // --- core
 
     // Equation
@@ -44,7 +42,6 @@ PYBIND11_MODULE(eqlib, m)
 
     // Variable
     eqlib::Variable::register_python(m);
-
 
     // Constraint
     eqlib::Constraint::register_python(m);
@@ -58,10 +55,8 @@ PYBIND11_MODULE(eqlib, m)
     // LambdaObjective
     eqlib::LambdaObjective::register_python(m);
 
-
     // Problem
     eqlib::Problem::register_python(m);
-
 
     // Log
     eqlib::Log::register_python(m);
@@ -74,5 +69,4 @@ PYBIND11_MODULE(eqlib, m)
 
     // NewtonRaphson
     eqlib::NewtonRaphson::register_python(m);
-
 }
