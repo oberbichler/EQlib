@@ -13,6 +13,12 @@
 
 namespace eqlib {
 
+#if defined(_MSC_VER)
+#define EQLIB_INLINE __forceinline
+#else
+#define EQLIB_INLINE __attribute__((always_inline)) inline
+#endif
+
 using index = std::ptrdiff_t;
 
 template <typename T>
