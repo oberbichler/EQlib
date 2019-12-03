@@ -9,21 +9,21 @@
 
 namespace eqlib {
 
-class SimplicialLDLT : public LinearSolver
-{
-private:    // types
+class SimplicialLDLT : public LinearSolver {
+private: // types
     using ColMajorSparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
-private:    // variables
+private: // variables
     Eigen::SimplicialLDLT<ColMajorSparse, Eigen::Lower> m_solver;
     bool m_is_analyzed;
 
-public:     // constructors
-    SimplicialLDLT() : m_is_analyzed(false)
+public: // constructors
+    SimplicialLDLT()
+        : m_is_analyzed(false)
     {
     }
 
-public:     // methods
+public: // methods
     std::string solver_name() const override
     {
         return "Eigen Simplicial LDLT";

@@ -8,26 +8,32 @@
 
 namespace eqlib {
 
-class Objective
-{
-protected:  // variables
+class Objective {
+private: // types
+    using Type = Objective;
+
+protected: // variables
     std::string m_name;
     bool m_is_active;
     std::vector<Pointer<Variable>> m_variables;
 
-public:     // constructors
-    Objective() : m_is_active(true), m_name("")
+public: // constructors
+    Objective()
+        : m_is_active(true)
+        , m_name("")
     {
     }
 
     Objective(const index nb_variables)
-    : m_variables(nb_variables), m_is_active(true), m_name("")
+        : m_variables(nb_variables)
+        , m_is_active(true)
+        , m_name("")
     {
     }
 
     virtual ~Objective() = default;
 
-public:     // methods
+public: // methods
     const Pointer<Variable>& variable(const index i) const
     {
         return m_variables[i];
@@ -65,20 +71,19 @@ public:     // methods
         m_name = value;
     }
 
-protected:  // methods
+protected: // methods
     void set_variables(const std::vector<Pointer<Variable>>& value)
     {
         m_variables = value;
     }
 
-public:     // python
+public: // python
     template <typename T>
-    class PyObjective : public T
-    {
-    public:     // constructor
+    class PyObjective : public T {
+    public: // constructor
         using T::T;
 
-    public:     // methods
+    public: // methods
         double compute(Ref<Vector> g, Ref<Matrix> h) const override
         {
             pybind11::gil_scoped_acquire acquire;
@@ -92,7 +97,6 @@ public:     // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        using Type = Objective;
         using Trampoline = PyObjective<Type>;
         using Holder = Pointer<Type>;
 
@@ -114,8 +118,7 @@ public:     // python
                 const double f = self.compute(g, h);
                 return std::make_tuple(f, g, h);
             })
-            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal)
-        ;
+            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal);
     }
 };
 

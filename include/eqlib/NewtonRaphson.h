@@ -8,12 +8,11 @@
 
 namespace eqlib {
 
-class NewtonRaphson
-{
-private:    // types
+class NewtonRaphson {
+private: // types
     using Type = eqlib::NewtonRaphson;
 
-private:    // members
+private: // members
     Pointer<Problem> m_problem;
     index m_iterations;
     index m_maxiter;
@@ -27,22 +26,21 @@ private:    // members
     double m_damping;
     index m_stopping_reason;
 
-private:    // methods
-
-public:     // constructor
+private: // methods
+public: // constructor
     NewtonRaphson(Pointer<Problem> problem)
-    : m_problem(problem)
-    , m_maxiter(100)
-    , m_rtol(1e-6)
-    , m_xtol(1e-6)
-    , m_damping(0.0)
+        : m_problem(problem)
+        , m_maxiter(100)
+        , m_rtol(1e-6)
+        , m_xtol(1e-6)
+        , m_damping(0.0)
     {
         if (problem->is_constrained()) {
             throw std::runtime_error("Constraints are not supported");
         }
     }
 
-public:     // methods
+public: // methods
     index iterations() const noexcept
     {
         return m_iterations;
@@ -118,7 +116,7 @@ public:     // methods
 
         const index n = m_problem->nb_variables();
 
-        for (index iteration = 0; ; iteration++) {
+        for (index iteration = 0;; iteration++) {
             // check max iterations
 
             if (iteration >= m_maxiter) {
@@ -189,7 +187,7 @@ public:     // methods
         Log::task_end("System solved in {:.3f} sec", timer.ellapsed());
     }
 
-public:     // python
+public: // python
     template <typename TModule>
     static void register_python(TModule& m)
     {
@@ -208,8 +206,7 @@ public:     // python
             .def_property_readonly("rnorm", &Type::rnorm)
             .def_property_readonly("fevals", &Type::fevals)
             .def_property_readonly("gevals", &Type::gevals)
-            .def_property_readonly("hevals", &Type::hevals)
-        ;
+            .def_property_readonly("hevals", &Type::hevals);
     }
 };
 

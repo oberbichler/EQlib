@@ -9,27 +9,34 @@
 
 namespace eqlib {
 
-class Constraint
-{
-protected:  // variables
+class Constraint {
+private: // types
+    using Type = Constraint;
+
+protected: // variables
     std::string m_name;
     bool m_is_active;
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
 
-public:     // constructors
-    Constraint() : m_is_active(true), m_name("")
+public: // constructors
+    Constraint()
+        : m_is_active(true)
+        , m_name("")
     {
     }
 
     Constraint(const index nb_equations, const index nb_variables)
-    : m_equations(nb_equations), m_variables(nb_variables), m_is_active(true), m_name("")
+        : m_equations(nb_equations)
+        , m_variables(nb_variables)
+        , m_is_active(true)
+        , m_name("")
     {
     }
 
     virtual ~Constraint() = default;
 
-public:     // methods
+public: // methods
     const Pointer<Equation>& equation(const index i) const
     {
         return m_equations[i];
@@ -82,7 +89,7 @@ public:     // methods
         m_name = value;
     }
 
-protected:  // methods
+protected: // methods
     void set_equations(const std::vector<Pointer<Equation>>& value)
     {
         m_equations = value;
@@ -93,14 +100,13 @@ protected:  // methods
         m_variables = value;
     }
 
-public:     // python
+public: // python
     template <typename T>
-    class PyConstraint : public T
-    {
-    public:     // constructor
+    class PyConstraint : public T {
+    public: // constructor
         using T::T;
 
-    public:     // methods
+    public: // methods
         void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs, const std::vector<Ref<Matrix>>& hs) const override
         {
             pybind11::gil_scoped_acquire acquire;
@@ -133,8 +139,7 @@ public:     // python
             // methods
             .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
             .def("equation", &Type::equation, "index"_a, py::return_value_policy::reference_internal)
-            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal)
-        ;
+            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal);
     }
 };
 

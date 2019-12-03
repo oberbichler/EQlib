@@ -25,9 +25,8 @@
 
 namespace eqlib {
 
-class Problem
-{
-private:    // types
+class Problem {
+private: // types
     using Type = Problem;
 
     using ElementsF = std::vector<Pointer<Objective>>;
@@ -36,13 +35,13 @@ private:    // types
     using Equations = std::vector<Pointer<Equation>>;
     using Variables = std::vector<Pointer<Variable>>;
 
-    struct Index
-    {
+    struct Index {
         index local;
         index global;
 
         Index(index local, index global)
-        : local(local), global(global)
+            : local(local)
+            , global(global)
         {
         }
 
@@ -52,7 +51,7 @@ private:    // types
         }
     };
 
-private:    // variables
+private: // variables
     double m_sigma;
 
     int m_nb_threads;
@@ -85,19 +84,19 @@ private:    // variables
 
     Pointer<LinearSolver> m_linear_solver;
 
-public:     // constructors
+public: // constructors
     Problem()
     {
     }
 
-    Problem(ElementsF elements_f, ElementsG elements_g, const index nb_threads=1, const index grainsize=100)
-    : m_elements_f(std::move(elements_f))
-    , m_elements_g(std::move(elements_g))
-    , m_sigma(1.0)
-    , m_nb_threads(nb_threads)
-    , m_grainsize(grainsize)
-    , m_max_element_n(0)
-    , m_max_element_m(0)
+    Problem(ElementsF elements_f, ElementsG elements_g, const index nb_threads = 1, const index grainsize = 100)
+        : m_elements_f(std::move(elements_f))
+        , m_elements_g(std::move(elements_g))
+        , m_sigma(1.0)
+        , m_nb_threads(nb_threads)
+        , m_grainsize(grainsize)
+        , m_max_element_n(0)
+        , m_max_element_m(0)
     {
         Log::task_begin("Initialize problem...");
 
@@ -108,7 +107,6 @@ public:     // constructors
 
         Log::task_info("The objective consists of {} elements", nb_elements_f);
         Log::task_info("The constraints consist of {} elements", nb_elements_g);
-
 
         Log::task_step("Getting equations and variables...");
 
@@ -138,7 +136,6 @@ public:     // constructors
             m_max_element_m = std::max(m_max_element_m, nb_equations);
         }
 
-
         Log::task_step("Creating the set of unique equations...");
 
         tsl::robin_set<Pointer<Equation>> equation_set;
@@ -156,7 +153,6 @@ public:     // constructors
                 }
             }
         }
-
 
         Log::task_step("Creating the set of unique variables...");
 
@@ -196,7 +192,6 @@ public:     // constructors
         Log::task_info("The problem contains {} variables", nb_variables);
         Log::task_info("The problem contains {} constraint equations", nb_equations);
 
-
         Log::task_step("Compute indices for variables and equations...");
 
         m_equation_indices.set_empty_key(nullptr);
@@ -215,7 +210,6 @@ public:     // constructors
             m_variable_indices[variable] = i;
         }
 
-
         Log::task_step("Compute indices for elements...");
 
         // variable indices f
@@ -224,9 +218,9 @@ public:     // constructors
         m_element_g_equation_indices.resize(nb_elements_g);
         m_element_g_variable_indices.resize(nb_elements_g);
 
-        #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f; i++) {
                 const auto& variables = m_elements_f[i]->variables();
 
@@ -252,7 +246,7 @@ public:     // constructors
 
             // equation indices g
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& equations = m_elements_g[i]->equations();
 
@@ -276,7 +270,7 @@ public:     // constructors
 
             // variable indices g
 
-            #pragma omp for schedule(dynamic, m_grainsize)
+#pragma omp for schedule(dynamic, m_grainsize)
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& variables = m_elements_g[i]->variables();
 
@@ -301,7 +295,6 @@ public:     // constructors
             }
         }
 
-
         Log::task_step("Analyse sparse patterns...");
 
         const auto n = length(m_variables);
@@ -313,12 +306,12 @@ public:     // constructors
         std::vector<std::mutex> lock_pattern_dg(m);
         std::vector<std::mutex> lock_pattern_hm(n);
 
-        #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
             std::vector<tsl::robin_set<index>> pattern_dg(m);
             std::vector<tsl::robin_set<index>> pattern_hm(n);
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_f); i++) {
                 const auto& variable_indices = m_element_f_variable_indices[i];
 
@@ -333,7 +326,7 @@ public:     // constructors
                 }
             }
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_g); i++) {
                 const auto& equation_indices = m_element_g_equation_indices[i];
                 const auto& variable_indices = m_element_g_variable_indices[i];
@@ -374,7 +367,6 @@ public:     // constructors
             }
         }
 
-
         Log::task_step("Allocate memory...");
 
         m_structure_dg.set(m, n, m_pattern_dg);
@@ -390,16 +382,16 @@ public:     // constructors
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
-        #ifdef EQLIB_USE_MKL
+#ifdef EQLIB_USE_MKL
         m_linear_solver = new_<PardisoLDLT>();
-        #else
+#else
         m_linear_solver = new_<SimplicialLDLT>();
-        #endif
+#endif
 
         Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
     }
 
-private:    // methods: computation
+private: // methods: computation
     template <index TOrder>
     void compute_element_f(ProblemData& data, const index i)
     {
@@ -435,7 +427,7 @@ private:    // methods: computation
 
         data.f() += f;
 
-        if constexpr(TOrder < 1) {
+        if constexpr (TOrder < 1) {
             return;
         }
 
@@ -444,7 +436,7 @@ private:    // methods: computation
 
             data.df(row.global) += g(row.local);
 
-            if constexpr(TOrder < 2) {
+            if constexpr (TOrder < 2) {
                 return;
             }
 
@@ -510,7 +502,7 @@ private:    // methods: computation
 
             data.g(equation_index.global) += fs(equation_index.local);
 
-            if constexpr(TOrder < 1) {
+            if constexpr (TOrder < 1) {
                 return;
             }
 
@@ -526,7 +518,7 @@ private:    // methods: computation
 
                 data.dg_value(dg_value_i) += local_g(row.local);
 
-                if constexpr(TOrder < 2) {
+                if constexpr (TOrder < 2) {
                     return;
                 }
 
@@ -543,13 +535,13 @@ private:    // methods: computation
         data.assemble_time() += timer_element_assemble.ellapsed();
     }
 
-public:     // methods: computation
+public: // methods: computation
     template <bool TParallel, bool TInfo, index TOrder>
     void compute()
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        if constexpr(TInfo) {
+        if constexpr (TInfo) {
             Log::task_begin("Compute problem...");
         }
 
@@ -557,12 +549,12 @@ public:     // methods: computation
 
         m_data.set_zero();
 
-        if constexpr(TParallel) {
+        if constexpr (TParallel) {
             ProblemData local_data(m_data);
 
-            #pragma omp parallel if(m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(local_data)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(local_data)
             {
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_f(); i++) {
                     compute_element_f<TOrder>(local_data, i);
                 }
@@ -570,21 +562,21 @@ public:     // methods: computation
                 if (sigma() != 1.0) {
                     local_data.f() *= sigma();
 
-                    if constexpr(TOrder > 0) {
+                    if constexpr (TOrder > 0) {
                         local_data.df() *= sigma();
                     }
 
-                    if constexpr(TOrder > 1) {
+                    if constexpr (TOrder > 1) {
                         local_data.hm_values() *= sigma();
                     }
                 }
 
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_g(); i++) {
                     compute_element_g<TOrder>(local_data, i);
                 }
 
-                #pragma omp critical
+#pragma omp critical
                 m_data += local_data;
             }
         } else {
@@ -595,11 +587,11 @@ public:     // methods: computation
             if (sigma() != 1.0) {
                 m_data.f() *= sigma();
 
-                if constexpr(TOrder > 0) {
+                if constexpr (TOrder > 0) {
                     m_data.df() *= sigma();
                 }
 
-                if constexpr(TOrder > 1) {
+                if constexpr (TOrder > 1) {
                     m_data.hm_values() *= sigma();
                 }
             }
@@ -609,7 +601,7 @@ public:     // methods: computation
             }
         }
 
-        if constexpr(TInfo) {
+        if constexpr (TInfo) {
             Log::task_info("Element computation took {} sec", m_data.computation_time());
             Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
 
@@ -694,7 +686,7 @@ public:     // methods: computation
         }
     }
 
-public:     // methods
+public: // methods
     Vector hm_inv_v(Ref<const Vector> v)
     {
         if (nb_variables() == 0) {
@@ -730,11 +722,11 @@ public:     // methods
     {
         auto new_problem = new_<Problem>(*this);
 
-        #ifdef EQLIB_USE_MKL
+#ifdef EQLIB_USE_MKL
         new_problem->m_linear_solver = new_<PardisoLDLT>();
-        #else
+#else
         new_problem->m_linear_solver = new_<SimplicialLDLT>();
-        #endif
+#endif
 
         return new_problem;
     }
@@ -849,7 +841,7 @@ public:     // methods
         remove_inactive_constraints();
     }
 
-public:     // methods: model properties
+public: // methods: model properties
     int nb_threads() const noexcept
     {
         return m_nb_threads;
@@ -915,7 +907,7 @@ public:     // methods: model properties
         return m_equations.at(index);
     }
 
-public:     // methods: input
+public: // methods: input
     Vector x() const
     {
         Vector result(nb_variables());
@@ -1007,7 +999,8 @@ public:     // methods: input
         m_sigma = value;
     }
 
-    std::vector<std::pair<double, double>> equation_bounds() const {
+    std::vector<std::pair<double, double>> equation_bounds() const
+    {
         std::vector<std::pair<double, double>> bounds(nb_equations());
 
         for (index i = 0; i < nb_equations(); i++) {
@@ -1017,7 +1010,8 @@ public:     // methods: input
         return bounds;
     }
 
-    std::vector<std::pair<double, double>> variable_bounds() const {
+    std::vector<std::pair<double, double>> variable_bounds() const
+    {
         std::vector<std::pair<double, double>> bounds(nb_variables());
 
         for (index i = 0; i < nb_variables(); i++) {
@@ -1027,7 +1021,7 @@ public:     // methods: input
         return bounds;
     }
 
-public:     // methods: output values
+public: // methods: output values
     Ref<Vector> values() noexcept
     {
         return Map<Vector>(m_data.values_ptr(), m_data.values().size());
@@ -1038,7 +1032,7 @@ public:     // methods: output values
         return Map<const Vector>(m_data.values_ptr(), m_data.values().size());
     }
 
-public:     // methods: output f
+public: // methods: output f
     double f() const noexcept
     {
         return m_data.f();
@@ -1049,7 +1043,7 @@ public:     // methods: output f
         m_data.f() = value;
     }
 
-public:     // methods: output g
+public: // methods: output g
     Ref<Vector> g() noexcept
     {
         return m_data.g();
@@ -1070,7 +1064,7 @@ public:     // methods: output g
         return m_data.g(index);
     }
 
-public:     // methods: output df
+public: // methods: output df
     Ref<Vector> df() noexcept
     {
         return m_data.df();
@@ -1091,7 +1085,7 @@ public:     // methods: output df
         return m_data.df(index);
     }
 
-public:     // methods: output dg
+public: // methods: output dg
     Ref<const Sparse> dg() const noexcept
     {
         return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg_ptr());
@@ -1139,7 +1133,7 @@ public:     // methods: output dg
         return m_data.dg_value(index);
     }
 
-public:     // methods: output hm
+public: // methods: output hm
     Map<const Sparse> hm() const noexcept
     {
         return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm_ptr());
@@ -1187,7 +1181,7 @@ public:     // methods: output hm
         return m_data.hm_value(index);
     }
 
-public:     // methods: python
+public: // methods: python
     template <typename TModule>
     static void register_python(TModule& m)
     {
@@ -1203,8 +1197,8 @@ public:     // methods: python
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<ElementsF, ElementsG, index, index>(), "objective"_a=py::list(), "constraints"_a=py::list(),
-                "nb_threads"_a=1, "grainsize"_a=100)
+            .def(py::init<ElementsF, ElementsG, index, index>(), "objective"_a = py::list(), "constraints"_a = py::list(),
+                "nb_threads"_a = 1, "grainsize"_a = 100)
             // read-only properties
             .def_property_readonly("is_constrained", &Type::is_constrained)
             .def_property_readonly("equations", &Type::equations)
@@ -1214,8 +1208,8 @@ public:     // methods: python
             .def_property_readonly("dg", [=](Type& self) {
                 return csr_matrix(
                     std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
-                    std::make_pair(self.nb_equations(), self.nb_variables())
-                ).release();
+                    std::make_pair(self.nb_equations(), self.nb_variables()))
+                    .release();
             })
             .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
             .def_property_readonly("dg_indptr", &Type::dg_indptr)
@@ -1223,8 +1217,8 @@ public:     // methods: python
             .def_property_readonly("hm", [=](Type& self) {
                 return csr_matrix(
                     std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
-                    std::make_pair(self.nb_variables(), self.nb_variables())
-                ).release();
+                    std::make_pair(self.nb_variables(), self.nb_variables()))
+                    .release();
             })
             .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
             .def_property_readonly("hm_indptr", &Type::hm_indptr)
@@ -1239,16 +1233,13 @@ public:     // methods: python
             .def_property("nb_threads", &Type::nb_threads, &Type::set_nb_threads)
             .def_property("grainsize", &Type::grainsize, &Type::set_grainsize)
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
-            .def_property("x", py::overload_cast<>(&Type::x, py::const_),
-                py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
-            .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_),
-                py::overload_cast<Ref<const Vector>>(&Type::set_variable_multipliers, py::const_))
-            .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_),
-                py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
+            .def_property("x", py::overload_cast<>(&Type::x, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
+            .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_variable_multipliers, py::const_))
+            .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
             .def("clone", &Type::clone)
             .def("remove_inactive_elements", &Type::remove_inactive_elements)
-            .def("compute", &Type::compute<true>, "order"_a=2, py::call_guard<py::gil_scoped_release>())
+            .def("compute", &Type::compute<true>, "order"_a = 2, py::call_guard<py::gil_scoped_release>())
             .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
             .def("hm_inv_v", &Type::hm_inv_v)
             .def("hm_v", &Type::hm_v)
@@ -1256,34 +1247,38 @@ public:     // methods: python
                 self.set_x(x);
                 self.compute<false>(0);
                 return self.f();
-            }, "x"_a)
+            },
+                "x"_a)
             .def("g_of", [](Type& self, Ref<const Vector> x) -> Vector {
                 self.set_x(x);
                 self.compute<false>(0);
                 return self.g();
-            }, "x"_a)
+            },
+                "x"_a)
             .def("df_of", [](Type& self, Ref<const Vector> x) -> Vector {
                 self.set_x(x);
                 self.compute<false>(1);
                 return self.df();
-            }, "x"_a)
+            },
+                "x"_a)
             .def("dg_of", [=](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(1);
                 return csr_matrix(
                     std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
-                    std::make_pair(self.nb_equations(), self.nb_variables())
-                ).release();
-            }, "x"_a)
+                    std::make_pair(self.nb_equations(), self.nb_variables()))
+                    .release();
+            },
+                "x"_a)
             .def("hm_of", [=](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(2);
                 return csr_matrix(
                     std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
-                    std::make_pair(self.nb_variables(), self.nb_variables())
-                ).release();
-            }, "x"_a)
-        ;
+                    std::make_pair(self.nb_variables(), self.nb_variables()))
+                    .release();
+            },
+                "x"_a);
     }
 };
 
