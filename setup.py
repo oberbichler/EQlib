@@ -8,7 +8,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-EQLIB_VERSION = '0.28.1'
+EQLIB_VERSION = '0.28.2'
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -67,6 +67,6 @@ setup(
     author_email='thomas.oberbichler@gmail.com',
     ext_modules=[CMakeExtension('eqlib')],
     cmdclass=dict(build_ext=CMakeBuild),
-    install_requires=['mkl', 'numpy', 'scipy'],
+    install_requires=['numpy', 'scipy'],
     zip_safe=False,
 )
