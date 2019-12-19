@@ -67,6 +67,6 @@ setup(
     author_email='thomas.oberbichler@gmail.com',
     ext_modules=[CMakeExtension('eqlib')],
     cmdclass=dict(build_ext=CMakeBuild),
-    install_requires=['msvc-runtime', 'numpy', 'scipy'],
+    install_requires=['msvc-runtime ; platform_system=="Windows"', 'numpy', 'scipy'],
     zip_safe=False,
 )
