@@ -13,8 +13,8 @@ private: // variables
     Vector m_values;
     Ref<Vector> m_g;
     Ref<Vector> m_df;
-    Ref<Vector> m_dg_values;
-    Ref<Vector> m_hm_values;
+    Ref<Vector> m_dg;
+    Ref<Vector> m_hm;
 
 public: // variables
     double m_computation_time;
@@ -28,8 +28,8 @@ public: // constructor
         , m_values(0)
         , m_g(m_values.head<0>())
         , m_df(m_values.head<0>())
-        , m_dg_values(m_values.head<0>())
-        , m_hm_values(m_values.head<0>())
+        , m_dg(m_values.head<0>())
+        , m_hm(m_values.head<0>())
     {
     }
 
@@ -70,8 +70,8 @@ public: // methods
         m_values.resize(nb_entries);
         new (&m_g) Ref<Vector>(m_values.segment(1, m));
         new (&m_df) Ref<Vector>(m_values.segment(1 + m, n));
-        new (&m_dg_values) Ref<Vector>(m_values.segment(1 + m + n, nb_nonzeros_dg));
-        new (&m_hm_values) Ref<Vector>(m_values.segment(1 + m + n + nb_nonzeros_dg, nb_nonzeros_hm));
+        new (&m_dg) Ref<Vector>(m_values.segment(1 + m + n, nb_nonzeros_dg));
+        new (&m_hm) Ref<Vector>(m_values.segment(1 + m + n + nb_nonzeros_dg, nb_nonzeros_hm));
 
         m_buffer.resize(std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
 
@@ -130,42 +130,42 @@ public: // methods
 
     double& dg_value(const index i) noexcept
     {
-        return m_dg_values(i);
+        return m_dg(i);
     }
 
     double dg_value(const index i) const noexcept
     {
-        return m_dg_values(i);
+        return m_dg(i);
     }
 
-    Ref<Vector> dg_values() noexcept
+    Ref<Vector> dg() noexcept
     {
-        return m_dg_values;
+        return m_dg;
     }
 
-    Ref<const Vector> dg_values() const noexcept
+    Ref<const Vector> dg() const noexcept
     {
-        return m_dg_values;
+        return m_dg;
     }
 
     double& hm_value(const index i) noexcept
     {
-        return m_hm_values(i);
+        return m_hm(i);
     }
 
     double hm_value(const index i) const noexcept
     {
-        return m_hm_values(i);
+        return m_hm(i);
     }
 
-    Ref<Vector> hm_values() noexcept
+    Ref<Vector> hm() noexcept
     {
-        return m_hm_values;
+        return m_hm;
     }
 
-    Ref<const Vector> hm_values() const noexcept
+    Ref<const Vector> hm() const noexcept
     {
-        return m_hm_values;
+        return m_hm;
     }
 
     Ref<Vector> values()

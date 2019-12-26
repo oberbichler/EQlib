@@ -567,7 +567,7 @@ public: // methods: computation
                     }
 
                     if constexpr (TOrder > 1) {
-                        local_data.hm_values() *= sigma();
+                        local_data.hm() *= sigma();
                     }
                 }
 
@@ -592,7 +592,7 @@ public: // methods: computation
                 }
 
                 if constexpr (TOrder > 1) {
-                    m_data.hm_values() *= sigma();
+                    m_data.hm() *= sigma();
                 }
             }
 
@@ -693,13 +693,13 @@ public: // methods
             return Vector(0);
         }
 
-        if (m_linear_solver->factorize(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm_values())) {
+        if (m_linear_solver->factorize(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm())) {
             throw std::runtime_error("Factorization failed");
         }
 
         Vector x(nb_variables());
 
-        if (m_linear_solver->solve(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm_values(), v, x)) {
+        if (m_linear_solver->solve(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm(), v, x)) {
             throw std::runtime_error("Solve failed");
         }
 
@@ -1088,17 +1088,17 @@ public: // methods: output df
 public: // methods: output dg
     Ref<const Sparse> dg() const noexcept
     {
-        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg_values().data());
+        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
     }
 
     Ref<Vector> dg_values() noexcept
     {
-        return m_data.dg_values();
+        return m_data.dg();
     }
 
     Ref<const Vector> dg_values() const noexcept
     {
-        return m_data.dg_values();
+        return m_data.dg();
     }
 
     const std::vector<int>& dg_indptr() const noexcept
@@ -1136,17 +1136,17 @@ public: // methods: output dg
 public: // methods: output hm
     Map<const Sparse> hm() const noexcept
     {
-        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm_values().data());
+        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm().data());
     }
 
     Ref<Vector> hm_values() noexcept
     {
-        return m_data.hm_values();
+        return m_data.hm();
     }
 
     Ref<const Vector> hm_values() const noexcept
     {
-        return m_data.hm_values();
+        return m_data.hm();
     }
 
     const std::vector<int>& hm_indptr() const noexcept
