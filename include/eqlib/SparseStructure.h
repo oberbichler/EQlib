@@ -136,7 +136,7 @@ public:     // methods
                 m_indices[i].set_empty_key(-1);
                 m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
                 for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
-                    const index j = m_ja[k];
+                    const TIndex j = m_ja[k];
                     m_indices[i][j] = k;
                 }
             }
