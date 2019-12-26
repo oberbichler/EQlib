@@ -11,6 +11,10 @@ private: // variables
     index m_nb_nonzeros_dg;
     index m_nb_nonzeros_hm;
     Vector m_values;
+    Ref<Vector> m_g;
+    Ref<Vector> m_df;
+    Ref<Vector> m_dg_values;
+    Ref<Vector> m_hm_values;
 
 public: // variables
     double m_computation_time;
@@ -21,6 +25,11 @@ public: // constructor
     ProblemData()
         : m_computation_time(0)
         , m_assemble_time(0)
+        , m_values(0)
+        , m_g(m_values.head<0>())
+        , m_df(m_values.head<0>())
+        , m_dg_values(m_values.head<0>())
+        , m_hm_values(m_values.head<0>())
     {
     }
 
@@ -59,6 +68,10 @@ public: // methods
         const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hm;
 
         m_values.resize(nb_entries);
+        new (&m_g) Ref<Vector>(m_values.segment(1, m));
+        new (&m_df) Ref<Vector>(m_values.segment(1 + m, n));
+        new (&m_dg_values) Ref<Vector>(m_values.segment(1 + m + n, nb_nonzeros_dg));
+        new (&m_hm_values) Ref<Vector>(m_values.segment(1 + m + n + nb_nonzeros_dg, nb_nonzeros_hm));
 
         m_buffer.resize(
             std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
@@ -78,100 +91,92 @@ public: // methods
 
     double& g(const index i) noexcept
     {
-        assert(0 <= i && i < m_m);
-        return m_values[1 + i];
+        return m_g(i);
     }
 
     double g(const index i) const noexcept
     {
-        assert(0 <= i && i < m_m);
-        return m_values[1 + i];
+        return m_g(i);
     }
 
     Ref<Vector> g() noexcept
     {
-        return m_values.segment(1, m_m);
+        return m_g;
     }
 
     Ref<const Vector> g() const noexcept
     {
-        return m_values.segment(1, m_m);
+        return m_g;
     }
 
     double& df(const index i) noexcept
     {
-        assert(0 <= i && i < m_n);
-        return m_values[1 + m_m + i];
+        return m_df(i);
     }
 
     double df(const index i) const noexcept
     {
-        assert(0 <= i && i < m_n);
-        return m_values[1 + m_m + i];
+        return m_df(i);
     }
 
     Ref<Vector> df() noexcept
     {
-        return m_values.segment(1 + m_m, m_n);
+        return m_df;
     }
 
     Ref<const Vector> df() const noexcept
     {
-        return m_values.segment(1 + m_m, m_n);
+        return m_df;
     }
 
     double& dg_value(const index i) noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_dg);
-        return m_values[1 + m_m + m_n + i];
+        return m_dg_values(i);
     }
 
     double dg_value(const index i) const noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_dg);
-        return m_values[1 + m_m + m_n + i];
+        return m_dg_values(i);
     }
 
     Ref<Vector> dg_values() noexcept
     {
-        return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
+        return m_dg_values;
     }
 
     Ref<const Vector> dg_values() const noexcept
     {
-        return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
+        return m_dg_values;
     }
 
     const double* dg_ptr() const noexcept
     {
-        return m_values.data() + 1 + m_m + m_n;
+        return m_dg_values.data();
     }
 
     double& hm_value(const index i) noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_hm);
-        return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
+        return m_hm_values(i);
     }
 
     double hm_value(const index i) const noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_hm);
-        return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
+        return m_hm_values(i);
     }
 
     const double* const hm_ptr() const noexcept
     {
-        return m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg;
+        return m_hm_values.data();
     }
 
     Ref<Vector> hm_values() noexcept
     {
-        return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
+        return m_hm_values;
     }
 
     Ref<const Vector> hm_values() const noexcept
     {
-        return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
+        return m_hm_values;
     }
 
     Ref<Vector> values()
