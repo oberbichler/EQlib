@@ -708,7 +708,7 @@ public: // methods
 
     Vector hm_v(Ref<const Vector> v) const
     {
-        return hm().selfadjointView<Eigen::Upper>() * v;
+        return hm().selfadjointView<Eigen::Upper>() * v.transpose();
     }
 
     void hm_add_diagonal(const double value)
