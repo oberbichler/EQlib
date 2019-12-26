@@ -73,8 +73,7 @@ public: // methods
         new (&m_dg_values) Ref<Vector>(m_values.segment(1 + m + n, nb_nonzeros_dg));
         new (&m_hm_values) Ref<Vector>(m_values.segment(1 + m + n + nb_nonzeros_dg, nb_nonzeros_hm));
 
-        m_buffer.resize(
-            std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
+        m_buffer.resize(std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
 
         set_zero();
     }
