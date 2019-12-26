@@ -89,7 +89,7 @@ public: // constructors
     {
     }
 
-    Problem(ElementsF elements_f, ElementsG elements_g, const index nb_threads = 1, const index grainsize = 100)
+    Problem(ElementsF elements_f, ElementsG elements_g, const int nb_threads = 1, const int grainsize = 100)
         : m_elements_f(std::move(elements_f))
         , m_elements_g(std::move(elements_g))
         , m_sigma(1.0)
@@ -1197,7 +1197,7 @@ public: // methods: python
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<ElementsF, ElementsG, index, index>(), "objective"_a = py::list(), "constraints"_a = py::list(),
+            .def(py::init<ElementsF, ElementsG, int, int>(), "objective"_a = py::list(), "constraints"_a = py::list(),
                 "nb_threads"_a = 1, "grainsize"_a = 100)
             // read-only properties
             .def_property_readonly("is_constrained", &Type::is_constrained)
