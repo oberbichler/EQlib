@@ -149,11 +149,6 @@ public: // methods
         return m_dg_values;
     }
 
-    const double* dg_ptr() const noexcept
-    {
-        return m_dg_values.data();
-    }
-
     double& hm_value(const index i) noexcept
     {
         return m_hm_values(i);
@@ -162,11 +157,6 @@ public: // methods
     double hm_value(const index i) const noexcept
     {
         return m_hm_values(i);
-    }
-
-    const double* const hm_ptr() const noexcept
-    {
-        return m_hm_values.data();
     }
 
     Ref<Vector> hm_values() noexcept
@@ -187,16 +177,6 @@ public: // methods
     Ref<const Vector> values() const
     {
         return m_values;
-    }
-
-    double* values_ptr()
-    {
-        return m_values.data();
-    }
-
-    const double* values_ptr() const
-    {
-        return m_values.data();
     }
 
     ProblemData& operator+=(const ProblemData& rhs)

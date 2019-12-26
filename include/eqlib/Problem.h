@@ -1024,12 +1024,12 @@ public: // methods: input
 public: // methods: output values
     Ref<Vector> values() noexcept
     {
-        return Map<Vector>(m_data.values_ptr(), m_data.values().size());
+        return Map<Vector>(m_data.values().data(), m_data.values().size());
     }
 
     Ref<const Vector> values() const noexcept
     {
-        return Map<const Vector>(m_data.values_ptr(), m_data.values().size());
+        return Map<const Vector>(m_data.values().data(), m_data.values().size());
     }
 
 public: // methods: output f
@@ -1088,7 +1088,7 @@ public: // methods: output df
 public: // methods: output dg
     Ref<const Sparse> dg() const noexcept
     {
-        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg_ptr());
+        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg_values().data());
     }
 
     Ref<Vector> dg_values() noexcept
@@ -1136,7 +1136,7 @@ public: // methods: output dg
 public: // methods: output hm
     Map<const Sparse> hm() const noexcept
     {
-        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm_ptr());
+        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm_values().data());
     }
 
     Ref<Vector> hm_values() noexcept
