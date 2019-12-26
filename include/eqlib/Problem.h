@@ -348,7 +348,7 @@ public: // constructors
                 }
             }
 
-            for (index i = 0; i < pattern_hm.size(); i++) {
+            for (index i = 0; i < length(pattern_hm); i++) {
                 if (pattern_hm[i].empty()) {
                     continue;
                 }
@@ -357,7 +357,7 @@ public: // constructors
                 lock_pattern_hm[i].unlock();
             }
 
-            for (index i = 0; i < pattern_dg.size(); i++) {
+            for (index i = 0; i < length(pattern_dg); i++) {
                 if (pattern_dg[i].empty()) {
                     continue;
                 }
