@@ -95,7 +95,7 @@ public: // methods
             return false;
         }
 
-        m_n = ia.size() - 1;
+        m_n = static_cast<MKL_INT>(ia.size() - 1);
         m_perm.resize(m_n);
 
         MKL_INT error = pardiso(
