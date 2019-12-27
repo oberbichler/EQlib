@@ -842,6 +842,20 @@ public: // methods
     }
 
 public: // methods: model properties
+    Pointer<LinearSolver> linear_solver() const noexcept
+    {
+        return m_linear_solver;
+    }
+
+    void set_linear_solver(const Pointer<LinearSolver> value) noexcept
+    {
+        if (value == nullptr) {
+            throw std::invalid_argument("Value is null");
+        }
+
+        m_linear_solver = value;
+    }
+
     int nb_threads() const noexcept
     {
         return m_nb_threads;
@@ -1229,6 +1243,7 @@ public: // methods: python
             .def_property_readonly("equation_bounds", &Type::equation_bounds)
             .def_property_readonly("variable_bounds", &Type::variable_bounds)
             // properties
+            .def_property("linear_solver", &Type::linear_solver, &Type::set_linear_solver)
             .def_property("f", &Type::f, &Type::set_f)
             .def_property("nb_threads", &Type::nb_threads, &Type::set_nb_threads)
             .def_property("grainsize", &Type::grainsize, &Type::set_grainsize)
