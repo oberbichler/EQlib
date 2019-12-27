@@ -69,4 +69,15 @@ PYBIND11_MODULE(eqlib, m)
 
     // NewtonRaphson
     eqlib::NewtonRaphson::register_python(m);
+
+    // LinearSolver
+    eqlib::LinearSolver::register_python(m);
+
+    // SimplicialLDLT
+    eqlib::SimplicialLDLT::register_python(m);
+
+    #ifdef EQLIB_USE_MKL
+    // PardisoLDLT
+    eqlib::PardisoLDLT::register_python(m);
+    #endif
 }
