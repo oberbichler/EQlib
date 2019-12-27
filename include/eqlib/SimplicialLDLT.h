@@ -11,6 +11,7 @@ namespace eqlib {
 
 class SimplicialLDLT : public LinearSolver {
 private: // types
+    using Type = SimplicialLDLT;
     using ColMajorSparse = Eigen::SparseMatrix<double, Eigen::ColMajor>;
 
 private: // variables
@@ -70,6 +71,21 @@ public: // methods
         const bool success = (m_solver.info() == Eigen::Success);
 
         return !success;
+    }
+
+public: // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Base = LinearSolver;
+        using Holder = Pointer<Type>;
+
+        py::class_<Type, Base, Holder>(m, "SimplicialLDLT")
+            // constructors
+            .def(py::init<>());
     }
 };
 
