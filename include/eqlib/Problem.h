@@ -550,34 +550,34 @@ public: // methods: computation
         m_data.set_zero();
 
         if constexpr (TParallel) {
-            ProblemData local_data(m_data);
+            ProblemData l_data(m_data);
 
-            #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(local_data)
+            #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_element_f<TOrder>(local_data, i);
+                    compute_element_f<TOrder>(l_data, i);
                 }
 
                 if (sigma() != 1.0) {
-                    local_data.f() *= sigma();
+                    l_data.f() *= sigma();
 
                     if constexpr (TOrder > 0) {
-                        local_data.df() *= sigma();
+                        l_data.df() *= sigma();
                     }
 
                     if constexpr (TOrder > 1) {
-                        local_data.hm() *= sigma();
+                        l_data.hm() *= sigma();
                     }
                 }
 
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_g(); i++) {
-                    compute_element_g<TOrder>(local_data, i);
+                    compute_element_g<TOrder>(l_data, i);
                 }
 
                 #pragma omp critical
-                m_data += local_data;
+                m_data += l_data;
             }
         } else {
             for (index i = 0; i < nb_elements_f(); i++) {
