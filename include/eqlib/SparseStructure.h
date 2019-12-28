@@ -128,29 +128,28 @@ public: // methods
     }
 
     template <typename TPattern>
-    void set(const index rows, const index cols, const TPattern& pattern) noexcept
+    static Type from_pattern(const index rows, const index cols, const TPattern& pattern)
     {
         const index size_i = TRowMajor ? rows : cols;
         const index size_j = TRowMajor ? cols : rows;
 
         assert(length(pattern) == size_i);
 
-        m_rows = static_cast<TIndex>(rows);
-        m_cols = static_cast<TIndex>(cols);
+        std::vector<TIndex> ia(size_i + 1);
 
-        m_ia.resize(size_i + 1);
-
-        m_ia[0] = 0;
+        ia[0] = 0;
 
         for (TIndex i = 0; i < size_i; i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
-            m_ia[i + 1] = m_ia[i] + n;
+            ia[i + 1] = ia[i] + n;
         }
 
-        m_ja.resize(nb_nonzeros());
+        const auto nb_nonzeros = ia.back();
 
-        auto ja_it = m_ja.begin();
+        std::vector<TIndex> ja(nb_nonzeros);
+
+        auto ja_it = ja.begin();
 
         for (TIndex i = 0; i < size_i; i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
@@ -161,18 +160,7 @@ public: // methods
             }
         }
 
-        if (TIndexMap) {
-            m_indices.resize(size_i);
-
-            for (index i = 0; i < size_i; i++) {
-                m_indices[i].set_empty_key(-1);
-                m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
-                for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
-                    const TIndex j = m_ja[k];
-                    m_indices[i][j] = k;
-                }
-            }
-        }
+        return Type(static_cast<TIndex>(rows), static_cast<TIndex>(cols), ia, ja);
     }
 
     std::pair<SparseStructure, std::vector<index>> to_general() const
@@ -200,8 +188,7 @@ public: // methods
             }
         }
 
-        SparseStructure result;
-        result.set(m_rows, m_cols, pattern);
+        SparseStructure result = from_pattern(m_rows, m_cols, pattern);
 
         std::vector<index> value_indices;
         value_indices.reserve(nb_nonzeros() * 2 - n);
@@ -238,8 +225,7 @@ public: // methods
             }
         }
 
-        SparseStructure result;
-        result.set(m_rows, m_cols, pattern);
+        SparseStructure result = from_pattern(m_rows, m_cols, pattern);
 
         Vector new_values(nb_nonzeros() * 2 - n);
         index i = 0;

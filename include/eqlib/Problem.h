@@ -365,8 +365,8 @@ public: // constructors
 
         Log::task_step("Allocate memory...");
 
-        m_structure_dg.set(m, n, pattern_dg);
-        m_structure_hm.set(n, n, pattern_hm);
+        m_structure_dg = SparseStructure<double, int, true>::from_pattern(m, n, pattern_dg);
+        m_structure_hm = SparseStructure<double, int, true>::from_pattern(n, n, pattern_hm);
 
         Log::task_info("The hessian has {} nonzero entries ({:.3f}%)",
             m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
