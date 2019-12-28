@@ -11,6 +11,9 @@ namespace eqlib {
 template <typename TScalar = double, typename TIndex = int, bool TRowMajor = false, bool TIndexMap = true>
 class SparseStructure
 {
+private:    // types
+    using Type = SparseStructure<TScalar, TIndex, TRowMajor, TIndexMap>;
+
 private:    // variables
     TIndex m_rows;
     TIndex m_cols;
@@ -209,6 +212,25 @@ public:     // methods
                 action(row, col);
             }
         }
+    }
+
+public: // python
+    template <typename TModule>
+    static void register_python(TModule& m, const std::string& name)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Holder = Pointer<Type>;
+
+        py::class_<Type, Holder>(m, name.c_str())
+            // read-only properties
+            .def_property_readonly("rows", &Type::rows)
+            .def_property_readonly("cols", &Type::cols)
+            .def_property_readonly("nb_nonzeros", &Type::nb_nonzeros)
+            .def_property_readonly("density", &Type::density)
+            .def_property_readonly("ia", py::overload_cast<>(&Type::ia, py::const_))
+            .def_property_readonly("ja", py::overload_cast<>(&Type::ja, py::const_));
     }
 };
 
