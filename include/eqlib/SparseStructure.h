@@ -288,6 +288,8 @@ public: // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, name.c_str())
+            // constructors
+            .def(py::init<TIndex, TIndex, std::vector<TIndex>, std::vector<TIndex>>(), "rows"_a, "cols"_a, "ia"_a, "ja"_a)
             // static methods
             .def_static("convert_from", &Type::convert_from, "other"_a, "values"_a)
             // methods
