@@ -2,6 +2,7 @@
 
 #include "Define.h"
 
+#include <set>
 #include <vector>
 
 namespace eqlib {
@@ -317,6 +318,7 @@ public: // python
             .def(py::init<TIndex, TIndex, std::vector<TIndex>, std::vector<TIndex>>(), "rows"_a, "cols"_a, "ia"_a, "ja"_a)
             // static methods
             .def_static("convert_from", &Type::convert_from, "other"_a, "values"_a)
+            .def_static("from_pattern", &Type::from_pattern<std::vector<std::set<TIndex>>>, "rows"_a, "cols"_a, "pattern"_a)
             // methods
             .def("to_general", py::overload_cast<>(&Type::to_general, py::const_))
             .def("to_general", py::overload_cast<Ref<const Vector>>(&Type::to_general, py::const_))
