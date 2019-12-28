@@ -847,7 +847,7 @@ public: // methods: model properties
         return m_linear_solver;
     }
 
-    void set_linear_solver(const Pointer<LinearSolver> value) noexcept
+    void set_linear_solver(const Pointer<LinearSolver> value)
     {
         if (value == nullptr) {
             throw std::invalid_argument("Value is null");
