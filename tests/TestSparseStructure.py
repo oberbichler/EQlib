@@ -52,6 +52,14 @@ class TestRowMajorSparseStructure(unittest.TestCase):
         assert_equal(structure.ja, [0, 2, 0, 1, 1, 2])
         assert_equal(a, [0, 4, 1, 2, 3, 5])
 
+    def test_from_pattern(self):
+        structure = eq.RowMajorSparseStructure.from_pattern(3, 4, [{0, 2}, {2, 3}, {1, 3}])
+
+        assert_equal(structure.rows, 3)
+        assert_equal(structure.cols, 4)
+        assert_equal(structure.ia, [0, 2, 4, 6])
+        assert_equal(structure.ja, [0, 2, 2, 3, 1, 3])
+
 
 class TestColMajorSparseStructure(unittest.TestCase):
     def test_rectangular(self):
@@ -100,6 +108,14 @@ class TestColMajorSparseStructure(unittest.TestCase):
         assert_equal(structure.ia, [0, 1, 2, 4, 6])
         assert_equal(structure.ja, [0, 2, 0, 1, 1, 2])
         assert_equal(a, [0, 4, 1, 2, 3, 5])
+
+    def test_from_pattern(self):
+        structure = eq.ColMajorSparseStructure.from_pattern(4, 3, [{0, 2}, {2, 3}, {1, 3}])
+
+        assert_equal(structure.rows, 4)
+        assert_equal(structure.cols, 3)
+        assert_equal(structure.ia, [0, 2, 4, 6])
+        assert_equal(structure.ja, [0, 2, 2, 3, 1, 3])
 
 
 if __name__ == '__main__':
