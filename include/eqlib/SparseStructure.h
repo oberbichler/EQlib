@@ -7,12 +7,11 @@
 namespace eqlib {
 
 template <typename TScalar = double, typename TIndex = int, bool TRowMajor = false, bool TIndexMap = true>
-class SparseStructure
-{
-private:    // types
+class SparseStructure {
+private: // types
     using Type = SparseStructure<TScalar, TIndex, TRowMajor, TIndexMap>;
 
-private:    // variables
+private: // variables
     TIndex m_rows;
     TIndex m_cols;
     std::vector<TIndex> m_ia;
@@ -44,10 +43,10 @@ public: // constructors
                     m_indices[i][j] = k;
                 }
             }
-    }
+        }
     }
 
-public:     // methods
+public: // methods
     TIndex rows() const noexcept
     {
         return m_rows;
@@ -179,7 +178,7 @@ public:     // methods
     std::pair<SparseStructure, std::vector<index>> to_general() const
     {
         assert(m_rows == m_cols);
-        
+
         const index n = m_rows;
 
         std::vector<std::vector<TIndex>> pattern(n);
@@ -200,7 +199,7 @@ public:     // methods
                 indices[j].push_back(k);
             }
         }
-        
+
         SparseStructure result;
         result.set(m_rows, m_cols, pattern);
 
@@ -217,7 +216,7 @@ public:     // methods
     std::pair<SparseStructure, Vector> to_general(Ref<const Vector> values) const
     {
         assert(m_rows == m_cols);
-        
+
         const index n = m_rows;
 
         std::vector<std::vector<TIndex>> pattern(n);
@@ -238,7 +237,7 @@ public:     // methods
                 indices[j].push_back(k);
             }
         }
-        
+
         SparseStructure result;
         result.set(m_rows, m_cols, pattern);
 
@@ -276,7 +275,7 @@ public:     // methods
         TIndex cumsum = 0;
 
         for (TIndex j = 0; j < m; j++) {
-            const auto temp  = ia[j];
+            const auto temp = ia[j];
             ia[j] = cumsum;
             cumsum += temp;
         }
@@ -285,8 +284,8 @@ public:     // methods
 
         Vector a_values = values;
 
-        for (TIndex i = 0; i < n; i++){
-            for(TIndex k = other.ia(i); k < other.ia(i + 1); k++){
+        for (TIndex i = 0; i < n; i++) {
+            for (TIndex k = other.ia(i); k < other.ia(i + 1); k++) {
                 const auto j = other.ja(k);
                 const auto dest = ia[j];
 
@@ -299,7 +298,7 @@ public:     // methods
 
         TIndex last = 0;
 
-        for (TIndex j = 0; j <= m; j++){
+        for (TIndex j = 0; j <= m; j++) {
             const auto temp = ia[j];
             ia[j] = last;
             last = temp;
