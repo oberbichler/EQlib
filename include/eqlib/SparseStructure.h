@@ -2,6 +2,7 @@
 
 #include "Define.h"
 
+#include <functional>
 #include <set>
 #include <vector>
 
@@ -294,12 +295,20 @@ public: // methods
         return Type(other.rows(), other.cols(), ia, ja);
     }
 
-    void for_each(std::function<void(TIndex, TIndex)> action) const
+    void for_each(std::function<void(TIndex, TIndex, TIndex)> action) const
     {
-        for (TIndex col = 0; col < m_cols; col++) {
-            for (TIndex i = m_ia[col]; i < m_ia[col + 1]; i++) {
-                const TIndex row = m_ja[i];
-                action(row, col);
+        const TIndex size_i = TRowMajor ? m_rows : m_cols;
+
+        TIndex idx = 0;
+
+        for (TIndex i = 0; i < size_i; i++) {
+            for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
+                const TIndex j = m_ja[k];
+                if constexpr(TRowMajor) {
+                    action(i, j, idx++);
+                } else {
+                    action(j, i, idx++);
+                }
             }
         }
     }
@@ -323,6 +332,7 @@ public: // python
             .def("to_general", py::overload_cast<>(&Type::to_general, py::const_))
             .def("to_general", py::overload_cast<Ref<const Vector>>(&Type::to_general, py::const_))
             .def("get_index", &Type::get_index, "i"_a, "j"_a)
+            .def("for_each", &Type::for_each, "action"_a)
             // read-only properties
             .def_property_readonly("rows", &Type::rows)
             .def_property_readonly("cols", &Type::cols)
