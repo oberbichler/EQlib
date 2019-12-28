@@ -11,6 +11,10 @@ private: // variables
     index m_nb_nonzeros_dg;
     index m_nb_nonzeros_hm;
     Vector m_values;
+    Ref<Vector> m_g;
+    Ref<Vector> m_df;
+    Ref<Vector> m_dg;
+    Ref<Vector> m_hm;
 
 public: // variables
     double m_computation_time;
@@ -21,6 +25,11 @@ public: // constructor
     ProblemData()
         : m_computation_time(0)
         , m_assemble_time(0)
+        , m_values(0)
+        , m_g(m_values.head<0>())
+        , m_df(m_values.head<0>())
+        , m_dg(m_values.head<0>())
+        , m_hm(m_values.head<0>())
     {
     }
 
@@ -59,9 +68,12 @@ public: // methods
         const index nb_entries = 1 + m + n + nb_nonzeros_dg + nb_nonzeros_hm;
 
         m_values.resize(nb_entries);
+        new (&m_g) Ref<Vector>(m_values.segment(1, m));
+        new (&m_df) Ref<Vector>(m_values.segment(1 + m, n));
+        new (&m_dg) Ref<Vector>(m_values.segment(1 + m + n, nb_nonzeros_dg));
+        new (&m_hm) Ref<Vector>(m_values.segment(1 + m + n + nb_nonzeros_dg, nb_nonzeros_hm));
 
-        m_buffer.resize(
-            std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
+        m_buffer.resize(std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
 
         set_zero();
     }
@@ -78,100 +90,82 @@ public: // methods
 
     double& g(const index i) noexcept
     {
-        assert(0 <= i && i < m_m);
-        return m_values[1 + i];
+        return m_g(i);
     }
 
     double g(const index i) const noexcept
     {
-        assert(0 <= i && i < m_m);
-        return m_values[1 + i];
+        return m_g(i);
     }
 
     Ref<Vector> g() noexcept
     {
-        return m_values.segment(1, m_m);
+        return m_g;
     }
 
     Ref<const Vector> g() const noexcept
     {
-        return m_values.segment(1, m_m);
+        return m_g;
     }
 
     double& df(const index i) noexcept
     {
-        assert(0 <= i && i < m_n);
-        return m_values[1 + m_m + i];
+        return m_df(i);
     }
 
     double df(const index i) const noexcept
     {
-        assert(0 <= i && i < m_n);
-        return m_values[1 + m_m + i];
+        return m_df(i);
     }
 
     Ref<Vector> df() noexcept
     {
-        return m_values.segment(1 + m_m, m_n);
+        return m_df;
     }
 
     Ref<const Vector> df() const noexcept
     {
-        return m_values.segment(1 + m_m, m_n);
+        return m_df;
     }
 
     double& dg_value(const index i) noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_dg);
-        return m_values[1 + m_m + m_n + i];
+        return m_dg(i);
     }
 
     double dg_value(const index i) const noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_dg);
-        return m_values[1 + m_m + m_n + i];
+        return m_dg(i);
     }
 
-    Ref<Vector> dg_values() noexcept
+    Ref<Vector> dg() noexcept
     {
-        return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
+        return m_dg;
     }
 
-    Ref<const Vector> dg_values() const noexcept
+    Ref<const Vector> dg() const noexcept
     {
-        return m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg);
-    }
-
-    const double* dg_ptr() const noexcept
-    {
-        return m_values.data() + 1 + m_m + m_n;
+        return m_dg;
     }
 
     double& hm_value(const index i) noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_hm);
-        return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
+        return m_hm(i);
     }
 
     double hm_value(const index i) const noexcept
     {
-        assert(0 <= i && i < m_nb_nonzeros_hm);
-        return m_values[1 + m_m + m_n + m_nb_nonzeros_dg + i];
+        return m_hm(i);
     }
 
-    const double* const hm_ptr() const noexcept
+    Ref<Vector> hm() noexcept
     {
-        return m_values.data() + 1 + m_m + m_n + m_nb_nonzeros_dg;
+        return m_hm;
     }
 
-    Ref<Vector> hm_values() noexcept
+    Ref<const Vector> hm() const noexcept
     {
-        return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
-    }
-
-    Ref<const Vector> hm_values() const noexcept
-    {
-        return m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm);
+        return m_hm;
     }
 
     Ref<Vector> values()
@@ -182,16 +176,6 @@ public: // methods
     Ref<const Vector> values() const
     {
         return m_values;
-    }
-
-    double* values_ptr()
-    {
-        return m_values.data();
-    }
-
-    const double* values_ptr() const
-    {
-        return m_values.data();
     }
 
     ProblemData& operator+=(const ProblemData& rhs)

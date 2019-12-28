@@ -46,7 +46,7 @@ Unique<T> new_(TArgs&&... args)
 using Vector3D = Eigen::Vector3d;
 
 using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
-using Vector = Eigen::Matrix<double, Eigen::Dynamic, 1>;
+using Vector = Eigen::Matrix<double, 1, Eigen::Dynamic>;
 using Sparse = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 
 template <int N>

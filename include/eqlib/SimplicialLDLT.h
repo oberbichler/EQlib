@@ -65,7 +65,7 @@ public: // methods
 
     bool solve(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a, Ref<const Vector> b, Ref<Vector> x) override
     {
-        x = m_solver.solve(b);
+        x = m_solver.solve(b.transpose());
 
         const bool success = (m_solver.info() == Eigen::Success);
 

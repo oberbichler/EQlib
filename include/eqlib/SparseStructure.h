@@ -101,16 +101,19 @@ public:     // methods
     template <typename TPattern>
     void set(const index rows, const index cols, const TPattern& pattern) noexcept
     {
-        assert(length(pattern) == (TRowMajor ? rows : cols));
+        const index size_i = TRowMajor ? rows : cols;
+        const index size_j = TRowMajor ? cols : rows;
+
+        assert(length(pattern) == size_i);
 
         m_rows = static_cast<TIndex>(rows);
         m_cols = static_cast<TIndex>(cols);
 
-        m_ia.resize((TRowMajor ? rows : cols) + 1);
+        m_ia.resize(size_i + 1);
 
         m_ia[0] = 0;
 
-        for (TIndex i = 0; i < (TRowMajor ? rows : cols); i++) {
+        for (TIndex i = 0; i < size_i; i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
             m_ia[i + 1] = m_ia[i] + n;
@@ -120,23 +123,23 @@ public:     // methods
 
         auto ja_it = m_ja.begin();
 
-        for (TIndex i = 0; i < (TRowMajor ? rows : cols); i++) {
+        for (TIndex i = 0; i < size_i; i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
             for (const auto j : pattern[i]) {
-                assert(j < (TRowMajor ? m_cols : m_rows));
+                assert(j < size_j);
                 *ja_it++ = static_cast<TIndex>(j);
             }
         }
 
         if (TIndexMap) {
-            m_indices.resize(TRowMajor ? rows : cols);
+            m_indices.resize(size_i);
 
-            for (index i = 0; i < (TRowMajor ? rows : cols); i++) {
+            for (index i = 0; i < size_i; i++) {
                 m_indices[i].set_empty_key(-1);
                 m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
                 for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
-                    const index j = m_ja[k];
+                    const TIndex j = m_ja[k];
                     m_indices[i][j] = k;
                 }
             }

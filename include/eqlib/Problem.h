@@ -89,7 +89,7 @@ public: // constructors
     {
     }
 
-    Problem(ElementsF elements_f, ElementsG elements_g, const index nb_threads = 1, const index grainsize = 100)
+    Problem(ElementsF elements_f, ElementsG elements_g, const int nb_threads = 1, const int grainsize = 100)
         : m_elements_f(std::move(elements_f))
         , m_elements_g(std::move(elements_g))
         , m_sigma(1.0)
@@ -218,9 +218,9 @@ public: // constructors
         m_element_g_equation_indices.resize(nb_elements_g);
         m_element_g_variable_indices.resize(nb_elements_g);
 
-#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
+        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
-#pragma omp for schedule(dynamic, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f; i++) {
                 const auto& variables = m_elements_f[i]->variables();
 
@@ -246,7 +246,7 @@ public: // constructors
 
             // equation indices g
 
-#pragma omp for schedule(dynamic, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& equations = m_elements_g[i]->equations();
 
@@ -270,7 +270,7 @@ public: // constructors
 
             // variable indices g
 
-#pragma omp for schedule(dynamic, m_grainsize)
+            #pragma omp for schedule(dynamic, m_grainsize)
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& variables = m_elements_g[i]->variables();
 
@@ -300,18 +300,18 @@ public: // constructors
         const auto n = length(m_variables);
         const auto m = length(m_equations);
 
-        std::vector<std::set<index>> m_pattern_dg(m);
-        std::vector<std::set<index>> m_pattern_hm(n);
+        std::vector<std::set<index>> pattern_dg(m);
+        std::vector<std::set<index>> pattern_hm(n);
 
         std::vector<std::mutex> lock_pattern_dg(m);
         std::vector<std::mutex> lock_pattern_hm(n);
 
-#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
+        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
-            std::vector<tsl::robin_set<index>> pattern_dg(m);
-            std::vector<tsl::robin_set<index>> pattern_hm(n);
+            std::vector<tsl::robin_set<index>> l_pattern_dg(m);
+            std::vector<tsl::robin_set<index>> l_pattern_hm(n);
 
-#pragma omp for schedule(dynamic, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_f); i++) {
                 const auto& variable_indices = m_element_f_variable_indices[i];
 
@@ -321,19 +321,19 @@ public: // constructors
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                        pattern_hm[row.global].insert(col.global);
+                        l_pattern_hm[row.global].insert(col.global);
                     }
                 }
             }
 
-#pragma omp for schedule(dynamic, m_grainsize) nowait
+            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_g); i++) {
                 const auto& equation_indices = m_element_g_equation_indices[i];
                 const auto& variable_indices = m_element_g_variable_indices[i];
 
                 for (const auto row : equation_indices) {
                     for (const auto col : variable_indices) {
-                        pattern_dg[row.global].insert(col.global);
+                        l_pattern_dg[row.global].insert(col.global);
                     }
                 }
 
@@ -343,34 +343,34 @@ public: // constructors
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                        pattern_hm[row.global].insert(col.global);
+                        l_pattern_hm[row.global].insert(col.global);
                     }
                 }
             }
 
-            for (index i = 0; i < pattern_hm.size(); i++) {
-                if (pattern_hm[i].empty()) {
+            for (index i = 0; i < length(l_pattern_hm); i++) {
+                if (l_pattern_hm[i].empty()) {
                     continue;
                 }
                 lock_pattern_hm[i].lock();
-                m_pattern_hm[i].insert(pattern_hm[i].begin(), pattern_hm[i].end());
+                pattern_hm[i].insert(l_pattern_hm[i].begin(), l_pattern_hm[i].end());
                 lock_pattern_hm[i].unlock();
             }
 
-            for (index i = 0; i < pattern_dg.size(); i++) {
-                if (pattern_dg[i].empty()) {
+            for (index i = 0; i < length(l_pattern_dg); i++) {
+                if (l_pattern_dg[i].empty()) {
                     continue;
                 }
                 lock_pattern_dg[i].lock();
-                m_pattern_dg[i].insert(pattern_dg[i].begin(), pattern_dg[i].end());
+                pattern_dg[i].insert(l_pattern_dg[i].begin(), l_pattern_dg[i].end());
                 lock_pattern_dg[i].unlock();
             }
         }
 
         Log::task_step("Allocate memory...");
 
-        m_structure_dg.set(m, n, m_pattern_dg);
-        m_structure_hm.set(n, n, m_pattern_hm);
+        m_structure_dg.set(m, n, pattern_dg);
+        m_structure_hm.set(n, n, pattern_hm);
 
         Log::task_info("The hessian has {} nonzero entries ({:.3f}%)",
             m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
@@ -550,34 +550,34 @@ public: // methods: computation
         m_data.set_zero();
 
         if constexpr (TParallel) {
-            ProblemData local_data(m_data);
+            ProblemData l_data(m_data);
 
-#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(local_data)
+            #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
-#pragma omp for schedule(dynamic, m_grainsize) nowait
+                #pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_element_f<TOrder>(local_data, i);
+                    compute_element_f<TOrder>(l_data, i);
                 }
 
                 if (sigma() != 1.0) {
-                    local_data.f() *= sigma();
+                    l_data.f() *= sigma();
 
                     if constexpr (TOrder > 0) {
-                        local_data.df() *= sigma();
+                        l_data.df() *= sigma();
                     }
 
                     if constexpr (TOrder > 1) {
-                        local_data.hm_values() *= sigma();
+                        l_data.hm() *= sigma();
                     }
                 }
 
-#pragma omp for schedule(dynamic, m_grainsize) nowait
+                #pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_g(); i++) {
-                    compute_element_g<TOrder>(local_data, i);
+                    compute_element_g<TOrder>(l_data, i);
                 }
 
-#pragma omp critical
-                m_data += local_data;
+                #pragma omp critical
+                m_data += l_data;
             }
         } else {
             for (index i = 0; i < nb_elements_f(); i++) {
@@ -592,7 +592,7 @@ public: // methods: computation
                 }
 
                 if constexpr (TOrder > 1) {
-                    m_data.hm_values() *= sigma();
+                    m_data.hm() *= sigma();
                 }
             }
 
@@ -693,13 +693,13 @@ public: // methods
             return Vector(0);
         }
 
-        if (m_linear_solver->factorize(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm_values())) {
+        if (m_linear_solver->factorize(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm())) {
             throw std::runtime_error("Factorization failed");
         }
 
         Vector x(nb_variables());
 
-        if (m_linear_solver->solve(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm_values(), v, x)) {
+        if (m_linear_solver->solve(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm(), v, x)) {
             throw std::runtime_error("Solve failed");
         }
 
@@ -708,7 +708,7 @@ public: // methods
 
     Vector hm_v(Ref<const Vector> v) const
     {
-        return hm().selfadjointView<Eigen::Upper>() * v;
+        return hm().selfadjointView<Eigen::Upper>() * v.transpose();
     }
 
     void hm_add_diagonal(const double value)
@@ -1024,12 +1024,12 @@ public: // methods: input
 public: // methods: output values
     Ref<Vector> values() noexcept
     {
-        return Map<Vector>(m_data.values_ptr(), m_data.values().size());
+        return Map<Vector>(m_data.values().data(), m_data.values().size());
     }
 
     Ref<const Vector> values() const noexcept
     {
-        return Map<const Vector>(m_data.values_ptr(), m_data.values().size());
+        return Map<const Vector>(m_data.values().data(), m_data.values().size());
     }
 
 public: // methods: output f
@@ -1088,17 +1088,17 @@ public: // methods: output df
 public: // methods: output dg
     Ref<const Sparse> dg() const noexcept
     {
-        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg_ptr());
+        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
     }
 
     Ref<Vector> dg_values() noexcept
     {
-        return m_data.dg_values();
+        return m_data.dg();
     }
 
     Ref<const Vector> dg_values() const noexcept
     {
-        return m_data.dg_values();
+        return m_data.dg();
     }
 
     const std::vector<int>& dg_indptr() const noexcept
@@ -1136,17 +1136,17 @@ public: // methods: output dg
 public: // methods: output hm
     Map<const Sparse> hm() const noexcept
     {
-        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm_ptr());
+        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm().data());
     }
 
     Ref<Vector> hm_values() noexcept
     {
-        return m_data.hm_values();
+        return m_data.hm();
     }
 
     Ref<const Vector> hm_values() const noexcept
     {
-        return m_data.hm_values();
+        return m_data.hm();
     }
 
     const std::vector<int>& hm_indptr() const noexcept
@@ -1197,7 +1197,7 @@ public: // methods: python
 
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
-            .def(py::init<ElementsF, ElementsG, index, index>(), "objective"_a = py::list(), "constraints"_a = py::list(),
+            .def(py::init<ElementsF, ElementsG, int, int>(), "objective"_a = py::list(), "constraints"_a = py::list(),
                 "nb_threads"_a = 1, "grainsize"_a = 100)
             // read-only properties
             .def_property_readonly("is_constrained", &Type::is_constrained)
