@@ -21,6 +21,19 @@ private:    // variables
     std::vector<TIndex> m_ja;
     std::vector<google::dense_hash_map<TIndex, index>> m_indices;
 
+public: // constructors
+    SparseStructure()
+    {
+    }
+
+    SparseStructure(const TIndex rows, const TIndex cols, const std::vector<TIndex>& ia, const std::vector<TIndex>& ja)
+        : m_rows(rows)
+        , m_cols(cols)
+        , m_ia(ia)
+        , m_ja(ja)
+    {
+    }
+
 public:     // methods
     TIndex rows() const noexcept
     {
@@ -149,6 +162,44 @@ public:     // methods
         }
     }
 
+    std::pair<SparseStructure, std::vector<index>> to_general() const
+    {
+        assert(m_rows == m_cols);
+        
+        const index n = m_rows;
+
+        std::vector<std::vector<TIndex>> pattern(n);
+        std::vector<std::vector<TIndex>> indices(n);
+
+        for (TIndex i = 0; i < n; i++) {
+            for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
+                const TIndex j = m_ja[k];
+
+                pattern[i].push_back(j);
+                indices[i].push_back(k);
+
+                if (i == j) {
+                    continue;
+                }
+
+                pattern[j].push_back(i);
+                indices[j].push_back(k);
+            }
+        }
+        
+        SparseStructure result;
+        result.set(m_rows, m_cols, pattern);
+
+        std::vector<index> value_indices;
+        value_indices.reserve(nb_nonzeros() * 2 - n);
+
+        for (const auto& indices_row : indices) {
+            value_indices.insert(value_indices.end(), indices_row.begin(), indices_row.end());
+        }
+
+        return {result, value_indices};
+    }
+
     /*
     * https://github.com/scipy/scipy/blob/3b36a574dc657d1ca116f6e230be694f3de31afc/scipy/sparse/sparsetools/csr.h#L380
     */
@@ -224,6 +275,8 @@ public: // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, name.c_str())
+            // methods
+            .def("to_general", &Type::to_general)
             // read-only properties
             .def_property_readonly("rows", &Type::rows)
             .def_property_readonly("cols", &Type::cols)
