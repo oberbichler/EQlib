@@ -105,7 +105,9 @@ public:     // methods
         if (TIndexMap) {
             const auto it = m_indices[i].find(j);
 
-            assert(it != m_indices[i].end());
+            if (it == m_indices[i].end()) {
+                return -1;
+            }
 
             return it->second;
         } else {
@@ -115,7 +117,6 @@ public:     // methods
             const auto it = std::lower_bound(lower, upper, j);
 
             if (*it != j || it == upper) {
-                assert(false);
                 return -1;
             }
 
