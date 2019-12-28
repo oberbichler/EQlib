@@ -217,56 +217,55 @@ public:     // methods
     /*
     * https://github.com/scipy/scipy/blob/3b36a574dc657d1ca116f6e230be694f3de31afc/scipy/sparse/sparsetools/csr.h#L380
     */
-    void convert_from(SparseStructure<TScalar, TIndex, !TRowMajor> other, std::vector<TScalar>& values)
+    static Type convert_from(SparseStructure<TScalar, TIndex, !TRowMajor> other, Ref<Vector> values)
     {
-        const auto nnz = other.nb_nonzeros();
+        const auto nb_nonzeros = other.nb_nonzeros();
 
         const auto n = TRowMajor ? other.cols() : other.rows();
         const auto m = TRowMajor ? other.rows() : other.cols();
 
-        m_rows = other.rows();
-        m_cols = other.cols();
+        std::vector<TIndex> ia(m + 1);
+        std::vector<TIndex> ja(nb_nonzeros);
 
-        m_ia.resize(m + 1);
-        m_ja.resize(nnz);
+        std::fill(ia.begin(), ia.end(), 0);
 
-        std::fill(m_ia.begin(), m_ia.end(), 0);
-
-        for (TIndex n = 0; n < nnz; n++) {
-            m_ia[other.ja(n)]++;
+        for (TIndex k = 0; k < nb_nonzeros; k++) {
+            ia[other.ja(k)] += 1;
         }
 
         TIndex cumsum = 0;
 
         for (TIndex j = 0; j < m; j++) {
-            const auto temp  = m_ia[j];
-            m_ia[j] = cumsum;
+            const auto temp  = ia[j];
+            ia[j] = cumsum;
             cumsum += temp;
         }
 
-        m_ia[m] = nnz;
+        ia[m] = nb_nonzeros;
 
-        std::vector<TScalar> a_values {values};
+        Vector a_values = values;
 
         for (TIndex i = 0; i < n; i++){
             for(TIndex k = other.ia(i); k < other.ia(i + 1); k++){
                 const auto j = other.ja(k);
-                const auto dest = m_ia[j];
+                const auto dest = ia[j];
 
-                m_ja[dest] = i;
+                ja[dest] = i;
                 values[dest] = a_values[k];
 
-                m_ia[j]++;
+                ia[j]++;
             }
         }
 
         TIndex last = 0;
 
         for (TIndex j = 0; j <= m; j++){
-            const auto temp = m_ia[j];
-            m_ia[j] = last;
+            const auto temp = ia[j];
+            ia[j] = last;
             last = temp;
         }
+
+        return Type(other.rows(), other.cols(), ia, ja);
     }
 
     void for_each(std::function<void(TIndex, TIndex)> action) const
@@ -289,6 +288,8 @@ public: // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, name.c_str())
+            // static methods
+            .def_static("convert_from", &Type::convert_from, "other"_a, "values"_a)
             // methods
             .def("to_general", &Type::to_general)
             // read-only properties
