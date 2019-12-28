@@ -34,6 +34,16 @@ public: // constructors
         const TIndex size_i = TRowMajor ? rows : cols;
         const TIndex size_j = TRowMajor ? cols : rows;
 
+        if (length(ia) != size_i + 1) {
+            throw std::invalid_argument("Vector ia has an invalid size");
+        }
+
+        const TIndex max_j = Map<const Eigen::Matrix<TIndex, 1, Eigen::Dynamic>>(ja.data(), ja.size()).maxCoeff();
+
+        if (max_j >= size_j) {
+            throw std::invalid_argument("Vector ja has invalid entries");
+        }
+
         if (TIndexMap) {
             m_indices.resize(size_i);
 
