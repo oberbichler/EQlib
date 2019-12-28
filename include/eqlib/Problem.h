@@ -1242,16 +1242,7 @@ public: // methods: python
                     .release();
             })
             .def_property_readonly("general_hm", [=](Type& self) {
-                const auto [structure, indices] = self.structure_hm().to_general();
-
-                const index nb_nonzeros = length(indices);
-
-                std::vector<double> values(nb_nonzeros);
-                
-                for (index i = 0; i < nb_nonzeros; i++) {
-                    values[i] = self.hm(indices[i]);
-                }
-                
+                const auto [structure, values] = self.structure_hm().to_general(self.hm_values());
                 return csr_matrix(
                     std::make_tuple(values, structure.ja(), structure.ia()),
                     std::make_pair(self.nb_variables(), self.nb_variables()),
