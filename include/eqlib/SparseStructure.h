@@ -31,13 +31,13 @@ public: // constructors
         , m_ia(ia)
         , m_ja(ja)
     {
-        const index size_i = TRowMajor ? rows : cols;
-        const index size_j = TRowMajor ? cols : rows;
+        const TIndex size_i = TRowMajor ? rows : cols;
+        const TIndex size_j = TRowMajor ? cols : rows;
 
         if (TIndexMap) {
             m_indices.resize(size_i);
 
-            for (index i = 0; i < size_i; i++) {
+            for (TIndex i = 0; i < size_i; i++) {
                 m_indices[i].set_empty_key(-1);
                 m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
                 for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
