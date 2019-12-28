@@ -15,6 +15,7 @@
 #include <eqlib/Node.h>
 #include <eqlib/Objective.h>
 #include <eqlib/Problem.h>
+#include <eqlib/SparseStructure.h>
 #include <eqlib/Variable.h>
 
 #include <eqlib/Info.h>
@@ -69,4 +70,18 @@ PYBIND11_MODULE(eqlib, m)
 
     // NewtonRaphson
     eqlib::NewtonRaphson::register_python(m);
+
+    // LinearSolver
+    eqlib::LinearSolver::register_python(m);
+
+    // SimplicialLDLT
+    eqlib::SimplicialLDLT::register_python(m);
+
+    #ifdef EQLIB_USE_MKL
+    // PardisoLDLT
+    eqlib::PardisoLDLT::register_python(m);
+    #endif
+
+    // SparseStructure
+    eqlib::SparseStructure<double, int, true, true>::register_python(m, "SparseStructure");
 }

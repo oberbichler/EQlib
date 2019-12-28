@@ -12,6 +12,9 @@
 namespace eqlib {
 
 class PardisoLDLT : public LinearSolver {
+private: //types
+    using Type = PardisoLDLT;
+
 private: // variables
     std::array<_MKL_DSS_HANDLE_t, 64> m_pt;
     MKL_INT m_mtype;
@@ -169,6 +172,21 @@ public: // methods
         );
 
         return (error != 0);
+    }
+
+public: // python
+    template <typename TModule>
+    static void register_python(TModule& m)
+    {
+        namespace py = pybind11;
+        using namespace pybind11::literals;
+
+        using Base = LinearSolver;
+        using Holder = Pointer<Type>;
+
+        py::class_<Type, Base, Holder>(m, "PardisoLDLT")
+            // constructors
+            .def(py::init<>());
     }
 };
 

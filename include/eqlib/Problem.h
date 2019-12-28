@@ -842,6 +842,20 @@ public: // methods
     }
 
 public: // methods: model properties
+    Pointer<LinearSolver> linear_solver() const noexcept
+    {
+        return m_linear_solver;
+    }
+
+    void set_linear_solver(const Pointer<LinearSolver> value)
+    {
+        if (value == nullptr) {
+            throw std::invalid_argument("Value is null");
+        }
+
+        m_linear_solver = value;
+    }
+
     int nb_threads() const noexcept
     {
         return m_nb_threads;
@@ -1086,6 +1100,11 @@ public: // methods: output df
     }
 
 public: // methods: output dg
+    auto structure_dg() const
+    {
+        return m_structure_dg;
+    }
+
     Ref<const Sparse> dg() const noexcept
     {
         return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
@@ -1134,6 +1153,11 @@ public: // methods: output dg
     }
 
 public: // methods: output hm
+    auto structure_hm() const
+    {
+        return m_structure_hm;
+    }
+
     Map<const Sparse> hm() const noexcept
     {
         return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm().data());
@@ -1211,6 +1235,7 @@ public: // methods: python
                     std::make_pair(self.nb_equations(), self.nb_variables()))
                     .release();
             })
+            .def_property_readonly("structure_dg", &Type::structure_dg)
             .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
             .def_property_readonly("dg_indptr", &Type::dg_indptr)
             .def_property_readonly("dg_indices", &Type::dg_indices)
@@ -1220,6 +1245,7 @@ public: // methods: python
                     std::make_pair(self.nb_variables(), self.nb_variables()))
                     .release();
             })
+            .def_property_readonly("structure_hm", &Type::structure_hm)
             .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
             .def_property_readonly("hm_indptr", &Type::hm_indptr)
             .def_property_readonly("hm_indices", &Type::hm_indices)
@@ -1229,6 +1255,7 @@ public: // methods: python
             .def_property_readonly("equation_bounds", &Type::equation_bounds)
             .def_property_readonly("variable_bounds", &Type::variable_bounds)
             // properties
+            .def_property("linear_solver", &Type::linear_solver, &Type::set_linear_solver)
             .def_property("f", &Type::f, &Type::set_f)
             .def_property("nb_threads", &Type::nb_threads, &Type::set_nb_threads)
             .def_property("grainsize", &Type::grainsize, &Type::set_grainsize)
@@ -1243,19 +1270,19 @@ public: // methods: python
             .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
             .def("hm_inv_v", &Type::hm_inv_v)
             .def("hm_v", &Type::hm_v)
-            .def("f_of", [](Type& self, Ref<const Vector> x) -> double {
+            .def("f_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(0);
                 return self.f();
             },
                 "x"_a)
-            .def("g_of", [](Type& self, Ref<const Vector> x) -> Vector {
+            .def("g_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(0);
                 return self.g();
             },
                 "x"_a)
-            .def("df_of", [](Type& self, Ref<const Vector> x) -> Vector {
+            .def("df_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(1);
                 return self.df();
