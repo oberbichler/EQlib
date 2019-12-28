@@ -214,6 +214,46 @@ public:     // methods
         return {result, value_indices};
     }
 
+    std::pair<SparseStructure, Vector> to_general(Ref<const Vector> values) const
+    {
+        assert(m_rows == m_cols);
+        
+        const index n = m_rows;
+
+        std::vector<std::vector<TIndex>> pattern(n);
+        std::vector<std::vector<TIndex>> indices(n);
+
+        for (TIndex i = 0; i < n; i++) {
+            for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
+                const TIndex j = m_ja[k];
+
+                pattern[i].push_back(j);
+                indices[i].push_back(k);
+
+                if (i == j) {
+                    continue;
+                }
+
+                pattern[j].push_back(i);
+                indices[j].push_back(k);
+            }
+        }
+        
+        SparseStructure result;
+        result.set(m_rows, m_cols, pattern);
+
+        Vector new_values(nb_nonzeros() * 2 - n);
+        index i = 0;
+
+        for (const auto& indices_row : indices) {
+            for (const auto& index : indices_row) {
+                new_values(i++) = values(index);
+            }
+        }
+
+        return {result, new_values};
+    }
+
     /*
     * https://github.com/scipy/scipy/blob/3b36a574dc657d1ca116f6e230be694f3de31afc/scipy/sparse/sparsetools/csr.h#L380
     */
@@ -293,6 +333,8 @@ public: // python
             // static methods
             .def_static("convert_from", &Type::convert_from, "other"_a, "values"_a)
             // methods
+            .def("to_general", py::overload_cast<>(&Type::to_general, py::const_))
+            .def("to_general", py::overload_cast<Ref<const Vector>>(&Type::to_general, py::const_))
             .def("get_index", &Type::get_index, "i"_a, "j"_a)
             // read-only properties
             .def_property_readonly("rows", &Type::rows)
