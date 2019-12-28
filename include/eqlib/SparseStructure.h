@@ -293,7 +293,7 @@ public: // python
             // static methods
             .def_static("convert_from", &Type::convert_from, "other"_a, "values"_a)
             // methods
-            .def("to_general", &Type::to_general)
+            .def("get_index", &Type::get_index, "i"_a, "j"_a)
             // read-only properties
             .def_property_readonly("rows", &Type::rows)
             .def_property_readonly("cols", &Type::cols)
