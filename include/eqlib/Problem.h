@@ -56,8 +56,8 @@ private: // variables
     ElementsF m_elements_f;
     ElementsG m_elements_g;
 
-    std::vector<Pointer<Equation>> m_equations;
-    std::vector<Pointer<Variable>> m_variables;
+    Equations m_equations;
+    Variables m_variables;
 
     DenseMap<Pointer<Equation>, index> m_equation_indices;
     DenseMap<Pointer<Variable>, index> m_variable_indices;
@@ -887,12 +887,12 @@ public: // methods: model properties
         return length(m_elements_g);
     }
 
-    const std::vector<Pointer<Equation>>& equations() const noexcept
+    const Equations& equations() const noexcept
     {
         return m_equations;
     }
 
-    const std::vector<Pointer<Variable>>& variables() const noexcept
+    const Variables& variables() const noexcept
     {
         return m_variables;
     }
