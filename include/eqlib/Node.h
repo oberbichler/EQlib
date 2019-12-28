@@ -4,8 +4,6 @@
 #include "Equation.h"
 #include "Variable.h"
 
-#include <tsl/robin_map.h>
-
 #include <string>
 
 namespace eqlib {
@@ -24,8 +22,8 @@ private: // variables
     Pointer<Variable> m_act_y;
     Pointer<Variable> m_act_z;
 
-    tsl::robin_map<std::string, Pointer<Equation>> m_equations;
-    tsl::robin_map<std::string, Pointer<Variable>> m_variables;
+    RobinMap<std::string, Pointer<Equation>> m_equations;
+    RobinMap<std::string, Pointer<Variable>> m_variables;
 
 public: // constructors
     Node(const double x, const double y, const double z) noexcept

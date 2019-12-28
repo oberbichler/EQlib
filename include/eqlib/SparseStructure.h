@@ -2,8 +2,6 @@
 
 #include "Define.h"
 
-#include <sparsehash/dense_hash_map>
-
 #include <vector>
 
 namespace eqlib {
@@ -19,7 +17,7 @@ private:    // variables
     TIndex m_cols;
     std::vector<TIndex> m_ia;
     std::vector<TIndex> m_ja;
-    std::vector<google::dense_hash_map<TIndex, index>> m_indices;
+    std::vector<DenseMap<TIndex, index>> m_indices;
 
 public: // constructors
     SparseStructure()

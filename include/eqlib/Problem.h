@@ -13,10 +13,6 @@
 #include "SparseStructure.h"
 #include "Timer.h"
 
-#include <sparsehash/dense_hash_map>
-
-#include <tsl/robin_set.h>
-
 #include <mutex>
 #include <set>
 #include <tuple>
@@ -63,8 +59,8 @@ private: // variables
     std::vector<Pointer<Equation>> m_equations;
     std::vector<Pointer<Variable>> m_variables;
 
-    google::dense_hash_map<Pointer<Equation>, index> m_equation_indices;
-    google::dense_hash_map<Pointer<Variable>, index> m_variable_indices;
+    DenseMap<Pointer<Equation>, index> m_equation_indices;
+    DenseMap<Pointer<Variable>, index> m_variable_indices;
 
     std::vector<index> m_element_f_nb_variables;
     std::vector<index> m_element_g_nb_variables;
@@ -138,7 +134,7 @@ public: // constructors
 
         Log::task_step("Creating the set of unique equations...");
 
-        tsl::robin_set<Pointer<Equation>> equation_set;
+        RobinSet<Pointer<Equation>> equation_set;
 
         for (const auto& element : m_elements_g) {
             for (const auto& equation : element->equations()) {
@@ -156,7 +152,7 @@ public: // constructors
 
         Log::task_step("Creating the set of unique variables...");
 
-        tsl::robin_set<Pointer<Variable>> variable_set;
+        RobinSet<Pointer<Variable>> variable_set;
 
         for (const auto& element : m_elements_f) {
             for (const auto& variable : element->variables()) {
@@ -308,8 +304,8 @@ public: // constructors
 
         #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
-            std::vector<tsl::robin_set<index>> l_pattern_dg(m);
-            std::vector<tsl::robin_set<index>> l_pattern_hm(n);
+            std::vector<RobinSet<index>> l_pattern_dg(m);
+            std::vector<RobinSet<index>> l_pattern_hm(n);
 
             #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_f); i++) {

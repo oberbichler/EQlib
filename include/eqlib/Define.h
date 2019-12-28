@@ -7,6 +7,11 @@
 
 #include <pybind11/pybind11.h>
 
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
+
+#include <sparsehash/dense_hash_map>
+
 #include <limits>
 #include <string>
 #include <variant>
@@ -40,6 +45,17 @@ Unique<T> new_(TArgs&&... args)
 {
     return Unique<T>(new T(std::forward<TArgs>(args)...));
 }
+
+// --- hashset
+
+template <typename TKey>
+using RobinSet = tsl::robin_set<TKey>;
+
+template <typename TKey, typename TValue>
+using RobinMap = tsl::robin_map<TKey, TValue>;
+
+template <typename TKey, typename TValue>
+using DenseMap = google::dense_hash_map<TKey, TValue>;
 
 // --- linear algebra
 
