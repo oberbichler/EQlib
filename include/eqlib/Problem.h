@@ -1258,19 +1258,19 @@ public: // methods: python
             .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
             .def("hm_inv_v", &Type::hm_inv_v)
             .def("hm_v", &Type::hm_v)
-            .def("f_of", [](Type& self, Ref<const Vector> x) -> double {
+            .def("f_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(0);
                 return self.f();
             },
                 "x"_a)
-            .def("g_of", [](Type& self, Ref<const Vector> x) -> Vector {
+            .def("g_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(0);
                 return self.g();
             },
                 "x"_a)
-            .def("df_of", [](Type& self, Ref<const Vector> x) -> Vector {
+            .def("df_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(1);
                 return self.df();
