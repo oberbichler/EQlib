@@ -1100,6 +1100,11 @@ public: // methods: output df
     }
 
 public: // methods: output dg
+    auto structure_dg() const
+    {
+        return m_structure_dg;
+    }
+
     Ref<const Sparse> dg() const noexcept
     {
         return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
@@ -1148,6 +1153,11 @@ public: // methods: output dg
     }
 
 public: // methods: output hm
+    auto structure_hm() const
+    {
+        return m_structure_hm;
+    }
+
     Map<const Sparse> hm() const noexcept
     {
         return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm().data());
@@ -1225,6 +1235,7 @@ public: // methods: python
                     std::make_pair(self.nb_equations(), self.nb_variables()))
                     .release();
             })
+            .def_property_readonly("structure_dg", &Type::structure_dg)
             .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
             .def_property_readonly("dg_indptr", &Type::dg_indptr)
             .def_property_readonly("dg_indices", &Type::dg_indices)
@@ -1234,6 +1245,7 @@ public: // methods: python
                     std::make_pair(self.nb_variables(), self.nb_variables()))
                     .release();
             })
+            .def_property_readonly("structure_hm", &Type::structure_hm)
             .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
             .def_property_readonly("hm_indptr", &Type::hm_indptr)
             .def_property_readonly("hm_indices", &Type::hm_indices)
