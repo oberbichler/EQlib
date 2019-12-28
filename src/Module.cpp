@@ -15,6 +15,7 @@
 #include <eqlib/Node.h>
 #include <eqlib/Objective.h>
 #include <eqlib/Problem.h>
+#include <eqlib/SparseLU.h>
 #include <eqlib/SparseStructure.h>
 #include <eqlib/Variable.h>
 
@@ -76,6 +77,9 @@ PYBIND11_MODULE(eqlib, m)
 
     // SimplicialLDLT
     eqlib::SimplicialLDLT::register_python(m);
+
+    // SparseLU
+    eqlib::SparseLU::register_python(m);
 
     #ifdef EQLIB_USE_MKL
     // PardisoLDLT
