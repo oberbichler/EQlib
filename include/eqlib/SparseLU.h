@@ -28,14 +28,10 @@ public: // constructors
         : m_is_analyzed(false)
         , m_a(0, 0, 0, nullptr, nullptr, nullptr)
     {
+        set_solver_name("EigenSparseLU");
     }
 
 public: // methods
-    std::string solver_name() const override
-    {
-        return "Eigen Sparse LU";
-    }
-
     bool analyze(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) override
     {
         if (m_is_analyzed) {

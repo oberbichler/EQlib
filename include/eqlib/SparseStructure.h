@@ -2,17 +2,18 @@
 
 #include "Define.h"
 
+#include <functional>
+#include <set>
 #include <vector>
 
 namespace eqlib {
 
 template <typename TScalar = double, typename TIndex = int, bool TRowMajor = false, bool TIndexMap = true>
-class SparseStructure
-{
-private:    // types
+class SparseStructure {
+private: // types
     using Type = SparseStructure<TScalar, TIndex, TRowMajor, TIndexMap>;
 
-private:    // variables
+private: // variables
     TIndex m_rows;
     TIndex m_cols;
     std::vector<TIndex> m_ia;
@@ -30,9 +31,34 @@ public: // constructors
         , m_ia(ia)
         , m_ja(ja)
     {
+        const TIndex size_i = TRowMajor ? rows : cols;
+        const TIndex size_j = TRowMajor ? cols : rows;
+
+        if (length(ia) != size_i + 1) {
+            throw std::invalid_argument("Vector ia has an invalid size");
+        }
+
+        const TIndex max_j = Map<const Eigen::Matrix<TIndex, 1, Eigen::Dynamic>>(ja.data(), ja.size()).maxCoeff();
+
+        if (max_j >= size_j) {
+            throw std::invalid_argument("Vector ja has invalid entries");
+        }
+
+        if (TIndexMap) {
+            m_indices.resize(size_i);
+
+            for (TIndex i = 0; i < size_i; i++) {
+                m_indices[i].set_empty_key(-1);
+                m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
+                for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
+                    const TIndex j = m_ja[k];
+                    m_indices[i][j] = k;
+                }
+            }
+        }
     }
 
-public:     // methods
+public: // methods
     TIndex rows() const noexcept
     {
         return m_rows;
@@ -90,7 +116,9 @@ public:     // methods
         if (TIndexMap) {
             const auto it = m_indices[i].find(j);
 
-            assert(it != m_indices[i].end());
+            if (it == m_indices[i].end()) {
+                return -1;
+            }
 
             return it->second;
         } else {
@@ -100,7 +128,6 @@ public:     // methods
             const auto it = std::lower_bound(lower, upper, j);
 
             if (*it != j || it == upper) {
-                assert(false);
                 return -1;
             }
 
@@ -113,29 +140,28 @@ public:     // methods
     }
 
     template <typename TPattern>
-    void set(const index rows, const index cols, const TPattern& pattern) noexcept
+    static Type from_pattern(const index rows, const index cols, const TPattern& pattern)
     {
         const index size_i = TRowMajor ? rows : cols;
         const index size_j = TRowMajor ? cols : rows;
 
         assert(length(pattern) == size_i);
 
-        m_rows = static_cast<TIndex>(rows);
-        m_cols = static_cast<TIndex>(cols);
+        std::vector<TIndex> ia(size_i + 1);
 
-        m_ia.resize(size_i + 1);
-
-        m_ia[0] = 0;
+        ia[0] = 0;
 
         for (TIndex i = 0; i < size_i; i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
 
-            m_ia[i + 1] = m_ia[i] + n;
+            ia[i + 1] = ia[i] + n;
         }
 
-        m_ja.resize(nb_nonzeros());
+        const auto nb_nonzeros = ia.back();
 
-        auto ja_it = m_ja.begin();
+        std::vector<TIndex> ja(nb_nonzeros);
+
+        auto ja_it = ja.begin();
 
         for (TIndex i = 0; i < size_i; i++) {
             const TIndex n = static_cast<TIndex>(pattern[i].size());
@@ -146,24 +172,13 @@ public:     // methods
             }
         }
 
-        if (TIndexMap) {
-            m_indices.resize(size_i);
-
-            for (index i = 0; i < size_i; i++) {
-                m_indices[i].set_empty_key(-1);
-                m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
-                for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
-                    const TIndex j = m_ja[k];
-                    m_indices[i][j] = k;
-                }
-            }
-        }
+        return Type(static_cast<TIndex>(rows), static_cast<TIndex>(cols), ia, ja);
     }
 
     std::pair<SparseStructure, std::vector<index>> to_general() const
     {
         assert(m_rows == m_cols);
-        
+
         const index n = m_rows;
 
         std::vector<std::vector<TIndex>> pattern(n);
@@ -184,9 +199,8 @@ public:     // methods
                 indices[j].push_back(k);
             }
         }
-        
-        SparseStructure result;
-        result.set(m_rows, m_cols, pattern);
+
+        SparseStructure result = from_pattern(m_rows, m_cols, pattern);
 
         std::vector<index> value_indices;
         value_indices.reserve(nb_nonzeros() * 2 - n);
@@ -198,67 +212,113 @@ public:     // methods
         return {result, value_indices};
     }
 
+    std::pair<SparseStructure, Vector> to_general(Ref<const Vector> values) const
+    {
+        assert(m_rows == m_cols);
+
+        const index n = m_rows;
+
+        std::vector<std::vector<TIndex>> pattern(n);
+        std::vector<std::vector<TIndex>> indices(n);
+
+        for (TIndex i = 0; i < n; i++) {
+            for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
+                const TIndex j = m_ja[k];
+
+                pattern[i].push_back(j);
+                indices[i].push_back(k);
+
+                if (i == j) {
+                    continue;
+                }
+
+                pattern[j].push_back(i);
+                indices[j].push_back(k);
+            }
+        }
+
+        SparseStructure result = from_pattern(m_rows, m_cols, pattern);
+
+        Vector new_values(nb_nonzeros() * 2 - n);
+        index i = 0;
+
+        for (const auto& indices_row : indices) {
+            for (const auto& index : indices_row) {
+                new_values(i++) = values(index);
+            }
+        }
+
+        return {result, new_values};
+    }
+
     /*
     * https://github.com/scipy/scipy/blob/3b36a574dc657d1ca116f6e230be694f3de31afc/scipy/sparse/sparsetools/csr.h#L380
     */
-    void convert_from(SparseStructure<TScalar, TIndex, !TRowMajor> other, std::vector<TScalar>& values)
+    static Type convert_from(SparseStructure<TScalar, TIndex, !TRowMajor> other, Ref<Vector> values)
     {
-        const auto nnz = other.nb_nonzeros();
+        const auto nb_nonzeros = other.nb_nonzeros();
 
         const auto n = TRowMajor ? other.cols() : other.rows();
         const auto m = TRowMajor ? other.rows() : other.cols();
 
-        m_rows = other.rows();
-        m_cols = other.cols();
+        std::vector<TIndex> ia(m + 1);
+        std::vector<TIndex> ja(nb_nonzeros);
 
-        m_ia.resize(m + 1);
-        m_ja.resize(nnz);
+        std::fill(ia.begin(), ia.end(), 0);
 
-        std::fill(m_ia.begin(), m_ia.end(), 0);
-
-        for (TIndex n = 0; n < nnz; n++) {
-            m_ia[other.ja(n)]++;
+        for (TIndex k = 0; k < nb_nonzeros; k++) {
+            ia[other.ja(k)] += 1;
         }
 
         TIndex cumsum = 0;
 
         for (TIndex j = 0; j < m; j++) {
-            const auto temp  = m_ia[j];
-            m_ia[j] = cumsum;
+            const auto temp = ia[j];
+            ia[j] = cumsum;
             cumsum += temp;
         }
 
-        m_ia[m] = nnz;
+        ia[m] = nb_nonzeros;
 
-        std::vector<TScalar> a_values {values};
+        Vector a_values = values;
 
-        for (TIndex i = 0; i < n; i++){
-            for(TIndex k = other.ia(i); k < other.ia(i + 1); k++){
+        for (TIndex i = 0; i < n; i++) {
+            for (TIndex k = other.ia(i); k < other.ia(i + 1); k++) {
                 const auto j = other.ja(k);
-                const auto dest = m_ia[j];
+                const auto dest = ia[j];
 
-                m_ja[dest] = i;
+                ja[dest] = i;
                 values[dest] = a_values[k];
 
-                m_ia[j]++;
+                ia[j]++;
             }
         }
 
         TIndex last = 0;
 
-        for (TIndex j = 0; j <= m; j++){
-            const auto temp = m_ia[j];
-            m_ia[j] = last;
+        for (TIndex j = 0; j <= m; j++) {
+            const auto temp = ia[j];
+            ia[j] = last;
             last = temp;
         }
+
+        return Type(other.rows(), other.cols(), ia, ja);
     }
 
-    void for_each(std::function<void(TIndex, TIndex)> action) const
+    void for_each(std::function<void(TIndex, TIndex, TIndex)> action) const
     {
-        for (TIndex col = 0; col < m_cols; col++) {
-            for (TIndex i = m_ia[col]; i < m_ia[col + 1]; i++) {
-                const TIndex row = m_ja[i];
-                action(row, col);
+        const TIndex size_i = TRowMajor ? m_rows : m_cols;
+
+        TIndex idx = 0;
+
+        for (TIndex i = 0; i < size_i; i++) {
+            for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
+                const TIndex j = m_ja[k];
+                if constexpr(TRowMajor) {
+                    action(i, j, idx++);
+                } else {
+                    action(j, i, idx++);
+                }
             }
         }
     }
@@ -273,8 +333,16 @@ public: // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, name.c_str())
+            // constructors
+            .def(py::init<TIndex, TIndex, std::vector<TIndex>, std::vector<TIndex>>(), "rows"_a, "cols"_a, "ia"_a, "ja"_a)
+            // static methods
+            .def_static("convert_from", &Type::convert_from, "other"_a, "values"_a)
+            .def_static("from_pattern", &Type::from_pattern<std::vector<std::set<TIndex>>>, "rows"_a, "cols"_a, "pattern"_a)
             // methods
-            .def("to_general", &Type::to_general)
+            .def("to_general", py::overload_cast<>(&Type::to_general, py::const_))
+            .def("to_general", py::overload_cast<Ref<const Vector>>(&Type::to_general, py::const_))
+            .def("get_index", &Type::get_index, "i"_a, "j"_a)
+            .def("for_each", &Type::for_each, "action"_a)
             // read-only properties
             .def_property_readonly("rows", &Type::rows)
             .def_property_readonly("cols", &Type::cols)

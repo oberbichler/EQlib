@@ -56,8 +56,8 @@ private: // variables
     ElementsF m_elements_f;
     ElementsG m_elements_g;
 
-    std::vector<Pointer<Equation>> m_equations;
-    std::vector<Pointer<Variable>> m_variables;
+    Equations m_equations;
+    Variables m_variables;
 
     DenseMap<Pointer<Equation>, index> m_equation_indices;
     DenseMap<Pointer<Variable>, index> m_variable_indices;
@@ -365,8 +365,8 @@ public: // constructors
 
         Log::task_step("Allocate memory...");
 
-        m_structure_dg.set(m, n, pattern_dg);
-        m_structure_hm.set(n, n, pattern_hm);
+        m_structure_dg = SparseStructure<double, int, true>::from_pattern(m, n, pattern_dg);
+        m_structure_hm = SparseStructure<double, int, true>::from_pattern(n, n, pattern_hm);
 
         Log::task_info("The hessian has {} nonzero entries ({:.3f}%)",
             m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
@@ -887,12 +887,12 @@ public: // methods: model properties
         return length(m_elements_g);
     }
 
-    const std::vector<Pointer<Equation>>& equations() const noexcept
+    const Equations& equations() const noexcept
     {
         return m_equations;
     }
 
-    const std::vector<Pointer<Variable>>& variables() const noexcept
+    const Variables& variables() const noexcept
     {
         return m_variables;
     }
@@ -1242,16 +1242,7 @@ public: // methods: python
                     .release();
             })
             .def_property_readonly("general_hm", [=](Type& self) {
-                const auto [structure, indices] = self.structure_hm().to_general();
-
-                const index nb_nonzeros = length(indices);
-
-                std::vector<double> values(nb_nonzeros);
-                
-                for (index i = 0; i < nb_nonzeros; i++) {
-                    values[i] = self.hm(indices[i]);
-                }
-                
+                const auto [structure, values] = self.structure_hm().to_general(self.hm_values());
                 return csr_matrix(
                     std::make_tuple(values, structure.ja(), structure.ia()),
                     std::make_pair(self.nb_variables(), self.nb_variables()),

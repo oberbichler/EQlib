@@ -30,6 +30,8 @@ public: // constructors
         , m_mtype(-2)
         , m_message_level(0)
     {
+        set_solver_name("PardisoLDLT");
+
         ::pardisoinit(m_pt.data(), &m_mtype, m_iparm.data());
 
         m_iparm[0] = 1; // No solver default
@@ -87,11 +89,6 @@ private: // static methods
     }
 
 public: // methods
-    std::string solver_name() const override
-    {
-        return "MKL Pardiso";
-    }
-
     bool analyze(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) override
     {
         if (m_is_analyzed) {

@@ -87,5 +87,6 @@ PYBIND11_MODULE(eqlib, m)
     #endif
 
     // SparseStructure
-    eqlib::SparseStructure<double, int, true, true>::register_python(m, "SparseStructure");
+    eqlib::SparseStructure<double, int, true, true>::register_python(m, "RowMajorSparseStructure");
+    eqlib::SparseStructure<double, int, false, true>::register_python(m, "ColMajorSparseStructure");
 }

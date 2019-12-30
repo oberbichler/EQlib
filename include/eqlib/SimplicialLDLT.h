@@ -22,14 +22,10 @@ public: // constructors
     SimplicialLDLT()
         : m_is_analyzed(false)
     {
+        set_solver_name("SimplicialLDLT");
     }
 
 public: // methods
-    std::string solver_name() const override
-    {
-        return "Eigen Simplicial LDLT";
-    }
-
     bool analyze(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a) override
     {
         if (m_is_analyzed) {
