@@ -38,10 +38,12 @@ public: // constructors
             throw std::invalid_argument("Vector ia has an invalid size");
         }
 
-        const TIndex max_j = Map<const Eigen::Matrix<TIndex, 1, Eigen::Dynamic>>(ja.data(), ja.size()).maxCoeff();
+        if (ja.size() > 0) {
+            const TIndex max_j = Map<const Eigen::Matrix<TIndex, 1, Eigen::Dynamic>>(ja.data(), ja.size()).maxCoeff();
 
-        if (max_j >= size_j) {
-            throw std::invalid_argument("Vector ja has invalid entries");
+            if (max_j >= size_j) {
+                throw std::invalid_argument("Vector ja has invalid entries");
+            }
         }
 
         if (TIndexMap) {
