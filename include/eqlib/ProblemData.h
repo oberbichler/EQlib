@@ -33,6 +33,22 @@ public: // constructor
     {
     }
 
+    ProblemData(const ProblemData& other)
+        : m_computation_time(0)
+        , m_assemble_time(0)
+        , m_n(other.m_n)
+        , m_m(other.m_m)
+        , m_nb_nonzeros_dg(other.m_nb_nonzeros_dg)
+        , m_nb_nonzeros_hm(other.m_nb_nonzeros_hm)
+        , m_values(other.m_values)
+        , m_buffer(other.m_buffer)
+        , m_g(m_values.segment(1, m_m))
+        , m_df(m_values.segment(1 + m_m, m_n))
+        , m_dg(m_values.segment(1 + m_m + m_n, m_nb_nonzeros_dg))
+        , m_hm(m_values.segment(1 + m_m + m_n + m_nb_nonzeros_dg, m_nb_nonzeros_hm))
+    {
+    }
+
 public: // methods
     double& computation_time()
     {
