@@ -745,6 +745,11 @@ public: // methods
         return row_sum.maxCoeff();
     }
 
+    void scale(const double factor)
+    {
+        m_data.values() *= factor;
+    }
+
     Pointer<Problem> clone() const
     {
         auto new_problem = new_<Problem>(*this);
@@ -1341,7 +1346,8 @@ public: // methods: python
                     std::make_pair(self.nb_variables(), self.nb_variables()))
                     .release();
             },
-                "x"_a);
+                "x"_a)
+            .def("scale", &Type::scale, "factor"_a);
     }
 };
 
