@@ -716,6 +716,27 @@ public: // methods
         }
     }
 
+    double hm_norm_inf() const
+    {
+        Vector row_sum = Vector::Zero(nb_variables());
+
+        for (index row = 0; row < nb_variables(); row++) {
+            for (index i = m_structure_hm.ia(row); i < m_structure_hm.ia(row + 1); i++) {
+                const index col = m_structure_hm.ja(i);
+
+                const double abs_value = std::abs(hm(i));
+
+                row_sum(row) += abs_value;
+
+                if (row != col) {
+                    row_sum(col) += abs_value;
+                }
+            }
+        }
+
+        return row_sum.maxCoeff();
+    }
+
     Pointer<Problem> clone() const
     {
         auto new_problem = new_<Problem>(*this);
@@ -1255,6 +1276,7 @@ public: // methods: python
             .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
             .def_property_readonly("hm_indptr", &Type::hm_indptr)
             .def_property_readonly("hm_indices", &Type::hm_indices)
+            .def_property_readonly("hm_norm_inf", &Type::hm_norm_inf)
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             .def_property_readonly("values", py::overload_cast<>(&Type::values))
