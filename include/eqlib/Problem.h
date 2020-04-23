@@ -548,11 +548,19 @@ public: // methods: computation
         if constexpr (TParallel) {
             ProblemData l_data(m_data);
 
+            std::vector<index> active_elements_f;
+
+            for (index i = 0; i < nb_elements_f(); i++) {
+                if (m_elements_f[i]->is_active()) {
+                    active_elements_f.push_back(i);
+                }
+            }
+
             #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_element_f<TOrder>(l_data, i);
+                for (index i = 0; i < length(active_elements_f); i++) {
+                    compute_element_f<TOrder>(l_data, active_elements_f[i]);
                 }
 
                 if (sigma() != 1.0) {
