@@ -709,8 +709,10 @@ public: // methods
 
     void hm_add_diagonal(const double value)
     {
-        for (index i = 0; i < nb_variables(); i++) {
-            hm(i, i) += value;
+        for (index row = 0; row < nb_variables(); row++) {
+            index i = m_structure_hm.ia(row);
+            index col = m_structure_hm.ja(i);
+            hm(i) += value;
         }
     }
 
