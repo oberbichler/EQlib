@@ -717,9 +717,9 @@ public: // methods
 
     void hm_add_diagonal(const double value)
     {
-        for (index row = 0; row < nb_variables(); row++) {
-            index i = m_structure_hm.ia(row);
-            index col = m_structure_hm.ja(i);
+        for (int row = 0; row < nb_variables(); row++) {
+            int i = m_structure_hm.ia(row);
+            int col = m_structure_hm.ja(i);
             hm(i) += value;
         }
     }
@@ -728,9 +728,9 @@ public: // methods
     {
         Vector row_sum = Vector::Zero(nb_variables());
 
-        for (index row = 0; row < nb_variables(); row++) {
-            for (index i = m_structure_hm.ia(row); i < m_structure_hm.ia(row + 1); i++) {
-                const index col = m_structure_hm.ja(i);
+        for (int row = 0; row < nb_variables(); row++) {
+            for (int i = m_structure_hm.ia(row); i < m_structure_hm.ia(row + 1); i++) {
+                const int col = m_structure_hm.ja(i);
 
                 const double abs_value = std::abs(hm(i));
 
