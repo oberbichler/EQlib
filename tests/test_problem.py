@@ -67,6 +67,16 @@ def problem():
     return (elements, problem)
 
 
+def test_compute(problem):
+    elements, problem = problem
+
+    problem.compute()
+
+    assert_equal(problem.f, 4)
+    assert_equal(problem.df, [2, 8.1, 7])
+    assert_equal(problem.hm.toarray(), [[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]])
+
+
 def test_hm_add_diagonal(zero_problem):
     elements, problem = zero_problem
 
@@ -88,10 +98,18 @@ def test_hm_norm_inf(problem):
 
     problem.compute()
 
-    assert_equal(problem.f, 4)
-    assert_equal(problem.df, [2, 8.1, 7])
-    assert_equal(problem.hm.toarray(), [[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]])
-
     norm = problem.hm_norm_inf
 
     assert_equal(norm, 17.3)
+
+
+def test_scale(problem):
+    elements, problem = problem
+
+    problem.compute()
+
+    problem.scale(1.5)
+
+    assert_equal(problem.f, 4 * 1.5)
+    assert_equal(problem.df, np.multiply([2, 8.1, 7], 1.5))
+    assert_equal(problem.hm.toarray(), np.multiply([[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]], 1.5))
