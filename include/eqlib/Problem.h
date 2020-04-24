@@ -548,11 +548,19 @@ public: // methods: computation
         if constexpr (TParallel) {
             ProblemData l_data(m_data);
 
+            std::vector<index> active_elements_f;
+
+            for (index i = 0; i < nb_elements_f(); i++) {
+                if (m_elements_f[i]->is_active()) {
+                    active_elements_f.push_back(i);
+                }
+            }
+
             #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_element_f<TOrder>(l_data, i);
+                for (index i = 0; i < length(active_elements_f); i++) {
+                    compute_element_f<TOrder>(l_data, active_elements_f[i]);
                 }
 
                 if (sigma() != 1.0) {
@@ -709,9 +717,37 @@ public: // methods
 
     void hm_add_diagonal(const double value)
     {
-        for (index i = 0; i < nb_variables(); i++) {
-            hm(i, i) += value;
+        for (int row = 0; row < nb_variables(); row++) {
+            int i = m_structure_hm.ia(row);
+            int col = m_structure_hm.ja(i);
+            hm(i) += value;
         }
+    }
+
+    double hm_norm_inf() const
+    {
+        Vector row_sum = Vector::Zero(nb_variables());
+
+        for (int row = 0; row < nb_variables(); row++) {
+            for (int i = m_structure_hm.ia(row); i < m_structure_hm.ia(row + 1); i++) {
+                const int col = m_structure_hm.ja(i);
+
+                const double abs_value = std::abs(hm(i));
+
+                row_sum(row) += abs_value;
+
+                if (row != col) {
+                    row_sum(col) += abs_value;
+                }
+            }
+        }
+
+        return row_sum.maxCoeff();
+    }
+
+    void scale(const double factor)
+    {
+        m_data.values() *= factor;
     }
 
     Pointer<Problem> clone() const
@@ -1253,6 +1289,7 @@ public: // methods: python
             .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
             .def_property_readonly("hm_indptr", &Type::hm_indptr)
             .def_property_readonly("hm_indices", &Type::hm_indices)
+            .def_property_readonly("hm_norm_inf", &Type::hm_norm_inf)
             .def_property_readonly("nb_equations", &Type::nb_equations)
             .def_property_readonly("nb_variables", &Type::nb_variables)
             .def_property_readonly("values", py::overload_cast<>(&Type::values))
@@ -1309,7 +1346,8 @@ public: // methods: python
                     std::make_pair(self.nb_variables(), self.nb_variables()))
                     .release();
             },
-                "x"_a);
+                "x"_a)
+            .def("scale", &Type::scale, "factor"_a);
     }
 };
 

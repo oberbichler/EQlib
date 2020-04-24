@@ -5,6 +5,12 @@ import numpy as np
 from numpy.testing import assert_equal
 
 
+def explode(value, g, h):
+    g[:] = value.g
+    h[:] = value.h
+    return value.f
+
+
 class TestLambdaElements(unittest.TestCase):
 
     def test_lambda_constraint(self):
@@ -18,8 +24,8 @@ class TestLambdaElements(unittest.TestCase):
             x1, x2 = hj.HyperJet.variables(variables)
             f1 = x1**2 + x1 * x2 + x2**3
             f2 = x1**3 + x1 * x2 + x2**2
-            fs[0] = hj.explode(f1, gs[0], hs[0])
-            fs[1] = hj.explode(f2, gs[1], hs[1])
+            fs[0] = explode(f1, gs[0], hs[0])
+            fs[1] = explode(f2, gs[1], hs[1])
 
         element = eq.LambdaConstraint([g1, g2], [x1, x2], compute)
 
@@ -40,7 +46,7 @@ class TestLambdaElements(unittest.TestCase):
         def compute(variables, g, h):
             x1, x2 = hj.HyperJet.variables(variables)
             f = x1**2 + x1 * x2 + x2**3
-            return hj.explode(f, g, h)
+            return explode(f, g, h)
 
         element = eq.LambdaObjective([x1, x2], compute)
 

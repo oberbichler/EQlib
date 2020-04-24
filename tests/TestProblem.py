@@ -1,8 +1,14 @@
 import unittest
 import eqlib as eq
-import numpy as np
 import hyperjet as hj
 from numpy.testing import assert_almost_equal, assert_equal
+
+
+def explode(value, g, h):
+    g[:] = value.g
+    h[:] = value.h
+    return value.f
+
 
 class F1(eq.Objective):
     def __init__(self, x1, x2):
@@ -14,7 +20,8 @@ class F1(eq.Objective):
     def compute(self, g, h):
         x1, x2 = hj.HyperJet.variables([self.x1, self.x2])
         r = x1**2 + x2**2
-        return hj.explode(r, g, h)
+        return explode(r, g, h)
+
 
 class F2(eq.Objective):
     def __init__(self, x2, x3):
@@ -26,7 +33,8 @@ class F2(eq.Objective):
     def compute(self, g, h):
         x2, x3 = hj.HyperJet.variables([self.x2, self.x3])
         r = x2**2 - x3
-        return hj.explode(r, g, h)
+        return explode(r, g, h)
+
 
 class C1(eq.Constraint):
     def __init__(self, g1, x1, x3):
@@ -41,7 +49,8 @@ class C1(eq.Constraint):
         x1, x3 = hj.HyperJet.variables([self.x1, self.x3])
         rs = [x1**2 + x1 * x3]
         for k in range(len(rs)):
-            fs[k] = hj.explode(rs[k], gs[k], hs[k])
+            fs[k] = explode(rs[k], gs[k], hs[k])
+
 
 class C2(eq.Constraint):
     def __init__(self, g1, g2, x3):
@@ -56,7 +65,8 @@ class C2(eq.Constraint):
         x3, = hj.HyperJet.variables([self.x3])
         rs = [x3**2, x3]
         for k in range(len(rs)):
-            fs[k] = hj.explode(rs[k], gs[k], hs[k])
+            fs[k] = explode(rs[k], gs[k], hs[k])
+
 
 class C3(eq.Constraint):
     def __init__(self, g2, g3, x4):
@@ -71,7 +81,8 @@ class C3(eq.Constraint):
         x4, = hj.HyperJet.variables([self.x4])
         rs = [-x4, x4]
         for k in range(len(rs)):
-            fs[k] = hj.explode(rs[k], gs[k], hs[k])
+            fs[k] = explode(rs[k], gs[k], hs[k])
+
 
 class C4(eq.Constraint):
     def __init__(self, g3, x2):
@@ -85,7 +96,8 @@ class C4(eq.Constraint):
         x2, = hj.HyperJet.variables([self.x2])
         rs = [x2]
         for k in range(len(rs)):
-            fs[k] = hj.explode(rs[k], gs[k], hs[k])
+            fs[k] = explode(rs[k], gs[k], hs[k])
+
 
 class TestProblem(unittest.TestCase):
 
@@ -130,6 +142,7 @@ class TestProblem(unittest.TestCase):
         assert_almost_equal(problem.hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [0, 0, 6.4, 0], [0, 0, 0, 0]])
 
         assert_almost_equal(problem.general_hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [3.2, 0, 6.4, 0], [0, 0, 0, 0]])
+
 
 if __name__ == '__main__':
     unittest.main()
