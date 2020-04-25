@@ -1,7 +1,7 @@
-import pytest
-
 import eqlib as eq
+
 import numpy as np
+import pytest
 
 from numpy.testing import assert_equal
 
