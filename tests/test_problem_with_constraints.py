@@ -1,7 +1,13 @@
-import unittest
 import eqlib as eq
+
 import hyperjet as hj
+import pytest
+
 from numpy.testing import assert_almost_equal, assert_equal
+
+if __name__ == '__main__':
+    import sys
+    pytest.main(sys.argv)
 
 
 def explode(value, g, h):
@@ -99,50 +105,49 @@ class C4(eq.Constraint):
             fs[k] = explode(rs[k], gs[k], hs[k])
 
 
-class TestProblem(unittest.TestCase):
+@pytest.fixture
+def problem():
+    g1 = eq.Equation(name='g1', lower_bound=1, upper_bound=1, multiplier=3.2)
+    g2 = eq.Equation(name='g2', lower_bound=float('-inf'), upper_bound=-1, multiplier=9.3)
+    g3 = eq.Equation(name='g3', lower_bound=2.5, upper_bound=5, multiplier=11.6)
 
-    def test_example(self):
-        g1 = eq.Equation(name='g1', lower_bound=1, upper_bound=1, multiplier=3.2)
-        g2 = eq.Equation(name='g2', lower_bound=float('-inf'), upper_bound=-1, multiplier=9.3)
-        g3 = eq.Equation(name='g3', lower_bound=2.5, upper_bound=5, multiplier=11.6)
+    x1 = eq.Variable(name='x1', value=2.0, lower_bound=-0.5, upper_bound=float('inf'))
+    x2 = eq.Variable(name='x2', value=7.0, lower_bound=-2.0, upper_bound=float('inf'))
+    x3 = eq.Variable(name='x3', value=1.0, lower_bound= 0.0, upper_bound=2)
+    x4 = eq.Variable(name='x4', value=5.0, lower_bound=-2.0, upper_bound=2)
 
-        x1 = eq.Variable(name='x1', value=2.0, lower_bound=-0.5, upper_bound=float('inf'))
-        x2 = eq.Variable(name='x2', value=7.0, lower_bound=-2.0, upper_bound=float('inf'))
-        x3 = eq.Variable(name='x3', value=1.0, lower_bound= 0.0, upper_bound=2)
-        x4 = eq.Variable(name='x4', value=5.0, lower_bound=-2.0, upper_bound=2)
+    objectives = [F1(x1, x2), F2(x2, x3)]
+    constraints = [C1(g1, x1, x3), C2(g1, g2, x3), C3(g2, g3, x4), C4(g3, x2)]
 
-        objectives = [F1(x1, x2), F2(x2, x3)]
-        constraints = [C1(g1, x1, x3), C2(g1, g2, x3), C3(g2, g3, x4), C4(g3, x2)]
+    problem = eq.Problem(objectives, constraints)
 
-        problem = eq.Problem(objectives, constraints)
+    problem.sigma = 1.5
 
-        problem.sigma = 1.5
-
-        assert_equal(problem.nb_equations, 3)
-        assert_equal(problem.nb_variables, 4)
-
-        assert_equal(problem.dg_indptr, [0, 2, 4, 6])
-        assert_equal(problem.dg_indices, [0, 2, 2, 3, 1, 3])
-
-        assert_equal(problem.hm_indptr, [0, 3, 5, 6, 7])
-        assert_equal(problem.hm_indices, [0, 1, 2, 1, 2, 2, 3])
-
-        assert_almost_equal(problem.equation_multipliers, [3.2, 9.3, 11.6])
-        assert_almost_equal(problem.variable_multipliers, [1, 1, 1, 1])
-
-        problem.compute()
-
-        assert_almost_equal(problem.f, 151.5)
-        assert_almost_equal(problem.g, [7, -4, 12])
-        assert_almost_equal(problem.df, [6, 42, -1.5, 0])
-        assert_almost_equal(problem.dg_values, [5, 4, 1, -1, 1, 1])
-        assert_almost_equal(problem.hm_values, [9.4, 0, 3.2, 6, 0, 6.4, 0])
-
-        assert_almost_equal(problem.dg.toarray(), [[5, 0, 4, 0], [0, 0, 1, -1], [0, 1, 0, 1]])
-        assert_almost_equal(problem.hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [0, 0, 6.4, 0], [0, 0, 0, 0]])
-
-        assert_almost_equal(problem.general_hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [3.2, 0, 6.4, 0], [0, 0, 0, 0]])
+    return problem
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_example(problem):
+    assert_equal(problem.nb_equations, 3)
+    assert_equal(problem.nb_variables, 4)
+
+    assert_equal(problem.dg_indptr, [0, 2, 4, 6])
+    assert_equal(problem.dg_indices, [0, 2, 2, 3, 1, 3])
+
+    assert_equal(problem.hm_indptr, [0, 3, 5, 6, 7])
+    assert_equal(problem.hm_indices, [0, 1, 2, 1, 2, 2, 3])
+
+    assert_almost_equal(problem.equation_multipliers, [3.2, 9.3, 11.6])
+    assert_almost_equal(problem.variable_multipliers, [1, 1, 1, 1])
+
+    problem.compute()
+
+    assert_almost_equal(problem.f, 151.5)
+    assert_almost_equal(problem.g, [7, -4, 12])
+    assert_almost_equal(problem.df, [6, 42, -1.5, 0])
+    assert_almost_equal(problem.dg_values, [5, 4, 1, -1, 1, 1])
+    assert_almost_equal(problem.hm_values, [9.4, 0, 3.2, 6, 0, 6.4, 0])
+
+    assert_almost_equal(problem.dg.toarray(), [[5, 0, 4, 0], [0, 0, 1, -1], [0, 1, 0, 1]])
+    assert_almost_equal(problem.hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [0, 0, 6.4, 0], [0, 0, 0, 0]])
+
+    assert_almost_equal(problem.general_hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [3.2, 0, 6.4, 0], [0, 0, 0, 0]])
