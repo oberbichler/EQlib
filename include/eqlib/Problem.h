@@ -1254,7 +1254,7 @@ public: // methods: python
         py::class_<Type, Holder>(m, name.c_str())
             // constructors
             .def(py::init<ElementsF, ElementsG, int, int>(), "objective"_a = py::list(), "constraints"_a = py::list(),
-                "nb_threads"_a = 1, "grainsize"_a = 100)
+                "nb_threads"_a = 1, "grainsize"_a = 100, py::keep_alive<1, 2>(), py::keep_alive<1, 3>())
             // read-only properties
             .def_property_readonly("is_constrained", &Type::is_constrained)
             .def_property_readonly("equations", &Type::equations)
