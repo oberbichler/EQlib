@@ -14,6 +14,7 @@
 #include <eqlib/NewtonRaphson.h>
 #include <eqlib/Node.h>
 #include <eqlib/Objective.h>
+#include <eqlib/Parameter.h>
 #include <eqlib/Problem.h>
 #include <eqlib/SparseLU.h>
 #include <eqlib/SparseStructure.h>
@@ -44,6 +45,9 @@ PYBIND11_MODULE(eqlib, m)
 
     // Variable
     eqlib::Variable::register_python(m);
+
+    // Parameter
+    eqlib::Parameter::register_python(m);
 
     // Constraint
     eqlib::Constraint::register_python(m);
