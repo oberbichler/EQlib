@@ -23,6 +23,8 @@
 #include <eqlib/Info.h>
 
 #include <eqlib/objectives/IgaPointDistance.h>
+#include <eqlib/objectives/IgaShell3PAD.h>
+
 PYBIND11_MODULE(eqlib, m)
 {
     namespace py = pybind11;
@@ -97,4 +99,6 @@ PYBIND11_MODULE(eqlib, m)
     // objectives: IgaPointDistance
     eqlib::IgaPointDistance::register_python(m);
 
+    // objectives: IgaShell3PAD
+    eqlib::IgaShell3PAD::register_python(m);
 }
