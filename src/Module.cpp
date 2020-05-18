@@ -22,6 +22,12 @@
 
 #include <eqlib/Info.h>
 
+#include <eqlib/objectives/IgaNormalDistanceAD.h>
+#include <eqlib/objectives/IgaPointDistance.h>
+#include <eqlib/objectives/IgaPointDistanceAD.h>
+#include <eqlib/objectives/IgaPointLocation.h>
+#include <eqlib/objectives/IgaShell3PAD.h>
+
 PYBIND11_MODULE(eqlib, m)
 {
     namespace py = pybind11;
@@ -93,4 +99,19 @@ PYBIND11_MODULE(eqlib, m)
     // SparseStructure
     eqlib::SparseStructure<double, int, true, true>::register_python(m, "RowMajorSparseStructure");
     eqlib::SparseStructure<double, int, false, true>::register_python(m, "ColMajorSparseStructure");
+
+    // objectives: IgaNormalDistance
+    eqlib::IgaNormalDistanceAD::register_python(m);
+
+    // objectives: IgaPointDistance
+    eqlib::IgaPointDistance::register_python(m);
+
+    // objectives: IgaPointDistanceAD
+    eqlib::IgaPointDistanceAD::register_python(m);
+
+    // objectives: IgaPointLocation
+    eqlib::IgaPointLocation::register_python(m);
+
+    // objectives: IgaShell3PAD
+    eqlib::IgaShell3PAD::register_python(m);
 }
