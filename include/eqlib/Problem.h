@@ -718,8 +718,7 @@ public: // methods
     void hm_add_diagonal(const double value)
     {
         for (int row = 0; row < nb_variables(); row++) {
-            int i = m_structure_hm.ia(row);
-            int col = m_structure_hm.ja(i);
+            const int i = m_structure_hm.ia(row);
             hm(i) += value;
         }
     }
