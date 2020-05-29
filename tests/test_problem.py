@@ -61,6 +61,16 @@ def test_compute(problem):
     assert_equal(problem.hm.toarray(), [[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]])
 
 
+def test_hm_diagonal(problem):
+    problem.compute()
+
+    assert_equal(problem.hm_diagonal, [4, 4.2, 11.3])
+
+    problem.hm_diagonal = [1, 2, 3]
+
+    assert_equal(problem.hm.toarray(), [[1, -5.6, 0], [0, 2, 6], [0, 0, 3]])
+
+
 def test_hm_add_diagonal(problem):
     problem.compute()
 

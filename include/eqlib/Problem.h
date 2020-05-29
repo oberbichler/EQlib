@@ -715,6 +715,26 @@ public: // methods
         return hm().selfadjointView<Eigen::Upper>() * v.transpose();
     }
 
+    Vector hm_diagonal()
+    {
+        Vector result(nb_variables());
+
+        for (int row = 0; row < nb_variables(); row++) {
+            const int i = m_structure_hm.ia(row);
+            result(row) = hm(i);
+        }
+
+        return result;
+    }
+
+    void set_hm_diagonal(Eigen::Ref<const Vector> value)
+    {
+        for (int row = 0; row < nb_variables(); row++) {
+            const int i = m_structure_hm.ia(row);
+            hm(i) = value(row);
+        }
+    }
+
     void hm_add_diagonal(const double value)
     {
         for (int row = 0; row < nb_variables(); row++) {
@@ -1300,6 +1320,7 @@ public: // methods: python
             .def_property("nb_threads", &Type::nb_threads, &Type::set_nb_threads)
             .def_property("grainsize", &Type::grainsize, &Type::set_grainsize)
             .def_property("sigma", &Type::sigma, &Type::set_sigma)
+            .def_property("hm_diagonal", &Type::hm_diagonal, &Type::set_hm_diagonal)
             .def_property("x", py::overload_cast<>(&Type::x, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
             .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_variable_multipliers, py::const_))
             .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
