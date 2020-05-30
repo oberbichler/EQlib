@@ -1359,6 +1359,12 @@ public: // methods: python
                     .release();
             },
                 "x"_a)
+            .def("hm_v_of", [=](Type& self, Ref<const Vector> x, Ref<const Vector> p) {
+                self.set_x(x);
+                self.compute<false>(2);
+                return self.hm_v(p);
+            },
+                "x"_a, "p"_a)
             .def("scale", &Type::scale, "factor"_a);
     }
 };
