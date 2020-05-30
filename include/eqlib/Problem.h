@@ -1332,13 +1332,13 @@ public: // methods: python
             .def("g_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(0);
-                return self.g();
+                return Vector(self.g());
             },
                 "x"_a)
             .def("df_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(1);
-                return self.df();
+                return Vector(self.df());
             },
                 "x"_a)
             .def("dg_of", [=](Type& self, Ref<const Vector> x) {
