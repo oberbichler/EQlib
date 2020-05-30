@@ -423,20 +423,12 @@ private: // methods: computation
 
         data.f() += f;
 
-        if constexpr (TOrder < 1) {
-            return;
-        }
-
-        for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+        for (index row_i = 0; row_i < length(variable_indices) && TOrder > 0; row_i++) {
             const auto row = variable_indices[row_i];
 
             data.df(row.global) += g(row.local);
 
-            if constexpr (TOrder < 2) {
-                return;
-            }
-
-            for (index col_i = row_i; col_i != length(variable_indices); ++col_i) {
+            for (index col_i = row_i; col_i < length(variable_indices) && TOrder > 1; col_i++) {
                 const auto col = variable_indices[col_i];
 
                 index index = m_structure_hm.get_index(row.global, col.global);
@@ -499,7 +491,7 @@ private: // methods: computation
             data.g(equation_index.global) += fs(equation_index.local);
 
             if constexpr (TOrder < 1) {
-                return;
+                continue;
             }
 
             auto& local_g = gs[equation_index.local];
@@ -515,7 +507,7 @@ private: // methods: computation
                 data.dg_value(dg_value_i) += local_g(row.local);
 
                 if constexpr (TOrder < 2) {
-                    return;
+                    continue;
                 }
 
                 for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
