@@ -66,6 +66,7 @@ jobs:
         PATH=${PYBIN}:$PATH
         pip install --upgrade pip
         pip install -r requirements.txt
+        pumpit --tag "${github.ref}" --file setup.py --replace "EQLIB_VERSION = 'dev'" "EQLIB_VERSION = '${VERSION}'"
         pip wheel . -w wheelhouse/
         for whl in wheelhouse/eqlib-*.whl; do
           auditwheel repair "$whl" --plat $PLAT -w wheelhouse/
@@ -93,5 +94,6 @@ jobs:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
+        pumpit --tag "${github.ref}" --file setup.py --replace "EQLIB_VERSION = 'dev'" "EQLIB_VERSION = '${VERSION}'"
         python setup.py sdist
         twine upload dist/*
