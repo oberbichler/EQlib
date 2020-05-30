@@ -19,8 +19,10 @@ class ConstantObjective(eq.Objective):
         self.h = h
 
     def compute(self, g, h):
-        g[:] = self.g
-        h[:] = self.h
+        if len(g) != 0:
+            g[:] = self.g
+        if len(h) != 0:
+            h[:] = self.h
         return self.f
 
 
@@ -59,6 +61,47 @@ def test_compute(problem):
     assert_equal(problem.f, 4)
     assert_equal(problem.df, [2, 8.1, 7])
     assert_equal(problem.hm.toarray(), [[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]])
+
+
+def test_compute_0(problem):
+    problem.df.fill(0)
+    problem.hm_values.fill(0)
+
+    problem.compute(0)
+
+    assert_equal(problem.f, 4)
+    assert_equal(problem.df, np.zeros(3))
+    assert_equal(problem.hm.toarray(), np.zeros((3, 3)))
+
+
+def test_compute_1(problem):
+    problem.hm_values.fill(0)
+
+    problem.compute(1)
+
+    assert_equal(problem.f, 4)
+    assert_equal(problem.df, [2, 8.1, 7])
+    assert_equal(problem.hm.toarray(), np.zeros((3, 3)))
+
+
+def test_compute_2(problem):
+    problem.compute(2)
+
+    assert_equal(problem.f, 4)
+    assert_equal(problem.df, [2, 8.1, 7])
+    assert_equal(problem.hm.toarray(), [[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]])
+
+
+def test_compute_invalid_order_throws(problem):
+    with pytest.raises(ValueError) as ex:
+        problem.compute(-1)
+
+    assert_equal('order', str(ex.value))
+
+    with pytest.raises(ValueError) as ex:
+        problem.compute(4)
+
+    assert_equal('order', str(ex.value))
 
 
 def test_hm_diagonal(problem):
