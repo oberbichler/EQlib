@@ -66,7 +66,7 @@ jobs:
         PATH=${PYBIN}:$PATH
         pip install --upgrade pip
         pip install -r requirements.txt
-        pumpit --tag "${github.ref}" --file setup.py --replace "EQLIB_VERSION = 'dev'" "EQLIB_VERSION = '${VERSION}'"
+        pumpit --tag "${{ github.ref }}" --file setup.py --replace "EQLIB_VERSION = 'dev'" "EQLIB_VERSION = '${VERSION}'"
         pip wheel . -w wheelhouse/
         for whl in wheelhouse/eqlib-*.whl; do
           auditwheel repair "$whl" --plat $PLAT -w wheelhouse/
