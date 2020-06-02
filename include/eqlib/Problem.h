@@ -535,7 +535,7 @@ public: // methods: computation
 
         Timer timer;
 
-        m_data.set_zero();
+        m_data.set_zero<TOrder>();
 
         if constexpr (TParallel) {
             ProblemData l_data(m_data);
@@ -1306,6 +1306,8 @@ public: // methods: python
             .def_property_readonly("values", py::overload_cast<>(&Type::values))
             .def_property_readonly("equation_bounds", &Type::equation_bounds)
             .def_property_readonly("variable_bounds", &Type::variable_bounds)
+            .def_property_readonly("nb_elements_f", &Type::nb_elements_f)
+            .def_property_readonly("nb_elements_g", &Type::nb_elements_g)
             // properties
             .def_property("linear_solver", &Type::linear_solver, &Type::set_linear_solver)
             .def_property("f", &Type::f, &Type::set_f)

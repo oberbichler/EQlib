@@ -55,6 +55,14 @@ def test_init(problem):
     assert_equal(len(problem.hm_values), 5)
 
 
+def test_nb_elements_f(problem):
+    assert_equal(problem.nb_elements_f, 2)
+
+
+def test_nb_elements_g(problem):
+    assert_equal(problem.nb_elements_g, 0)
+
+
 def test_compute(problem):
     problem.compute()
 

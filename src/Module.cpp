@@ -6,6 +6,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include <eqlib/Armijo.h>
 #include <eqlib/Constraint.h>
 #include <eqlib/Equation.h>
 #include <eqlib/LambdaConstraint.h>
@@ -45,6 +46,9 @@ PYBIND11_MODULE(eqlib, m)
     m.attr("_USE_MKL") = eqlib::Info::use_mkl();
 
     // --- core
+
+    // Armijo
+    eqlib::Armijo::register_python(m);
 
     // Equation
     eqlib::Equation::register_python(m);
