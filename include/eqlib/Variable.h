@@ -62,6 +62,11 @@ public: // methods
         return m_act_value;
     }
 
+    double& value() noexcept
+    {
+        return m_act_value;
+    }
+
     void set_value(const double value) noexcept
     {
         m_act_value = value;
@@ -162,7 +167,7 @@ public: // python
             .def(py::init<double, double, double, bool, double, std::string>(), "value"_a = 0.0, "lower_bound"_a = -infinity,
                 "upper_bound"_a = infinity, "is_active"_a = true, "multiplier"_a = 1.0, "name"_a = "")
             .def(py::init<>())
-            .def_property("value", &Type::value, &Type::set_value)
+            .def_property("value", py::overload_cast<>(&Type::value, py::const_), &Type::set_value)
             .def_property("lower_bound", &Type::lower_bound,
                 &Type::set_lower_bound)
             .def_property("upper_bound", &Type::upper_bound,
