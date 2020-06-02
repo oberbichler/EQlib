@@ -51,9 +51,8 @@ public: // methods
 
         if (reset) {
             m_problem->set_f(f_init);
+            m_problem->set_x(m_x_init);
         }
-
-        m_problem->set_x(m_x_init);
 
         return alpha;
     }
