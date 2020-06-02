@@ -1008,6 +1008,22 @@ public: // methods: input
         add_x(Map<const Vector>(delta, nb_variables()));
     }
 
+    void sub_x(Ref<const Vector> delta) const
+    {
+        if (length(delta) != nb_variables()) {
+            throw std::runtime_error("Invalid size");
+        }
+
+        for (index i = 0; i < length(delta); i++) {
+            variable(i)->value() -= delta[i];
+        }
+    }
+
+    void sub_x(double* const delta) const
+    {
+        sub_x(Map<const Vector>(delta, nb_variables()));
+    }
+
     Vector variable_multipliers() const
     {
         Vector result(nb_variables());
@@ -1336,6 +1352,7 @@ public: // methods: python
             .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
             // methods
             .def("add_x", py::overload_cast<Ref<const Vector>>(&Type::add_x, py::const_))
+            .def("sub_x", py::overload_cast<Ref<const Vector>>(&Type::sub_x, py::const_))
             .def("clone", &Type::clone)
             .def("remove_inactive_elements", &Type::remove_inactive_elements)
             .def("compute", &Type::compute<true>, "order"_a = 2, py::call_guard<py::gil_scoped_release>())
