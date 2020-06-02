@@ -62,6 +62,11 @@ public: // methods
         return m_act_value;
     }
 
+    double& value() noexcept
+    {
+        return m_act_value;
+    }
+
     void set_value(const double value) noexcept
     {
         m_act_value = value;
@@ -105,6 +110,15 @@ public: // methods
     void set_multiplier(const double value) noexcept
     {
         m_multiplier = value;
+    }
+
+    void clamp() noexcept
+    {
+        if (value() < lower_bound()) {
+            set_value(lower_bound());
+        } else if (upper_bound() < value()) {
+            set_value(upper_bound());
+        }
     }
 
     const std::string& name() const noexcept
@@ -159,19 +173,19 @@ public: // python
         using Holder = Pointer<Type>;
 
         py::class_<Type, Holder>(m, "Variable")
-            .def(py::init<double, double, double, bool, double, std::string>(), "value"_a = 0.0, "lower_bound"_a = -infinity,
-                "upper_bound"_a = infinity, "is_active"_a = true, "multiplier"_a = 1.0, "name"_a = "")
+            // constructors
+            .def(py::init<double, double, double, bool, double, std::string>(), "value"_a = 0.0, "lower_bound"_a = -infinity, "upper_bound"_a = infinity, "is_active"_a = true, "multiplier"_a = 1.0, "name"_a = "")
             .def(py::init<>())
-            .def_property("value", &Type::value, &Type::set_value)
-            .def_property("lower_bound", &Type::lower_bound,
-                &Type::set_lower_bound)
-            .def_property("upper_bound", &Type::upper_bound,
-                &Type::set_upper_bound)
+            // methods
+            .def("__float__", &Type::operator double)
+            .def("clamp", &Type::clamp)
+            // properties
+            .def_property("value", py::overload_cast<>(&Type::value, py::const_), &Type::set_value)
+            .def_property("lower_bound", &Type::lower_bound, &Type::set_lower_bound)
+            .def_property("upper_bound", &Type::upper_bound, &Type::set_upper_bound)
             .def_property("is_active", &Type::is_active, &Type::set_active)
-            .def_property("multiplier", &Type::multiplier,
-                &Type::set_multiplier)
-            .def_property("name", &Type::name, &Type::set_name)
-            .def("__float__", &Type::operator double);
+            .def_property("multiplier", &Type::multiplier, &Type::set_multiplier)
+            .def_property("name", &Type::name, &Type::set_name);
     }
 };
 
