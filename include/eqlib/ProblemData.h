@@ -60,10 +60,23 @@ public: // methods
         return m_assemble_time;
     }
 
+    template <index TOrder>
     void set_zero()
     {
-        m_values.setZero();
-        m_buffer.setZero();
+        if constexpr(TOrder == 0) {
+            m_values(0) = 0;
+        }
+        if constexpr(TOrder == 1) {
+            m_values.head(1 + m_m + m_n).setZero();
+        }
+        if constexpr(TOrder == 2) {
+            m_values.setZero();
+        }
+
+        if constexpr(TOrder > 0) {
+            m_buffer.setZero();
+        }
+
         m_computation_time = 0.0;
         m_assemble_time = 0.0;
     }
@@ -91,7 +104,7 @@ public: // methods
 
         m_buffer.resize(std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
 
-        set_zero();
+        set_zero<2>();
     }
 
     double& f() noexcept

@@ -535,7 +535,7 @@ public: // methods: computation
 
         Timer timer;
 
-        m_data.set_zero();
+        m_data.set_zero<TOrder>();
 
         if constexpr (TParallel) {
             ProblemData l_data(m_data);
