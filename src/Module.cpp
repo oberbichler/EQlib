@@ -17,6 +17,7 @@
 #include <eqlib/Objective.h>
 #include <eqlib/Parameter.h>
 #include <eqlib/Problem.h>
+#include <eqlib/SteepestDecent.h>
 #include <eqlib/SparseLU.h>
 #include <eqlib/SparseStructure.h>
 #include <eqlib/Variable.h>
@@ -85,6 +86,9 @@ PYBIND11_MODULE(eqlib, m)
 
     // NewtonRaphson
     eqlib::NewtonRaphson::register_python(m);
+
+    // SteepestDecent
+    eqlib::SteepestDecent::register_python(m);
 
     // LinearSolver
     eqlib::LinearSolver::register_python(m);
