@@ -959,9 +959,31 @@ public: // methods: model properties
         return m_variables.at(index);
     }
 
+    index variable_index(const Pointer<Variable>& variable) const
+    {
+        const auto it = m_variable_indices.find(variable);
+
+        if (it == m_variable_indices.end()) {
+            return -1;
+        }
+
+        return it->second;
+    }
+
     const Pointer<Equation>& equation(const index index) const
     {
         return m_equations.at(index);
+    }
+
+    index equation_index(const Pointer<Equation>& equation) const
+    {
+        const auto it = m_equation_indices.find(equation);
+
+        if (it == m_equation_indices.end()) {
+            return -1;
+        }
+
+        return it->second;
     }
 
 public: // methods: input
@@ -1353,6 +1375,8 @@ public: // methods: python
             // methods
             .def("add_x", py::overload_cast<Ref<const Vector>>(&Type::add_x, py::const_))
             .def("sub_x", py::overload_cast<Ref<const Vector>>(&Type::sub_x, py::const_))
+            .def("variable_index", &Type::variable_index, "variable"_a)
+            .def("equation_index", &Type::equation_index, "equation"_a)
             .def("clone", &Type::clone)
             .def("remove_inactive_elements", &Type::remove_inactive_elements)
             .def("compute", &Type::compute<true>, "order"_a = 2, py::call_guard<py::gil_scoped_release>())
