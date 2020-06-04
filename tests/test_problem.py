@@ -55,6 +55,11 @@ def test_init(problem):
     assert_equal(len(problem.hm_values), 5)
 
 
+def test_variable_index(problem):
+    for i, variable in enumerate(problem.variables):
+        assert_equal(problem.variable_index(variable), i)
+
+
 def test_nb_elements_f(problem):
     assert_equal(problem.nb_elements_f, 2)
 
