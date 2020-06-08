@@ -56,6 +56,9 @@ private: // variables
     ElementsF m_elements_f;
     ElementsG m_elements_g;
 
+    std::vector<index> m_active_elements_f;
+    std::vector<index> m_active_elements_g;
+
     Equations m_equations;
     Variables m_variables;
 
@@ -93,6 +96,8 @@ public: // constructors
         , m_grainsize(grainsize)
         , m_max_element_n(0)
         , m_max_element_m(0)
+        , m_active_elements_f(length(m_elements_f))
+        , m_active_elements_g(length(m_elements_g))
     {
         Log::task_begin("Initialize problem...");
 
@@ -524,6 +529,25 @@ private: // methods: computation
     }
 
 public: // methods: computation
+    void update_active_elements()
+    {
+        m_active_elements_f.clear();
+
+        for (index i = 0; i < nb_elements_f(); i++) {
+            if (m_elements_f[i]->is_active()) {
+                m_active_elements_f.emplace_back(i);
+            }
+        }
+        
+        m_active_elements_g.clear();
+
+        for (index i = 0; i < nb_elements_g(); i++) {
+            if (m_elements_g[i]->is_active()) {
+                m_active_elements_g.emplace_back(i);
+            }
+        }
+    }
+
     template <bool TParallel, bool TInfo, index TOrder>
     void compute()
     {
@@ -537,22 +561,17 @@ public: // methods: computation
 
         m_data.set_zero<TOrder>();
 
+        update_active_elements();
+
         if constexpr (TParallel) {
             ProblemData l_data(m_data);
-
-            std::vector<index> active_elements_f;
-
-            for (index i = 0; i < nb_elements_f(); i++) {
-                if (m_elements_f[i]->is_active()) {
-                    active_elements_f.push_back(i);
-                }
-            }
 
             #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < length(active_elements_f); i++) {
-                    compute_element_f<TOrder>(l_data, active_elements_f[i]);
+                for (index i = 0; i < length(m_active_elements_f); i++) {
+                    // Log::info("Element {}", i);
+                    compute_element_f<TOrder>(l_data, m_active_elements_f[i]);
                 }
 
                 if (sigma() != 1.0) {
@@ -568,8 +587,8 @@ public: // methods: computation
                 }
 
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < nb_elements_g(); i++) {
-                    compute_element_g<TOrder>(l_data, i);
+                for (index i = 0; i < length(m_active_elements_g); i++) {
+                    compute_element_g<TOrder>(l_data, m_active_elements_g[i]);
                 }
 
                 #pragma omp critical
@@ -1381,26 +1400,26 @@ public: // methods: python
             .def("remove_inactive_elements", &Type::remove_inactive_elements)
             .def("compute", &Type::compute<true>, "order"_a = 2, py::call_guard<py::gil_scoped_release>())
             .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
-            .def("hm_inv_v", &Type::hm_inv_v)
+            .def("hm_inv_v", &Type::hm_inv_v, py::call_guard<py::gil_scoped_release>())
             .def("hm_v", &Type::hm_v)
             .def("f_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(0);
                 return self.f();
             },
-                "x"_a)
+                "x"_a, py::call_guard<py::gil_scoped_release>())
             .def("g_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(0);
                 return Vector(self.g());
             },
-                "x"_a)
+                "x"_a, py::call_guard<py::gil_scoped_release>())
             .def("df_of", [](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(1);
                 return Vector(self.df());
             },
-                "x"_a)
+                "x"_a, py::call_guard<py::gil_scoped_release>())
             .def("dg_of", [=](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(1);
@@ -1409,7 +1428,7 @@ public: // methods: python
                     std::make_pair(self.nb_equations(), self.nb_variables()))
                     .release();
             },
-                "x"_a)
+                "x"_a, py::call_guard<py::gil_scoped_release>())
             .def("hm_of", [=](Type& self, Ref<const Vector> x) {
                 self.set_x(x);
                 self.compute<false>(2);
@@ -1418,13 +1437,13 @@ public: // methods: python
                     std::make_pair(self.nb_variables(), self.nb_variables()))
                     .release();
             },
-                "x"_a)
+                "x"_a, py::call_guard<py::gil_scoped_release>())
             .def("hm_v_of", [=](Type& self, Ref<const Vector> x, Ref<const Vector> p) {
                 self.set_x(x);
                 self.compute<false>(2);
                 return self.hm_v(p);
             },
-                "x"_a, "p"_a)
+                "x"_a, "p"_a, py::call_guard<py::gil_scoped_release>())
             .def("scale", &Type::scale, "factor"_a);
     }
 };
