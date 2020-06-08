@@ -151,3 +151,11 @@ def test_example(problem):
     assert_almost_equal(problem.hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [0, 0, 6.4, 0], [0, 0, 0, 0]])
 
     assert_almost_equal(problem.general_hm.toarray(), [[9.4, 0, 3.2, 0], [0, 6, 0, 0], [3.2, 0, 6.4, 0], [0, 0, 0, 0]])
+
+
+def test_nb_elements_f(problem):
+    assert_equal(problem.nb_elements_f, 2)
+
+
+def test_nb_elements_g(problem):
+    assert_equal(problem.nb_elements_g, 4)
