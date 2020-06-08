@@ -66,26 +66,24 @@ public: // methods
         auto result = Scalar3hj::zero(nb_variables());
 
         for (const auto& [shape_functions_a, shape_functions_b, weight] : m_data) {
-            const Vector3hj a1_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(1), nb_variables());
-            const Vector3hj a2_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(2), nb_variables());
+            const auto a1_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(1), nb_variables());
+            const auto a2_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(2), nb_variables());
 
-            const Vector3hj n_a = a1_a.cross(a2_a);
-            const Vector3hj a3_a = n_a / n_a.norm();
+            const auto a3_a = a1_a.cross(a2_a).normalized();
 
-            const Vector3hj a1_b = evaluate_act_geometry_hj_b(m_nodes_b, shape_functions_b.row(1), nb_variables());
-            const Vector3hj a2_b = evaluate_act_geometry_hj_b(m_nodes_b, shape_functions_b.row(2), nb_variables());
+            const auto a1_b = evaluate_act_geometry_hj_b(m_nodes_b, shape_functions_b.row(1), nb_variables());
+            const auto a2_b = evaluate_act_geometry_hj_b(m_nodes_b, shape_functions_b.row(2), nb_variables());
 
-            const Vector3hj n_b = a1_b.cross(a2_b);
-            const Vector3hj a3_b = n_b / n_b.norm();
+            const auto a3_b = a1_b.cross(a2_b).normalized();
 
-            const Vector3hj delta = a3_b - a3_a;
+            const auto delta = a3_b - a3_a;
 
-            result += (delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]) * weight / 2;
+            result += delta.dot(delta) * weight;
         }
 
-        g = result.g();
-        h = result.h();
-        return result.f();
+        g = result.g() / 2;
+        h = result.h() / 2;
+        return result.f() / 2;
     }
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
