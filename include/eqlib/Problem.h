@@ -438,7 +438,11 @@ private: // methods: computation
 
                 index index = m_structure_hm.get_index(row.global, col.global);
 
-                data.hm_value(index) += h(row.local, col.local);
+                if (row.local < col.local) {
+                    data.hm_value(index) += h(row.local, col.local);
+                } else {
+                    data.hm_value(index) += h(col.local, row.local);
+                }
             }
         }
 
