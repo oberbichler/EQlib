@@ -78,13 +78,11 @@ public: // methods
 
     double density() const noexcept
     {
-        const index size = rows() * cols();
-
-        if (size == 0) {
+        if (rows() == 0 || cols() == 0) {
             return 0;
         }
 
-        return (double)nb_nonzeros() / size;
+        return (double)nb_nonzeros() / rows() / cols();
     }
 
     const std::vector<TIndex>& ia() const noexcept
