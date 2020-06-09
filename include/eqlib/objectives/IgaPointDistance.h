@@ -70,7 +70,7 @@ public: // methods
 
             const Vector3D delta = point_b - point_a;
 
-            f += delta.squaredNorm() * weight / 2;
+            f += 0.5 * weight * delta.squaredNorm();
 
             if constexpr (TOrder > 0) {
                 index value_index = 0;
