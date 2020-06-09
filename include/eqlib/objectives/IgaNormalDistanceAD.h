@@ -64,11 +64,11 @@ public: // methods
         double f = 0;
 
         for (const auto& [shape_functions_a, shape_functions_b, weight] : m_data) {
-            const auto a1_a = Space::variables<0, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(1)));
-            const auto a2_a = Space::variables<3, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(2)));
+            const auto a1_a = Space::template variables<0, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(1)));
+            const auto a2_a = Space::template variables<3, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(2)));
             
-            const auto a1_b = Space::variables<6, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(1)));
-            const auto a2_b = Space::variables<9, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(2)));
+            const auto a1_b = Space::template variables<6, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(1)));
+            const auto a2_b = Space::template variables<9, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(2)));
 
             const auto a3_a = a1_a.cross(a2_a).normalized();
             const auto a3_b = a1_b.cross(a2_b).normalized();

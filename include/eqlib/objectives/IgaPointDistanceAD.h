@@ -72,8 +72,8 @@ public: // methods
         }
 
         for (const auto& [shape_functions_a, shape_functions_b, weight] : m_data) {
-            const auto x_a = Space::variables<0, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(0)));
-            const auto x_b = Space::variables<3, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(0)));
+            const auto x_a = Space::template variables<0, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(0)));
+            const auto x_b = Space::template variables<3, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(0)));
 
             const auto delta = x_a - x_b;
 
