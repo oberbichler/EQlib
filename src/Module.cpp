@@ -28,6 +28,7 @@
 #include <eqlib/objectives/IgaPointDistance.h>
 #include <eqlib/objectives/IgaPointDistanceAD.h>
 #include <eqlib/objectives/IgaPointLocation.h>
+#include <eqlib/objectives/IgaRotationCouplingAD.h>
 #include <eqlib/objectives/IgaShell3PAD.h>
 
 PYBIND11_MODULE(eqlib, m)
@@ -119,6 +120,9 @@ PYBIND11_MODULE(eqlib, m)
 
     // objectives: IgaPointLocation
     eqlib::IgaPointLocation::register_python(m);
+
+    // objectives: IgaRotationCouplingAD
+    eqlib::IgaRotationCouplingAD::register_python(m);
 
     // objectives: IgaShell3PAD
     eqlib::IgaShell3PAD::register_python(m);

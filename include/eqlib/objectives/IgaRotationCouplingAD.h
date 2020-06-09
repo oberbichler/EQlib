@@ -9,13 +9,16 @@
 
 namespace eqlib {
 
-class IgaNormalDistanceAD : public Objective {
+class IgaRotationCouplingAD : public Objective {
 private: // types
-    using Type = IgaNormalDistanceAD;
+    using Type = IgaRotationCouplingAD;
 
     struct Data {
         Matrix shape_functions_a;
         Matrix shape_functions_b;
+        Vector3D ref_a3_a;
+        Vector3D ref_a3_b;
+        Vector3D axis;
         double weight;
     };
 
@@ -25,7 +28,7 @@ private: // variables
     std::vector<Data> m_data;
 
 public: // constructor
-    IgaNormalDistanceAD(
+    IgaRotationCouplingAD(
         std::vector<Pointer<Node>> nodes_a,
         std::vector<Pointer<Node>> nodes_b)
         : m_nodes_a(nodes_a)
@@ -47,9 +50,21 @@ public: // constructor
     }
 
 public: // methods
-    index add(const Matrix shape_functions_a, const Matrix shape_functions_b, const double weight)
+    index add(const Matrix shape_functions_a, const Matrix shape_functions_b, const Vector3D axis, const double weight)
     {
-        m_data.emplace_back<Data>({shape_functions_a, shape_functions_b, weight});
+        using namespace iga_utilities;
+
+        const Vector3D ref_a1_a = evaluate_ref_geometry(m_nodes_a, shape_functions_a.row(1));
+        const Vector3D ref_a2_a = evaluate_ref_geometry(m_nodes_a, shape_functions_a.row(2));
+        const Vector3D ref_a3_a = ref_a1_a.cross(ref_a2_a).normalized();
+
+        const Vector3D ref_a1_b = evaluate_ref_geometry(m_nodes_b, shape_functions_b.row(1));
+        const Vector3D ref_a2_b = evaluate_ref_geometry(m_nodes_b, shape_functions_b.row(2));
+        const Vector3D ref_a3_b = ref_a1_b.cross(ref_a2_b).normalized();
+
+        const Vector3D unit_axis = axis.normalized();
+
+        m_data.emplace_back<Data>({shape_functions_a, shape_functions_b, ref_a3_a, ref_a3_b, unit_axis, weight});
         return m_data.size() - 1;
     }
 
@@ -58,14 +73,12 @@ public: // methods
     {
         using namespace eqlib::iga_utilities;
         using Space = hyperjet::Space<2, double, -1>;
-        using Scalar3hj = Space::Scalar;
-        using Vector3hj = Space::Vector<3>;
 
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        auto result = Scalar3hj::zero(nb_variables());
+        auto result = Space::Scalar::zero(nb_variables());
 
-        for (const auto& [shape_functions_a, shape_functions_b, weight] : m_data) {
+        for (const auto& [shape_functions_a, shape_functions_b, ref_a3_a, ref_a3_b, axis, weight] : m_data) {
             const auto a1_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(1), nb_variables());
             const auto a2_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(2), nb_variables());
 
@@ -76,9 +89,18 @@ public: // methods
 
             const auto a3_b = a1_b.cross(a2_b).normalized();
 
-            const auto delta = a3_b - a3_a;
+            const auto w_a = a3_a - ref_a3_a.transpose();
+            const auto w_b = a3_b - ref_a3_b.transpose();
 
-            result += delta.dot(delta) * weight;
+            const auto omega_a = ref_a3_a.cross(w_a);
+            const auto omega_b = ref_a3_b.cross(w_b);
+
+            const auto angle_a = omega_a.dot(axis).asin();
+            const auto angle_b = omega_b.dot(axis).asin();
+
+            const auto angular_difference = angle_a - angle_b;
+
+            result += angular_difference.pow(2) * weight;
         }
 
         g = result.g() / 2;
@@ -107,10 +129,10 @@ public: // python
         using Holder = Pointer<Type>;
         using Base = Objective;
 
-        py::class_<Type, Base, Holder>(m, "IgaNormalDistanceAD")
+        py::class_<Type, Base, Holder>(m, "IgaRotationCouplingAD")
             .def(py::init<std::vector<Pointer<Node>>, std::vector<Pointer<Node>>>(), "nodes_a"_a, "nodes_b"_a)
-            .def("add", &Type::add, "shape_functions"_a, "shape_functions_b"_a, "weight"_a);
+            .def("add", &Type::add, "shape_functions"_a, "shape_functions_b"_a, "axis"_a, "weight"_a);
     }
-}; // class Point
+}; // class IgaRotationCouplingAD
 
 } // namespace eqlib

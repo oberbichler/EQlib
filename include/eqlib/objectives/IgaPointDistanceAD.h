@@ -69,12 +69,12 @@ public: // methods
 
             const auto delta = x_a - x_b;
 
-            result += delta.squaredNorm() * weight / 2;
+            result += delta.squaredNorm() * weight;
         }
 
-        g = result.g();
-        h = result.h();
-        return result.f();
+        g = result.g() / 2;
+        h = result.h() / 2;
+        return result.f() / 2;
     }
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
