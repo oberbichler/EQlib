@@ -113,7 +113,7 @@ public: // methods
 
             const auto eps = transformation_matrix * (act_a - ref_a).transpose() * 0.5;
 
-            const auto result = eps.dot(m_dm * eps) * weight;
+            const auto result = 0.5 * weight * eps.dot(m_dm * eps);
 
             const index a = shape_functions.cols() * 3;
 
