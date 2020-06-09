@@ -1,5 +1,6 @@
 import pytest
 import eqlib as eq
+import numpy as np
 from numpy.testing import assert_almost_equal
 
 if __name__ == '__main__':
@@ -52,4 +53,4 @@ def test_element(element):
 
     assert_almost_equal(f, DATA['exp_f'])
     assert_almost_equal(g, DATA['exp_g'])
-    assert_almost_equal(h, DATA['exp_h'])
+    assert_almost_equal(np.triu(h), np.triu(DATA['exp_h']))

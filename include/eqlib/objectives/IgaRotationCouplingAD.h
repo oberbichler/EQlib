@@ -72,21 +72,22 @@ public: // methods
     double compute(Ref<Vector> g, Ref<Matrix> h) const
     {
         using namespace eqlib::iga_utilities;
-        using Space = hyperjet::Space<2, double, -1>;
+        using Space = hyperjet::Space<TOrder, double, 12>;
+        using std::asin;
+        using std::pow;
 
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        auto result = Space::Scalar::zero(nb_variables());
+        double f = 0;
 
         for (const auto& [shape_functions_a, shape_functions_b, ref_a3_a, ref_a3_b, axis, weight] : m_data) {
-            const auto a1_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(1), nb_variables());
-            const auto a2_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(2), nb_variables());
+            const auto a1_a = Space::template variables<0, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(1)));
+            const auto a2_a = Space::template variables<3, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(2)));
+
+            const auto a1_b = Space::template variables<6, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(1)));
+            const auto a2_b = Space::template variables<9, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(2)));
 
             const auto a3_a = a1_a.cross(a2_a).normalized();
-
-            const auto a1_b = evaluate_act_geometry_hj_b(m_nodes_b, shape_functions_b.row(1), nb_variables());
-            const auto a2_b = evaluate_act_geometry_hj_b(m_nodes_b, shape_functions_b.row(2), nb_variables());
-
             const auto a3_b = a1_b.cross(a2_b).normalized();
 
             const auto w_a = a3_a - ref_a3_a.transpose();
@@ -95,17 +96,88 @@ public: // methods
             const auto omega_a = ref_a3_a.cross(w_a);
             const auto omega_b = ref_a3_b.cross(w_b);
 
-            const auto angle_a = omega_a.dot(axis).asin();
-            const auto angle_b = omega_b.dot(axis).asin();
+            const auto angle_a = asin(omega_a.dot(axis));
+            const auto angle_b = asin(omega_b.dot(axis));
 
             const auto angular_difference = angle_a - angle_b;
 
-            result += angular_difference.pow(2) * weight;
+            const auto result = 0.5 * weight * pow(angular_difference, 2);
+
+            const index a = shape_functions_a.cols() * 3;
+            const index b = shape_functions_b.cols() * 3;
+
+            if constexpr (TOrder > 0) {
+                for (index r = 0; r < a; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    g(0 + r) = result.g(0 + rd) * shape_functions_a(1, ri) + result.g(3 + rd) * shape_functions_a(2, ri);
+                }
+
+                for (index r = 0; r < b; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    g(a + r) = result.g(6 + rd) * shape_functions_b(1, ri) + result.g(9 + rd) * shape_functions_b(2, ri);
+                }
+            }
+
+            if constexpr (TOrder > 1) {
+                for (index r = 0; r < a; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    for (index s = 0; s < a; s++) {
+                        const index sd = s % 3;
+                        const index si = s / 3;
+
+                        h(0 + r, 0 + s) = result.h(0 + rd, 0 + sd) * shape_functions_a(1, ri) * shape_functions_a(1, si)
+                            + result.h(3 + rd, 0 + sd) * shape_functions_a(2, ri) * shape_functions_a(1, si)
+                            + result.h(0 + rd, 3 + sd) * shape_functions_a(1, ri) * shape_functions_a(2, si)
+                            + result.h(3 + rd, 3 + sd) * shape_functions_a(2, ri) * shape_functions_a(2, si);
+                    }
+
+                    for (index s = 0; s < b; s++) {
+                        const index sd = s % 3;
+                        const index si = s / 3;
+
+                        h(0 + r, a + s) = result.h(0 + rd, 6 + sd) * shape_functions_a(1, ri) * shape_functions_b(1, si)
+                            + result.h(3 + rd, 6 + sd) * shape_functions_a(2, ri) * shape_functions_b(1, si)
+                            + result.h(0 + rd, 9 + sd) * shape_functions_a(1, ri) * shape_functions_b(2, si)
+                            + result.h(3 + rd, 9 + sd) * shape_functions_a(2, ri) * shape_functions_b(2, si);
+                    }
+                }
+
+                for (index r = 0; r < b; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    for (index s = 0; s < a; s++) {
+                        const index sd = s % 3;
+                        const index si = s / 3;
+
+                        h(a + r, 0 + s) = result.h(6 + rd, 0 + sd) * shape_functions_b(1, ri) * shape_functions_a(1, si)
+                            + result.h(9 + rd, 0 + sd) * shape_functions_b(2, ri) * shape_functions_a(1, si)
+                            + result.h(6 + rd, 3 + sd) * shape_functions_b(1, ri) * shape_functions_a(2, si)
+                            + result.h(9 + rd, 3 + sd) * shape_functions_b(2, ri) * shape_functions_a(2, si);
+                    }
+
+                    for (index s = 0; s < b; s++) {
+                        const index sd = s % 3;
+                        const index si = s / 3;
+
+                        h(a + r, a + s) = result.h(6 + rd, 6 + sd) * shape_functions_b(1, ri) * shape_functions_b(1, si)
+                            + result.h(9 + rd, 6 + sd) * shape_functions_b(2, ri) * shape_functions_b(1, si)
+                            + result.h(6 + rd, 9 + sd) * shape_functions_b(1, ri) * shape_functions_b(2, si)
+                            + result.h(9 + rd, 9 + sd) * shape_functions_b(2, ri) * shape_functions_b(2, si);
+                    }
+                }
+            }
+
+            f += Space::f(result);
         }
 
-        g = result.g() / 2;
-        h = result.h() / 2;
-        return result.f() / 2;
+        return f;
     }
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override

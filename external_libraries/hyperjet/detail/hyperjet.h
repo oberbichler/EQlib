@@ -256,10 +256,102 @@ public: // methods
         return result;
     }
 
+    auto backward(const std::vector<HyperJet<TScalar, Dynamic>>& xs) const
+    {
+        const index size = xs[0].size();
+
+        auto result = HyperJet<TScalar, Dynamic>::zero(size);
+        
+        result.f() = f();
+
+        backward_to(xs, result.g(), result.h(), true);
+
+        return result;
+    }
+
+    void backward_to(const std::vector<HyperJet<TScalar, Dynamic>>& xs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> h, const bool full) const
+    {
+        const index size = g.size();
+
+        for (index i = 0; i < size; i++) {
+            for (index r = 0; r < this->size(); r++) {
+                assert(xs[r].size() == size);
+                g(i) += this->g(r) * xs[r].g(i);
+            }
+
+            for (index j = i; j < size; j++) {
+                for (index r = 0; r < this->size(); r++) {
+                    h(i, j) += this->g(r) * xs[r].h(i, j);
+
+                    for (index s = 0; s < this->size(); s++) {
+                        h(i, j) += this->h(r, s) * xs[r].g(i) * xs[s].g(j);
+                    }
+                }
+            }
+        }
+
+        if (!full) {
+            return;
+        }
+
+        for (index i = 0; i < size; i++) {
+            for (index j = 0; j < i; j++) {
+                h(i, j) = h(j, i);
+            }
+        }
+    }
+
+    auto forward(const std::vector<HyperJet<TScalar, Dynamic>>& xs) const
+    {
+        const index size = length(xs);
+
+        auto result = HyperJet<TScalar, Dynamic>::zero(size);
+        
+        result.f() = f();
+        
+        forward_to(xs, result.g(), result.h(), true);
+
+        return result;
+    }
+
+    void forward_to(const std::vector<HyperJet<TScalar, Dynamic>>& xs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> h, const bool full) const
+    {
+        const index size = g.size();
+
+        for (index i = 0; i < size; i++) {
+            g(i) += xs[i].g().dot(this->g());
+
+            for (index j = i; j < size; j++) {
+                for (index r = 0; r < this->size(); r++) {
+                    for (index s = 0; s < this->size(); s++) {
+                        h(i, j) += this->g(r) * xs[i].h(r, s) + this->h(r, s) * xs[i].g(r) * xs[j].g(r);
+                    }
+                }
+            }
+        }
+
+        if (!full) {
+            return;
+        }
+
+        for (index i = 0; i < size; i++) {
+            for (index j = 0; j < i; j++) {
+                h(i, j) = h(j, i);
+            }
+        }
+    }
+
+    std::string to_string() const
+    {
+        std::stringstream ss;
+        ss << *this;
+        return ss.str();
+    }
+
 public: // operators
     friend std::ostream& operator<<(std::ostream& out, const HyperJet<TScalar, TSize>& value)
     {
-        out << "HyperJet<" << value.m_f << ">";
+        out << value.m_f << "hj";
         return out;
     }
 
@@ -778,7 +870,7 @@ public: // python
             .def("__len__", &Type::size)
             .def("__pow__", &Type::pow<double>)
             .def("__pow__", &Type::pow<index>)
-            // .def("__repr__", &Type::to_string)
+            .def("__repr__", &Type::to_string)
             .def("abs", &Type::abs)
             .def("acos", &Type::acos)
             .def("arccos", &Type::acos)
@@ -787,8 +879,12 @@ public: // python
             .def("arctan2", &Type::atan2)
             .def("asin", &Type::asin)
             .def("atan", &Type::atan)
+            .def("backward", &Type::backward, "xs"_a)
+            .def("backward_to", &Type::backward_to, "xs"_a, "g"_a, "h"_a, "full"_a=true)
             .def("cos", &Type::cos)
             .def("enlarge", py::overload_cast<index, index>(&Type::enlarge, py::const_), "left"_a = 0, "right"_a = 0)
+            .def("forward", &Type::forward, "xs"_a)
+            .def("forward_to", &Type::forward_to, "xs"_a, "g"_a, "h"_a, "full"_a=true)
             .def("sin", &Type::sin)
             .def("sqrt", &Type::sqrt)
             .def("tan", &Type::tan)

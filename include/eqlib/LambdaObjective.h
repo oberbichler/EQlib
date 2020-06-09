@@ -30,6 +30,7 @@ public: // constructors
 public: // methods
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
     {
+        pybind11::gil_scoped_acquire acquire;
         return m_compute(m_variables, g, h);
     }
 

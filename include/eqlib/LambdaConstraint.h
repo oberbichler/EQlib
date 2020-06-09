@@ -33,6 +33,7 @@ public: // constructors
 public: // methods
     void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs, const std::vector<Ref<Matrix>>& hs) const override
     {
+        pybind11::gil_scoped_acquire acquire;
         m_compute(m_equations, m_variables, rs, gs, hs);
     }
 

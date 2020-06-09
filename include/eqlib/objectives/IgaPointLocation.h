@@ -56,7 +56,7 @@ public: // methods
 
             const Vector3D delta = act_x - target;
 
-            f += delta.dot(delta) * weight / 2;
+            f += 0.5 * weight * delta.dot(delta);
 
             if constexpr (TOrder > 0) {
                 for (index i = 0; i < length(m_nodes); i++) {
