@@ -109,7 +109,7 @@ public: // methods
             const auto act_a1 = Space::template variables<0, 3>(shape_functions.row(1) * locations);
             const auto act_a2 = Space::template variables<3, 3>(shape_functions.row(2) * locations);
 
-            const typename Space::Vector<3> act_a(act_a1.dot(act_a1), act_a2.dot(act_a2), act_a1.dot(act_a2));
+            const typename Space::template Vector<3> act_a(act_a1.dot(act_a1), act_a2.dot(act_a2), act_a1.dot(act_a2));
 
             const auto eps = transformation_matrix * (act_a - ref_a).transpose() * 0.5;
 
