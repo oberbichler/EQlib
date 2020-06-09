@@ -28,8 +28,8 @@ public: // constructor
     IgaPointDistanceAD(
         std::vector<Pointer<Node>> nodes_a,
         std::vector<Pointer<Node>> nodes_b)
-    : m_nodes_a(nodes_a)
-    , m_nodes_b(nodes_b)
+        : m_nodes_a(nodes_a)
+        , m_nodes_b(nodes_b)
     {
         m_variables.reserve(length(nodes_a) * 3 + length(nodes_b) * 3);
 
@@ -57,24 +57,96 @@ public: // methods
     double compute(Ref<Vector> g, Ref<Matrix> h) const
     {
         using namespace eqlib::iga_utilities;
-        using Space = hyperjet::Space<2, double, -1>;
+        using Space = hyperjet::Space<TOrder, double, 6>;
 
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        auto result = Space::Scalar::zero(nb_variables());
+        double f = 0;
+
+        if constexpr (TOrder > 0) {
+            g.setZero();
+        }
+
+        if constexpr (TOrder > 1) {
+            h.setZero();
+        }
 
         for (const auto& [shape_functions_a, shape_functions_b, weight] : m_data) {
-            const auto x_a = evaluate_act_geometry_hj_a(m_nodes_a, shape_functions_a.row(0), nb_variables());
-            const auto x_b = evaluate_act_geometry_hj_b(m_nodes_b, shape_functions_b.row(0), nb_variables());
+            const auto x_a = Space::variables<0, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(0)));
+            const auto x_b = Space::variables<3, 3>(evaluate_act_geometry(m_nodes_b, shape_functions_b.row(0)));
 
             const auto delta = x_a - x_b;
 
-            result += delta.squaredNorm() * weight;
+            const auto result = 0.5 * weight * delta.squaredNorm();
+
+            f += Space::f(result);
+
+            const index a = shape_functions_a.cols() * 3;
+            const index b = shape_functions_b.cols() * 3;
+
+            if constexpr (TOrder > 0) {
+                for (index r = 0; r < a; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    g(0 + r) = result.g(0 + rd) * shape_functions_a(0, ri);
+                }
+
+                for (index r = 0; r < b; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    g(a + r) = result.g(3 + rd) * shape_functions_b(0, ri);
+                }
+            }
+
+            if constexpr (TOrder > 1) {
+                for (index r = 0; r < a; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    for (index s = r; s < a; s++) {
+                        const index sd = s % 3;
+                        const index si = s / 3;
+
+                        if (rd != sd) {
+                            continue;
+                        }
+
+                        h(0 + r, 0 + s) = result.h(0 + rd, 0 + sd) * shape_functions_a(0, ri) * shape_functions_a(0, si);
+                    }
+
+                    for (index s = 0; s < b; s++) {
+                        const index sd = s % 3;
+                        const index si = s / 3;
+
+                        if (rd != sd) {
+                            continue;
+                        }
+
+                        h(0 + r, a + s) = result.h(0 + rd, 3 + sd) * shape_functions_a(0, ri) * shape_functions_b(0, si);
+                    }
+                }
+
+                for (index r = 0; r < b; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    for (index s = r; s < b; s++) {
+                        const index sd = s % 3;
+                        const index si = s / 3;
+
+                        if (rd != sd) {
+                            continue;
+                        }
+
+                        h(a + r, a + s) = result.h(3 + rd, 3 + sd) * shape_functions_b(0, ri) * shape_functions_b(0, si);
+                    }
+                }
+            }
         }
 
-        g = result.g() / 2;
-        h = result.h() / 2;
-        return result.f() / 2;
+        return f;
     }
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
