@@ -13,6 +13,7 @@
 
 #include <assert.h>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <type_traits>
 
@@ -31,6 +32,8 @@ HYPERJET_INLINE index length(const T& container)
 {
     return static_cast<index>(container.size());
 }
+
+constexpr index Dynamic = -1;
 
 constexpr index init_size(const int size)
 {
