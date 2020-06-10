@@ -33,7 +33,7 @@ public: // constructor
         const double thickness,
         const double youngs_modulus,
         const double poissons_ratio)
-    : m_nodes(nodes)
+        : m_nodes(nodes)
     {
         m_variables.reserve(length(nodes) * 3);
 
@@ -42,7 +42,7 @@ public: // constructor
             m_variables.push_back(node->y());
             m_variables.push_back(node->z());
         }
-        
+
         m_dm << 1, poissons_ratio, 0, poissons_ratio, 1, 0, 0, 0, (1 - poissons_ratio) / 2;
         m_dm *= youngs_modulus * thickness / (1 - std::pow(poissons_ratio, 2));
 
@@ -94,37 +94,81 @@ public: // methods
     template <int TOrder>
     double compute(Ref<Vector> g, Ref<Matrix> h) const
     {
-        using namespace eqlib::iga_utilities;
-        using Space = hyperjet::Space<2, double, -1>;
-        using Scalar3hj = Space::Scalar;
-        using Vector3hj = Space::Vector<3>;
+        using Space = hyperjet::Space<TOrder, double, 15>;
 
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        auto result = Scalar3hj::zero(nb_variables());
+        const index nb_nodes = length(m_nodes);
 
-        for (const auto& [shape_functions, ref_a, ref_b, transformation_matrix, weight] : m_data) {
-            const Vector3hj act_a1 = evaluate_act_geometry_hj(m_nodes, shape_functions.row(1));
-            const Vector3hj act_a2 = evaluate_act_geometry_hj(m_nodes, shape_functions.row(2));
+        Eigen::Matrix<double, Eigen::Dynamic, 3> locations(nb_nodes, 3);
 
-            const Vector3hj act_a1_1 = evaluate_act_geometry_hj(m_nodes, shape_functions.row(3));
-            const Vector3hj act_a1_2 = evaluate_act_geometry_hj(m_nodes, shape_functions.row(4));
-            const Vector3hj act_a2_2 = evaluate_act_geometry_hj(m_nodes, shape_functions.row(5));
-
-            const Vector3hj act_a3 = act_a1.cross(act_a2).normalized();
-
-            const Vector3hj act_a(act_a1.dot(act_a1), act_a2.dot(act_a2), act_a1.dot(act_a2));
-            const Vector3hj act_b(act_a1_1.dot(act_a3), act_a1_2.dot(act_a3), act_a2_2.dot(act_a3));
-
-            const Vector3hj eps = transformation_matrix * (act_a - ref_a).transpose() / 2;
-            const Vector3hj kap = transformation_matrix * (act_b - ref_b).transpose();
-
-            result += (eps.dot(m_dm * eps.transpose()) + kap.dot(m_db * kap.transpose())) * weight;
+        for (index i = 0; i < nb_nodes; i++) {
+            locations.row(i) = m_nodes[i]->act_location();
         }
 
-        g = result.g() / 2;
-        h = result.h() / 2;
-        return result.f() / 2;
+        double f = 0;
+
+        if constexpr (TOrder > 0) {
+            g.setZero();
+        }
+
+        if constexpr (TOrder > 1) {
+            h.setZero();
+        }
+
+        for (const auto& [shape_functions, ref_a, ref_b, transformation_matrix, weight] : m_data) {
+            const auto act_a1 = Space::template variables<0, 3>(shape_functions.row(1) * locations);
+            const auto act_a2 = Space::template variables<3, 3>(shape_functions.row(2) * locations);
+
+            const auto act_a1_1 = Space::template variables<6, 3>(shape_functions.row(3) * locations);
+            const auto act_a1_2 = Space::template variables<9, 3>(shape_functions.row(4) * locations);
+            const auto act_a2_2 = Space::template variables<12, 3>(shape_functions.row(5) * locations);
+
+            const auto act_a3 = act_a1.cross(act_a2).normalized();
+
+            const typename Space::template Vector<3> act_a(act_a1.dot(act_a1), act_a2.dot(act_a2), act_a1.dot(act_a2));
+            const typename Space::template Vector<3> act_b(act_a1_1.dot(act_a3), act_a1_2.dot(act_a3), act_a2_2.dot(act_a3));
+
+            const auto eps = transformation_matrix * (act_a - ref_a).transpose() * 0.5;
+            const auto kap = transformation_matrix * (act_b - ref_b).transpose();
+
+            const auto result = 0.5 * weight * (eps.dot(m_dm * eps) + kap.dot(m_db * kap));
+
+            const index a = nb_nodes * 3;
+
+            f += Space::f(result);
+
+            if constexpr (TOrder > 0) {
+                for (index r = 0; r < a; r++) {
+                    const index rd = r % 3;
+                    const index ri = r / 3;
+
+                    for (index k = 0; k < 5; k++) {
+                        g(r) += result.g(k * 3 + rd) * shape_functions(1 + k, ri);
+                    }
+                }
+            }
+
+            if constexpr (TOrder > 1) {
+                for (index r = 0; r < a; r++) {
+                    const index ri = r / 3;
+                    const index rd = r % 3;
+
+                    for (index s = r; s < a; s++) {
+                        const index si = s / 3;
+                        const index sd = s % 3;
+
+                        for (index k = 0; k < 5; k++) {
+                            for (index l = 0; l < 5; l++) {
+                                h(r, s) += result.h(k * 3 + rd, l * 3 + sd) * shape_functions(1 + k, ri) * shape_functions(1 + l, si);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return f;
     }
 
     double compute(Ref<Vector> g, Ref<Matrix> h) const override
@@ -152,6 +196,6 @@ public: // python
             .def(py::init<std::vector<Pointer<Node>>, double, double, double>(), "nodes"_a, "thickness"_a, "youngs_modulus"_a, "poissons_ratio"_a)
             .def("add", &Type::add, "shape_functions"_a, "weight"_a);
     }
-}; // class Point
+}; // class IgaShell3PAD
 
 } // namespace eqlib
