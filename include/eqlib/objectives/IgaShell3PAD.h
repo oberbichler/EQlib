@@ -196,6 +196,6 @@ public: // python
             .def(py::init<std::vector<Pointer<Node>>, double, double, double>(), "nodes"_a, "thickness"_a, "youngs_modulus"_a, "poissons_ratio"_a)
             .def("add", &Type::add, "shape_functions"_a, "weight"_a);
     }
-}; // class Point
+}; // class IgaShell3PAD
 
 } // namespace eqlib

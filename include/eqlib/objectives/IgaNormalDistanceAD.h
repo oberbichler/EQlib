@@ -169,6 +169,6 @@ public: // python
             .def(py::init<std::vector<Pointer<Node>>, std::vector<Pointer<Node>>>(), "nodes_a"_a, "nodes_b"_a)
             .def("add", &Type::add, "shape_functions"_a, "shape_functions_b"_a, "weight"_a);
     }
-}; // class Point
+}; // class IgaNormalDistanceAD
 
 } // namespace eqlib

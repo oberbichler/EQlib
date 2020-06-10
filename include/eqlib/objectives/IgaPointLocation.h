@@ -105,6 +105,6 @@ public: // python
             .def(py::init<std::vector<Pointer<Node>>>(), "nodes"_a)
             .def("add", &Type::add, "shape_functions"_a, "target"_a, "weight"_a);
     }
-}; // class Point
+}; // class IgaPointLocation
 
 } // namespace eqlib
