@@ -373,21 +373,19 @@ public: // constructors
         m_structure_dg = SparseStructure<double, int, true>::from_pattern(m, n, pattern_dg);
         m_structure_hm = SparseStructure<double, int, true>::from_pattern(n, n, pattern_hm);
 
-        Log::task_info("The hessian has {} nonzero entries ({:.3f}%)",
-            m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
+        Log::task_info("The hessian has {} nonzero entries ({:.3f}%)", m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
 
-        Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)",
-            m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
+        Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)", m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
 
         m_data.resize(n, m, m_structure_dg.nb_nonzeros(), m_structure_hm.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
-#ifdef EQLIB_USE_MKL
+        #ifdef EQLIB_USE_MKL
         m_linear_solver = new_<PardisoLDLT>();
-#else
+        #else
         m_linear_solver = new_<SimplicialLDLT>();
-#endif
+        #endif
 
         Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
     }
