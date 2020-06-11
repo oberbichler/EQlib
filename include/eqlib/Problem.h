@@ -213,7 +213,7 @@ public: // constructors
 
         Log::task_step("Compute indices for elements...");
 
-        // variable indices f
+        // variable and equation indices
 
         m_element_f_variable_indices.resize(nb_elements_f);
         m_element_g_equation_indices.resize(nb_elements_g);
@@ -221,6 +221,8 @@ public: // constructors
 
         #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
+            // variable indices f
+
             #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f; i++) {
                 const auto& variables = m_elements_f[i]->variables();
@@ -368,7 +370,7 @@ public: // constructors
             }
         }
 
-        Log::task_step("Allocate memory...");
+        Log::task_step("Generate sparse structures...");
 
         m_structure_dg = SparseStructure<double, int, true>::from_pattern(m, n, pattern_dg);
         m_structure_hm = SparseStructure<double, int, true>::from_pattern(n, n, pattern_hm);
@@ -376,6 +378,8 @@ public: // constructors
         Log::task_info("The hessian has {} nonzero entries ({:.3f}%)", m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
 
         Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)", m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
+
+        Log::task_step("Allocate memory...");
 
         m_data.resize(n, m, m_structure_dg.nb_nonzeros(), m_structure_hm.nb_nonzeros(), m_max_element_n, m_max_element_m);
 
