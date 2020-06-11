@@ -4,12 +4,9 @@
 #include "Define.h"
 #include "LinearSolver.h"
 #include "Objective.h"
-#ifdef EQLIB_USE_MKL
-#include "PardisoLDLT.h"
-#endif
+#include "SparseLDLT.h"
 #include "ProblemData.h"
 #include "Settings.h"
-#include "SimplicialLDLT.h"
 #include "SparseStructure.h"
 #include "Timer.h"
 
@@ -48,6 +45,8 @@ private: // types
     };
 
 private: // variables
+    index m_order;
+
     double m_sigma;
 
     int m_nb_threads;
@@ -88,9 +87,10 @@ public: // constructors
     {
     }
 
-    Problem(ElementsF elements_f, ElementsG elements_g, const int nb_threads = 1, const int grainsize = 100)
+    Problem(ElementsF elements_f, ElementsG elements_g, const index order = 2, const int nb_threads = 1, const int grainsize = 100)
         : m_elements_f(std::move(elements_f))
         , m_elements_g(std::move(elements_g))
+        , m_order(order)
         , m_sigma(1.0)
         , m_nb_threads(nb_threads)
         , m_grainsize(grainsize)
@@ -311,73 +311,89 @@ public: // constructors
 
         #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
-            std::vector<RobinSet<index>> l_pattern_dg(m);
-            std::vector<RobinSet<index>> l_pattern_hm(n);
+            if (order > 1) {
+                std::vector<RobinSet<index>> l_pattern_hm(n);
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
-            for (index i = 0; i < length(m_elements_f); i++) {
-                const auto& variable_indices = m_element_f_variable_indices[i];
+                #pragma omp for schedule(dynamic, m_grainsize) nowait
+                for (index i = 0; i < length(m_elements_f); i++) {
+                    const auto& variable_indices = m_element_f_variable_indices[i];
 
-                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
+                    for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                        const auto row = variable_indices[row_i];
 
-                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                        const auto col = variable_indices[col_i];
+                        for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                            const auto col = variable_indices[col_i];
 
-                        l_pattern_hm[row.global].insert(col.global);
+                            l_pattern_hm[row.global].insert(col.global);
+                        }
                     }
+                }
+                
+                #pragma omp for schedule(dynamic, m_grainsize) nowait
+                for (index i = 0; i < length(m_elements_g); i++) {
+                    const auto& equation_indices = m_element_g_equation_indices[i];
+                    const auto& variable_indices = m_element_g_variable_indices[i];
+
+                    for (index row_i = 0; row_i < length(variable_indices); row_i++) {
+                        const auto row = variable_indices[row_i];
+
+                        for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
+                            const auto col = variable_indices[col_i];
+
+                            l_pattern_hm[row.global].insert(col.global);
+                        }
+                    }
+                }
+
+                for (index i = 0; i < length(l_pattern_hm); i++) {
+                    if (l_pattern_hm[i].empty()) {
+                        continue;
+                    }
+                    lock_pattern_hm[i].lock();
+                    pattern_hm[i].insert(l_pattern_hm[i].begin(), l_pattern_hm[i].end());
+                    lock_pattern_hm[i].unlock();
                 }
             }
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
-            for (index i = 0; i < length(m_elements_g); i++) {
-                const auto& equation_indices = m_element_g_equation_indices[i];
-                const auto& variable_indices = m_element_g_variable_indices[i];
+            if (order > 0) {
+                std::vector<RobinSet<index>> l_pattern_dg(m);
 
-                for (const auto row : equation_indices) {
-                    for (const auto col : variable_indices) {
-                        l_pattern_dg[row.global].insert(col.global);
+                #pragma omp for schedule(dynamic, m_grainsize) nowait
+                for (index i = 0; i < length(m_elements_g); i++) {
+                    const auto& equation_indices = m_element_g_equation_indices[i];
+                    const auto& variable_indices = m_element_g_variable_indices[i];
+
+                    for (const auto row : equation_indices) {
+                        for (const auto col : variable_indices) {
+                            l_pattern_dg[row.global].insert(col.global);
+                        }
                     }
                 }
 
-                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
-
-                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                        const auto col = variable_indices[col_i];
-
-                        l_pattern_hm[row.global].insert(col.global);
+                for (index i = 0; i < length(l_pattern_dg); i++) {
+                    if (l_pattern_dg[i].empty()) {
+                        continue;
                     }
+                    lock_pattern_dg[i].lock();
+                    pattern_dg[i].insert(l_pattern_dg[i].begin(), l_pattern_dg[i].end());
+                    lock_pattern_dg[i].unlock();
                 }
-            }
-
-            for (index i = 0; i < length(l_pattern_hm); i++) {
-                if (l_pattern_hm[i].empty()) {
-                    continue;
-                }
-                lock_pattern_hm[i].lock();
-                pattern_hm[i].insert(l_pattern_hm[i].begin(), l_pattern_hm[i].end());
-                lock_pattern_hm[i].unlock();
-            }
-
-            for (index i = 0; i < length(l_pattern_dg); i++) {
-                if (l_pattern_dg[i].empty()) {
-                    continue;
-                }
-                lock_pattern_dg[i].lock();
-                pattern_dg[i].insert(l_pattern_dg[i].begin(), l_pattern_dg[i].end());
-                lock_pattern_dg[i].unlock();
             }
         }
 
         Log::task_step("Generate sparse structures...");
 
-        m_structure_dg = SparseStructure<double, int, true>::from_pattern(m, n, pattern_dg);
-        m_structure_hm = SparseStructure<double, int, true>::from_pattern(n, n, pattern_hm);
+        if (order > 0) {
+            m_structure_dg = SparseStructure<double, int, true>::from_pattern(m, n, pattern_dg);
 
-        Log::task_info("The hessian has {} nonzero entries ({:.3f}%)", m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
+            Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)", m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
+        }
 
-        Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)", m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
+        if (order > 1) {
+            m_structure_hm = SparseStructure<double, int, true>::from_pattern(n, n, pattern_hm);
+
+            Log::task_info("The hessian has {} nonzero entries ({:.3f}%)", m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
+        }
 
         Log::task_step("Allocate memory...");
 
@@ -385,11 +401,9 @@ public: // constructors
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
-        #ifdef EQLIB_USE_MKL
-        m_linear_solver = new_<PardisoLDLT>();
-        #else
-        m_linear_solver = new_<SimplicialLDLT>();
-        #endif
+        if (order > 1) {
+            m_linear_solver = new_<SparseLDLT>();
+        }
 
         Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
     }
@@ -790,11 +804,7 @@ public: // methods
     {
         auto new_problem = new_<Problem>(*this);
 
-#ifdef EQLIB_USE_MKL
-        new_problem->m_linear_solver = new_<PardisoLDLT>();
-#else
-        new_problem->m_linear_solver = new_<SimplicialLDLT>();
-#endif
+        new_problem->m_linear_solver = new_<SparseLDLT>();
 
         return new_problem;
     }
