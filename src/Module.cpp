@@ -16,9 +16,13 @@
 #include <eqlib/Node.h>
 #include <eqlib/Objective.h>
 #include <eqlib/Parameter.h>
+#ifdef EQLIB_USE_MKL
+#include <eqlib/PardisoLDLT.h>
+#endif
 #include <eqlib/Problem.h>
 #include <eqlib/SteepestDecent.h>
 #include <eqlib/SparseLU.h>
+#include <eqlib/SimplicialLDLT.h>
 #include <eqlib/SparseStructure.h>
 #include <eqlib/Variable.h>
 
