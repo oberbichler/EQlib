@@ -73,6 +73,10 @@ public: // methods
 
     TIndex nb_nonzeros() const noexcept
     {
+        if (length(m_ia) == 0) {
+            return 0;
+        }
+
         return m_ia.back();
     }
 
