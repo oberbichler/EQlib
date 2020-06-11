@@ -192,6 +192,7 @@ public: // constructors
 
         Log::task_info("The problem contains {} variables", nb_variables);
         Log::task_info("The problem contains {} constraint equations", nb_equations);
+        Log::task_info("The maximum element size is ({}, {})", m_max_element_n, m_max_element_m);
 
         Log::task_step("Compute indices for variables and equations...");
 
