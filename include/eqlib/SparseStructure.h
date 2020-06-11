@@ -21,7 +21,7 @@ private: // variables
     std::vector<DenseMap<TIndex, index>> m_indices;
 
 public: // constructors
-    SparseStructure()
+    SparseStructure() : m_rows(0), m_cols(0)
     {
     }
 
