@@ -303,8 +303,11 @@ public: // constructors
         const auto n = length(m_variables);
         const auto m = length(m_equations);
 
-        std::vector<std::set<index>> pattern_dg(m);
-        std::vector<std::set<index>> pattern_hm(n);
+        std::vector<std::vector<index>> pattern_dg(m);
+        std::vector<std::vector<index>> pattern_hm(n);
+        
+        std::vector<RobinSet<index>> pattern_dg_set(m);
+        std::vector<RobinSet<index>> pattern_hm_set(n);
 
         #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) shared(pattern_dg, pattern_hm)
         {
@@ -324,7 +327,7 @@ public: // constructors
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                        pattern_hm[row.global].insert(col.global);
+                        pattern_hm_set[row.global].insert(col.global);
                     }
                 }
             }
@@ -339,7 +342,7 @@ public: // constructors
                     }
 
                     for (const auto col : variable_indices) {
-                        pattern_dg[row.global].insert(col.global);
+                        pattern_dg_set[row.global].insert(col.global);
                     }
                 }
 
@@ -353,9 +356,41 @@ public: // constructors
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                        pattern_hm[row.global].insert(col.global);
+                        pattern_hm_set[row.global].insert(col.global);
                     }
                 }
+            }
+
+            for (index i = 0; i < m; i++) {
+                if ((i / grainsize) % current_nb_threats != thread_id) {
+                    continue;
+                }
+
+                std::vector<index> tmp;
+
+                tmp.reserve(length(pattern_dg_set[i]));
+                
+                tmp.insert(tmp.end(), pattern_dg_set[i].begin(), pattern_dg_set[i].end());
+
+                std::sort(tmp.begin(), tmp.end());
+
+                pattern_dg[i] = std::move(tmp);
+            }
+
+            for (index i = 0; i < n; i++) {
+                if ((i / grainsize) % current_nb_threats != thread_id) {
+                    continue;
+                }
+
+                std::vector<index> tmp;
+
+                tmp.reserve(length(pattern_hm_set[i]));
+                
+                tmp.insert(tmp.end(), pattern_hm_set[i].begin(), pattern_hm_set[i].end());
+
+                std::sort(tmp.begin(), tmp.end());
+
+                pattern_hm[i] = std::move(tmp);
             }
         }
 
