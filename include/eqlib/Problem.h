@@ -13,6 +13,8 @@
 #include "SparseStructure.h"
 #include "Timer.h"
 
+#include <omp.h>
+
 #include <mutex>
 #include <set>
 #include <tuple>
@@ -304,67 +306,56 @@ public: // constructors
         std::vector<std::set<index>> pattern_dg(m);
         std::vector<std::set<index>> pattern_hm(n);
 
-        std::vector<std::mutex> lock_pattern_dg(m);
-        std::vector<std::mutex> lock_pattern_hm(n);
-
-        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
+        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) shared(pattern_dg, pattern_hm)
         {
-            std::vector<RobinSet<index>> l_pattern_dg(m);
-            std::vector<RobinSet<index>> l_pattern_hm(n);
+            const auto current_nb_threats = omp_get_num_threads();
+            const auto thread_id = omp_get_thread_num();
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_f); i++) {
                 const auto& variable_indices = m_element_f_variable_indices[i];
 
                 for (index row_i = 0; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
+                    if (row.global % current_nb_threats != thread_id) {
+                        continue;
+                    }
+
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                        l_pattern_hm[row.global].insert(col.global);
+                        pattern_hm[row.global].insert(col.global);
                     }
                 }
             }
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < length(m_elements_g); i++) {
                 const auto& equation_indices = m_element_g_equation_indices[i];
                 const auto& variable_indices = m_element_g_variable_indices[i];
 
                 for (const auto row : equation_indices) {
+                    if (row.global % current_nb_threats != thread_id) {
+                        continue;
+                    }
+
                     for (const auto col : variable_indices) {
-                        l_pattern_dg[row.global].insert(col.global);
+                        pattern_dg[row.global].insert(col.global);
                     }
                 }
 
                 for (index row_i = 0; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
+                    if (row.global % current_nb_threats != thread_id) {
+                        continue;
+                    }
+
                     for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
                         const auto col = variable_indices[col_i];
 
-                        l_pattern_hm[row.global].insert(col.global);
+                        pattern_hm[row.global].insert(col.global);
                     }
                 }
-            }
-
-            for (index i = 0; i < length(l_pattern_hm); i++) {
-                if (l_pattern_hm[i].empty()) {
-                    continue;
-                }
-                lock_pattern_hm[i].lock();
-                pattern_hm[i].insert(l_pattern_hm[i].begin(), l_pattern_hm[i].end());
-                lock_pattern_hm[i].unlock();
-            }
-
-            for (index i = 0; i < length(l_pattern_dg); i++) {
-                if (l_pattern_dg[i].empty()) {
-                    continue;
-                }
-                lock_pattern_dg[i].lock();
-                pattern_dg[i].insert(l_pattern_dg[i].begin(), l_pattern_dg[i].end());
-                lock_pattern_dg[i].unlock();
             }
         }
 
