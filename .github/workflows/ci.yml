@@ -75,7 +75,7 @@ jobs:
     - name: Install llvm
       run: |
         brew install llvm
-      if: ${{ matrix.os == 'macOS-latest' }}
+      if: matrix.os == "macOS-latest"
     - name: Install package
       run: |
         $env:MKL_ROOT=python -c "from sysconfig import get_paths as gp; print(gp()['data'])"
