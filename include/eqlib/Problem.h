@@ -317,7 +317,7 @@ public: // constructors
                 for (index row_i = 0; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    if (row.global % current_nb_threats != thread_id) {
+                    if ((row.global / grainsize) % current_nb_threats != thread_id) {
                         continue;
                     }
 
@@ -334,7 +334,7 @@ public: // constructors
                 const auto& variable_indices = m_element_g_variable_indices[i];
 
                 for (const auto row : equation_indices) {
-                    if (row.global % current_nb_threats != thread_id) {
+                    if ((row.global / grainsize) % current_nb_threats != thread_id) {
                         continue;
                     }
 
@@ -346,7 +346,7 @@ public: // constructors
                 for (index row_i = 0; row_i < length(variable_indices); row_i++) {
                     const auto row = variable_indices[row_i];
 
-                    if (row.global % current_nb_threats != thread_id) {
+                    if ((row.global / grainsize) % current_nb_threats != thread_id) {
                         continue;
                     }
 
