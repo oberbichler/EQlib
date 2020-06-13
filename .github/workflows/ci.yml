@@ -67,15 +67,15 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install libomp
+      run: |
+        brew install libomp
+      if: matrix.os == 'macos-latest'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
-    - name: Install llvm
-      run: |
-        brew install llvm
-      if: matrix.os == "macOS-latest"
     - name: Install package
       run: |
         $env:MKL_ROOT=python -c "from sysconfig import get_paths as gp; print(gp()['data'])"
