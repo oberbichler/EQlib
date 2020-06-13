@@ -70,7 +70,6 @@ jobs:
     - name: Install libomp
       run: |
         brew install libomp
-        export PATH="$(brew --prefix)/bin:$PATH"
       if: matrix.os == 'macos-latest'
     - name: Install dependencies
       run: |
