@@ -20,8 +20,6 @@ include_directories(
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-find_package(MKL)
-
 find_package(OpenMP)
 
 if(OPENMP_FOUND)
@@ -54,13 +52,13 @@ else()
     message("-- Anaconda not found")
 endif()
 
-if (MKL_FOUND)
-    message("-- Found MKL: ${MKL_INCLUDE_DIR}")
-    include_directories(SYSTEM ${MKL_INCLUDE_DIR})
-    target_link_libraries(eqlib PRIVATE ${MKL_LIBRARIES})
-else()
-    message("-- MKL not found")
-endif()
+find_path(MKL_INCLUDE_DIR mkl.h HINTS $HOME/.local/include)
+
+find_library(MKL_LIBRARY NAMES mkl_rt HINTS $HOME/.local/lib/)
+
+message("-- Found MKL: ${MKL_INCLUDE_DIR}")
+include_directories(SYSTEM ${MKL_INCLUDE_DIR})
+target_link_libraries(eqlib PRIVATE ${MKL_LIBRARY})
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(eqlib PUBLIC -fsized-deallocation)
