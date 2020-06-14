@@ -56,7 +56,7 @@ endif()
 
 if (MKL_FOUND)
     message("-- Found MKL: ${MKL_INCLUDE_DIR}")
-    include_directories(SYSTEM ${MKL_INCLUDE_DIR}
+    include_directories(SYSTEM ${MKL_INCLUDE_DIR})
     target_link_libraries(eqlib PRIVATE ${MKL_LIBRARIES})
 else()
     message("-- MKL not found")
