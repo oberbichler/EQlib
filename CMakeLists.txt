@@ -59,6 +59,7 @@ message(${MKL_INCLUDE_DIR})
 message(${MKL_LIBRARY})
 
 message("-- Found MKL: ${MKL_INCLUDE_DIR}")
+add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
 include_directories(SYSTEM ${MKL_INCLUDE_DIR})
 target_link_libraries(eqlib PRIVATE ${MKL_LIBRARY})
 
