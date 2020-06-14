@@ -25,8 +25,8 @@ jobs:
     - name: Find
       run: |
         apt-get install 
-        sudo find / -name mkl.h
-        sudo find / -name mkl_rt.so
+        find / -name mkl.h 2>/dev/null
+        find / -name mkl_rt.so 2>/dev/null
     - name: Install package
       run: |
         pip install .
