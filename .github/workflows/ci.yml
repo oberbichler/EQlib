@@ -25,6 +25,8 @@ jobs:
     - name: Find
       run: |
         find / -name mkl.h 2>/dev/null
+    - name: Find
+      run: |
         find / -name libmkl_rt.so 2>/dev/null
     - name: Install package
       run: |
