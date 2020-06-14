@@ -52,8 +52,8 @@ else()
     message("-- Anaconda not found")
 endif()
 
-find_path(MKL_INCLUDE_DIR mkl.h)
-find_library(MKL_LIBRARY mkl_rt)
+find_path(MKL_INCLUDE_DIR mkl.h HINT /opt/hostedtoolcache/Python/3.8.3/x64/include)
+find_library(MKL_LIBRARY mkl_rt HINT /opt/hostedtoolcache/Python/3.8.3/x64/lib)
 
 message(${MKL_INCLUDE_DIR})
 message(${MKL_LIBRARY})
