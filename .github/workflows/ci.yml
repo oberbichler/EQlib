@@ -24,8 +24,9 @@ jobs:
         pip install hyperjet
     - name: Find
       run: |
-        find / -name mkl.h
-        find / -name mkl_rt.so
+        apt-get install 
+        sudo find / -name mkl.h
+        sudo find / -name mkl_rt.so
     - name: Install package
       run: |
         pip install .
