@@ -24,7 +24,7 @@ jobs:
         info = get_paths()
         data = info['data']
         os.environ['PATH'] = data + '/include' + os.pathsep + os.environ['PATH']
-        print(os.environ['PATH'])
+        print(os.environ)
       shell: python
     - uses: actions/cache@v2
       with:
