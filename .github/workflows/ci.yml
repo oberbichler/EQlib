@@ -28,8 +28,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
-        find / -name libmkl_rt.so 2>/dev/null
-        export PATH=$HOME/.local/include/:$PATH
+    - name: Find
+      run: |
+        find / -name mkl.h 2>/dev/null
     - name: Install package
       run: |
         pip install .
