@@ -1,6 +1,5 @@
 cmake
 mkl
-mkl-devel
 mkl-include
 numpy
 pumpit
