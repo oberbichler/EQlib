@@ -20,8 +20,11 @@ jobs:
     - name: Print
       run: |
         from sysconfig import get_paths
+        import os
         info = get_paths()
-        print(info)
+        data = info['data']
+        os.environ['PATH'] = data + '/include' + os.pathsep + os.environ['PATH']
+        print(os.environ['PATH'])
       shell: python
     - uses: actions/cache@v2
       with:
