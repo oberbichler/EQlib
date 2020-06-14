@@ -52,7 +52,7 @@ else()
     message("-- Anaconda not found")
 endif()
 
-find_path(MKL_INCLUDE_DIR mkl.h HINTS $HOME/.local/include)
+find_path(MKL_INCLUDE_DIR mkl.h HINTS $ENV{HOME}/.local/include)
 
 find_library(MKL_LIBRARY NAMES mkl_rt HINTS $HOME/.local/lib/)
 
