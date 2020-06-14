@@ -22,7 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --user -r requirements.txt
         pip install hyperjet
-        export PATH=$HOME/.local/include/;$PATH
+        export PATH=$HOME/.local/include/:$PATH
     - name: Install package
       run: |
         pip install .
