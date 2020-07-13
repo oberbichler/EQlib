@@ -96,4 +96,4 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
 
 const double infinity = std::numeric_limits<double>::infinity();
 
-} // namespace
+} // namespace eqlib
