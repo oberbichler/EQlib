@@ -422,8 +422,8 @@ private: // methods: computation
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        if (PyErr_CheckSignals() != 0)
-            throw py::error_already_set();
+        if (check_cancellation()) {
+            return;
         }
 
         const auto& element_f = *m_elements_f[i];
@@ -482,8 +482,8 @@ private: // methods: computation
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
-        if (PyErr_CheckSignals() != 0)
-            throw py::error_already_set();
+        if (check_cancellation()) {
+            return;
         }
 
         const auto& element_g = *m_elements_g[i];

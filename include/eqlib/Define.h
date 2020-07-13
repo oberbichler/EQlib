@@ -96,4 +96,14 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& v)
 
 const double infinity = std::numeric_limits<double>::infinity();
 
+// --- python
+
+EQLIB_INLINE bool check_cancellation()
+{
+    if (PyErr_CheckSignals() != 0) {
+        return true;
+    }
+    return false;
+}
+
 } // namespace eqlib
