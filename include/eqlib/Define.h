@@ -28,7 +28,7 @@ namespace eqlib {
 using index = std::ptrdiff_t;
 
 template <typename T>
-inline index length(const T& container) noexcept
+EQLIB_INLINE index length(const T& container) noexcept
 {
     return static_cast<index>(container.size());
 }
