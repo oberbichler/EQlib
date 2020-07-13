@@ -422,6 +422,10 @@ private: // methods: computation
     {
         static_assert(0 <= TOrder && TOrder <= 2);
 
+        if (PyErr_CheckSignals() != 0)
+            throw py::error_already_set();
+        }
+
         const auto& element_f = *m_elements_f[i];
 
         if (!element_f.is_active()) {
@@ -477,6 +481,10 @@ private: // methods: computation
     void compute_element_g(ProblemData& data, const index i)
     {
         static_assert(0 <= TOrder && TOrder <= 2);
+
+        if (PyErr_CheckSignals() != 0)
+            throw py::error_already_set();
+        }
 
         const auto& element_g = *m_elements_g[i];
 
