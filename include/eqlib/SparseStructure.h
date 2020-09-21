@@ -105,6 +105,31 @@ public: // methods
         return m_ja.at(index);
     }
 
+    EQLIB_INLINE index get_first_index(const index i) const
+    {
+        return m_ia[i];
+    }
+
+    index get_index_bounded(const index j, const index lo, const index hi) const
+    {
+        const auto ja_begin = m_ja.begin();
+
+        const auto lower = std::next(ja_begin, lo);
+        const auto upper = std::next(ja_begin, hi);
+
+        const auto it = std::lower_bound(lower, upper, j);
+
+        if (*it != j || it == upper) {
+            return -1;
+        }
+
+        const index value_index = std::distance(ja_begin, it);
+
+        assert(value_index < nb_nonzeros());
+
+        return value_index;
+    }
+
     index get_index(const index row, const index col) const
     {
         assert(0 <= row && row < rows());
@@ -122,8 +147,10 @@ public: // methods
 
             return it->second;
         } else {
-            const auto lower = m_ja.begin() + m_ia[i];
-            const auto upper = m_ja.begin() + m_ia[i + 1];
+            const auto ja_begin = m_ja.begin();
+
+            const auto lower = std::next(ja_begin, m_ia[i]);
+            const auto upper = std::next(ja_begin, m_ia[i + 1]);
 
             const auto it = std::lower_bound(lower, upper, j);
 
@@ -131,7 +158,7 @@ public: // methods
                 return -1;
             }
 
-            const index value_index = std::distance(m_ja.begin(), it);
+            const index value_index = std::distance(ja_begin, it);
 
             assert(value_index < nb_nonzeros());
 

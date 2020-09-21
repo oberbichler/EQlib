@@ -63,14 +63,14 @@ public: // methods
     template <class... TArgs>
     static void task_info(std::string text, TArgs&&... args)
     {
-        std::string message = "\033[38;5;33m" + text + "\033[0m";
+        std::string message = "\033[37m" + text + "\033[0m";
         info(2, message.c_str(), std::forward<TArgs>(args)...);
     }
 
     template <class... TArgs>
     static void task_step(std::string text, TArgs&&... args)
     {
-        std::string message = "\033[38;5;8m" + text + "\033[0m";
+        std::string message = "\033[33m" + text + "\033[0m";
         info(3, message.c_str(), std::forward<TArgs>(args)...);
     }
 
@@ -109,7 +109,7 @@ public: // methods
     template <class... TArgs>
     static void warn(std::string text, TArgs&&... args)
     {
-        std::string message = "\033[38;5;208m" + text + "\033[0m";
+        std::string message = "\033[35m" + text + "\033[0m";
         s_console->warn(message.c_str(), std::forward<TArgs>(args)...);
     }
 

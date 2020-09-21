@@ -78,6 +78,8 @@ private: // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
+    std::vector<std::vector<index>> m_element_f_variable_indices_hi;
+
     SparseStructure<double, int, true> m_structure_dg;
     SparseStructure<double, int, true> m_structure_hm;
 
@@ -407,11 +409,33 @@ public: // constructors
 
         Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
 
+        Log::task_step("Initialize linear solver...");
+
         #ifdef EQLIB_USE_MKL
         m_linear_solver = new_<PardisoLDLT>();
         #else
         m_linear_solver = new_<SimplicialLDLT>();
         #endif
+
+        Log::task_step("Initialize element boundaries...");
+
+        m_element_f_variable_indices_hi.resize(nb_elements_f);
+
+        for (index i = 0; i < nb_elements_f; i++)
+        {
+            const auto& element_indices = m_element_f_variable_indices[i];
+
+            std::vector<index> element_hi(length(element_indices));
+
+            for (index row_i = 0; row_i < length(element_indices); row_i++) {
+                const auto row = element_indices[row_i];
+                const auto col = element_indices.back();
+
+                element_hi[row_i] = m_structure_hm.get_index(row.global, col.global) + 1;
+            }
+
+            m_element_f_variable_indices_hi[i] = std::move(element_hi);
+        }
 
         Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
     }
@@ -457,16 +481,21 @@ private: // methods: computation
 
             data.df(row.global) += g(row.local);
 
+            auto lo = m_structure_hm.get_first_index(row.global);
+            const auto hi = m_element_f_variable_indices_hi[i][row_i];
+
             for (index col_i = row_i; col_i < length(variable_indices) && TOrder > 1; col_i++) {
                 const auto col = variable_indices[col_i];
 
-                index index = m_structure_hm.get_index(row.global, col.global);
+                const index index = m_structure_hm.get_index_bounded(col.global, lo, hi);
 
                 if (row.local < col.local) {
                     data.hm_value(index) += h(row.local, col.local);
                 } else {
                     data.hm_value(index) += h(col.local, row.local);
                 }
+
+                lo = index;
             }
         }
 
@@ -597,9 +626,8 @@ public: // methods: computation
             #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < length(m_active_elements_f); i++) {
-                    // Log::info("Element {}", i);
-                    compute_element_f<TOrder>(l_data, m_active_elements_f[i]);
+                for (index i = 0; i < nb_elements_f(); i++) {
+                    compute_element_f<TOrder>(l_data, i);
                 }
 
                 if (sigma() != 1.0) {
@@ -615,8 +643,8 @@ public: // methods: computation
                 }
 
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < length(m_active_elements_g); i++) {
-                    compute_element_g<TOrder>(l_data, m_active_elements_g[i]);
+                for (index i = 0; i < nb_elements_g(); i++) {
+                    compute_element_g<TOrder>(l_data, i);
                 }
 
                 #pragma omp critical
