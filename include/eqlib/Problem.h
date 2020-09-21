@@ -78,8 +78,8 @@ private: // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
-    std::vector<std::vector<Index>> m_element_f_variable_indices_lo;
-    std::vector<std::vector<Index>> m_element_f_variable_indices_hi;
+    std::vector<std::vector<index>> m_element_f_variable_indices_lo;
+    std::vector<std::vector<index>> m_element_f_variable_indices_hi;
 
     SparseStructure<double, int, true> m_structure_dg;
     SparseStructure<double, int, true> m_structure_hm;
@@ -418,6 +418,8 @@ public: // constructors
         m_linear_solver = new_<SimplicialLDLT>();
         #endif
 
+        Log::task_step("Initialize element boundaries...");
+
         m_element_f_variable_indices_lo.resize(nb_elements_f);
         m_element_f_variable_indices_hi.resize(nb_elements_f);
 
@@ -431,9 +433,12 @@ public: // constructors
             for (index row_i = 0; row_i < length(element_indices); row_i++) {
                 const auto row = element_indices[row_i];
 
-                element_lo[row_i] = m_structure_hm.get_index(row.global, element_indices.front().global);
-                element_hi[row_i] = m_structure_hm.get_index(row.global, element_indices.back().global);
+                element_lo[row_i] = m_structure_hm.get_index(row.global, row.global);
+                element_hi[row_i] = m_structure_hm.get_index(row.global, element_indices.back().global) + 1;
             }
+
+            m_element_f_variable_indices_lo[i] = std::move(element_lo);
+            m_element_f_variable_indices_hi[i] = std::move(element_hi);
         }
 
         Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
@@ -480,16 +485,21 @@ private: // methods: computation
 
             data.df(row.global) += g(row.local);
 
+            auto lo = m_element_f_variable_indices_lo[i][row_i];
+            const auto hi = m_element_f_variable_indices_hi[i][row_i];
+
             for (index col_i = row_i; col_i < length(variable_indices) && TOrder > 1; col_i++) {
                 const auto col = variable_indices[col_i];
 
-                index index = m_structure_hm.get_index(row.global, col.global);
+                index index = m_structure_hm.get_index_bounded(col.global, lo, hi);
 
                 if (row.local < col.local) {
                     data.hm_value(index) += h(row.local, col.local);
                 } else {
                     data.hm_value(index) += h(col.local, row.local);
                 }
+
+                lo = index;
             }
         }
 
