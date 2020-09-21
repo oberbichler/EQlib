@@ -105,7 +105,7 @@ public: // methods
         return m_ja.at(index);
     }
 
-    index get_first_index(const index i) const
+    EQLIB_INLINE index get_first_index(const index i) const
     {
         return m_ia[i];
     }
