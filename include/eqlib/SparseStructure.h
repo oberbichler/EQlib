@@ -122,8 +122,10 @@ public: // methods
 
             return it->second;
         } else {
-            const auto lower = m_ja.begin() + m_ia[i];
-            const auto upper = m_ja.begin() + m_ia[i + 1];
+            const auto ja_begin = m_ja.begin();
+
+            const auto lower = std::next(ja_begin, m_ia[i]);
+            const auto upper = std::next(ja_begin, m_ia[i + 1]);
 
             const auto it = std::lower_bound(lower, upper, j);
 
@@ -131,7 +133,7 @@ public: // methods
                 return -1;
             }
 
-            const index value_index = std::distance(m_ja.begin(), it);
+            const index value_index = std::distance(ja_begin, it);
 
             assert(value_index < nb_nonzeros());
 
