@@ -78,6 +78,9 @@ private: // variables
     std::vector<std::vector<Index>> m_element_g_equation_indices;
     std::vector<std::vector<Index>> m_element_g_variable_indices;
 
+    std::vector<std::vector<Index>> m_element_f_variable_indices_lo;
+    std::vector<std::vector<Index>> m_element_f_variable_indices_hi;
+
     SparseStructure<double, int, true> m_structure_dg;
     SparseStructure<double, int, true> m_structure_hm;
 
@@ -412,6 +415,24 @@ public: // constructors
         #else
         m_linear_solver = new_<SimplicialLDLT>();
         #endif
+
+        m_element_f_variable_indices_lo.resize(nb_elements_f);
+        m_element_f_variable_indices_hi.resize(nb_elements_f);
+
+        for (index i = 0; i < nb_elements_f; i++)
+        {
+            const auto& element_indices = m_element_f_variable_indices[i];
+
+            std::vector<index> element_lo(length(element_indices));
+            std::vector<index> element_hi(length(element_indices));
+
+            for (index row_i = 0; row_i < length(element_indices); row_i++) {
+                const auto row = element_indices[row_i];
+
+                element_lo[row_i] = m_structure_hm.get_index(row.global, element_indices.front().global);
+                element_hi[row_i] = m_structure_hm.get_index(row.global, element_indices.back().global);
+            }
+        }
 
         Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
     }
