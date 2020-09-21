@@ -105,6 +105,11 @@ public: // methods
         return m_ja.at(index);
     }
 
+    index get_first_index(const index i) const
+    {
+        return m_ia(i);
+    }
+
     index get_index_bounded(const index j, const index lo, const index hi) const
     {
         const auto ja_begin = m_ja.begin();
