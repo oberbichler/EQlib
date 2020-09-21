@@ -105,6 +105,26 @@ public: // methods
         return m_ja.at(index);
     }
 
+    index get_index_bounded(const index j, const index lo, const index hi) const
+    {
+        const auto ja_begin = m_ja.begin();
+
+        const auto lower = std::next(ja_begin, lo);
+        const auto upper = std::next(ja_begin, hi);
+
+        const auto it = std::lower_bound(lower, upper, j);
+
+        if (*it != j || it == upper) {
+            return -1;
+        }
+
+        const index value_index = std::distance(ja_begin, it);
+
+        assert(value_index < nb_nonzeros());
+
+        return value_index;
+    }
+
     index get_index(const index row, const index col) const
     {
         assert(0 <= row && row < rows());
