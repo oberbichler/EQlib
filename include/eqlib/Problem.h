@@ -626,9 +626,8 @@ public: // methods: computation
             #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < length(m_active_elements_f); i++) {
-                    // Log::info("Element {}", i);
-                    compute_element_f<TOrder>(l_data, m_active_elements_f[i]);
+                for (index i = 0; i < nb_elements_f(); i++) {
+                    compute_element_f<TOrder>(l_data, i);
                 }
 
                 if (sigma() != 1.0) {
@@ -644,8 +643,8 @@ public: // methods: computation
                 }
 
                 #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < length(m_active_elements_g); i++) {
-                    compute_element_g<TOrder>(l_data, m_active_elements_g[i]);
+                for (index i = 0; i < nb_elements_g(); i++) {
+                    compute_element_g<TOrder>(l_data, i);
                 }
 
                 #pragma omp critical
