@@ -487,7 +487,7 @@ private: // methods: computation
             for (index col_i = row_i; col_i < length(variable_indices) && TOrder > 1; col_i++) {
                 const auto col = variable_indices[col_i];
 
-                index index = m_structure_hm.get_index_bounded(col.global, lo, hi);
+                const index index = m_structure_hm.get_index_bounded(col.global, lo, hi);
 
                 if (row.local < col.local) {
                     data.hm_value(index) += h(row.local, col.local);
