@@ -7,6 +7,8 @@ from numpy.testing import assert_almost_equal
 
 if __name__ == '__main__':
     import sys
+    import os
+    print(f'pid: {os.getpid()}')
     pytest.main(sys.argv)
 
 
