@@ -107,7 +107,7 @@ public: // methods
 
     index get_first_index(const index i) const
     {
-        return m_ia(i);
+        return m_ia[i];
     }
 
     index get_index_bounded(const index j, const index lo, const index hi) const
