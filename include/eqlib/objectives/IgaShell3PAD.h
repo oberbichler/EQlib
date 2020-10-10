@@ -127,7 +127,7 @@ public: // methods
             const auto act_a3 = act_a1.cross(act_a2).normalized();
 
             const typename Space::template Vector<3> act_a(act_a1.dot(act_a1), act_a2.dot(act_a2), act_a1.dot(act_a2));
-            const typename Space::template Vector<3> act_b(act_a1_1.dot(act_a3), act_a1_2.dot(act_a3), act_a2_2.dot(act_a3));
+            const typename Space::template Vector<3> act_b(act_a1_1.dot(act_a3), act_a2_2.dot(act_a3), act_a1_2.dot(act_a3));
 
             const auto eps = transformation_matrix * (act_a - ref_a).transpose() * 0.5;
             const auto kap = transformation_matrix * (act_b - ref_b).transpose();
