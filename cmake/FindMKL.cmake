@@ -104,6 +104,7 @@ find_path(MKL_INCLUDE_DIR
     /opt/intel
     /opt/intel/mkl
     $ENV{MKLROOT}
+    $ENV{MKLROOT}/include
     $ENV{ONEAPI_ROOT}/mkl/latest
     /opt/intel/compilers_and_libraries/linux/mkl
   PATH_SUFFIXES
