@@ -266,7 +266,7 @@ function(find_mkl_library)
         /opt/intel/tbb/lib
         /opt/intel/lib
         $ENV{MKLROOT}/lib
-        /opt/python/cp36-cp36m/include
+        /opt/python/cp36-cp36m/lib
         $ENV{ONEAPI_ROOT}/mkl/latest/lib
         ${ENV_LIBRARY_PATHS}
         /opt/intel/compilers_and_libraries/linux/mkl/lib
