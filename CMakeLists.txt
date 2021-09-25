@@ -92,7 +92,7 @@ target_compile_definitions(python_module PRIVATE
 )
 
 target_include_directories(python_module INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 if(MSVC)
