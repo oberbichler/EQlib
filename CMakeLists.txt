@@ -64,8 +64,8 @@ endif()
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(Python3 COMPONENTS Development)
-message(NOTICE Python3_INCLUDE_DIRS)
-message(NOTICE Python3_LIBRARY_DIRS)
+message(NOTICE ${Python3_INCLUDE_DIRS})
+message(NOTICE ${Python3_LIBRARY_DIRS})
 
 find_package(MKL REQUIRED)
 
