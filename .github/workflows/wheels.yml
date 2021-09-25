@@ -52,6 +52,7 @@ jobs:
         CIBW_SKIP: pp*-macosx* *-win32 *-manylinux_i686
         CIBW_TEST_EXTRAS: test
         CIBW_TEST_COMMAND: pytest {project}
+        CIBW_BEFORE_ALL_LINUX: sudo yum-config-manager --add-repo https://yum.repos.intel.com/setup/intelproducts.repo && sudo rpm --import https://yum.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && yum install intel-mkl-2020.0-088
 
     - name: Upload wheels
       uses: actions/upload-artifact@v2
