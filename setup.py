@@ -128,7 +128,7 @@ setup(
     author='Thomas Oberbichler',
     author_email='thomas.oberbichler@gmail.com',
     python_requires='>=3.6',
-    ext_modules=[CMakeExtension('eqlib')],
+    ext_modules=[CMakeExtension('eqlib', sourcedir='python')],
     cmdclass=dict(build_ext=CMakeBuild),
     install_requires=['msvc-runtime ; platform_system=="Windows"', 'numpy'],
     zip_safe=False,

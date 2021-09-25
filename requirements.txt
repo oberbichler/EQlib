@@ -1,0 +1,5 @@
+mkl-devel
+numpy
+scipy
+ninja
+cmake

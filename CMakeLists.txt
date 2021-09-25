@@ -8,29 +8,22 @@ project(
   LANGUAGES CXX
 )
 
-#
+# ---- Include guards
 
-set(CPM_DOWNLOAD_VERSION 0.32.0)
-
-if(CPM_SOURCE_CACHE)
-  set(CPM_DOWNLOAD_LOCATION "${CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
-elseif(DEFINED ENV{CPM_SOURCE_CACHE})
-  set(CPM_DOWNLOAD_LOCATION "$ENV{CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
-else()
-  set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
-endif()
-
-if(NOT (EXISTS ${CPM_DOWNLOAD_LOCATION}))
-  message(STATUS "Downloading CPM.cmake to ${CPM_DOWNLOAD_LOCATION}")
-  file(DOWNLOAD
-       https://github.com/TheLartians/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake
-       ${CPM_DOWNLOAD_LOCATION}
+if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(
+    FATAL_ERROR
+      "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
   )
 endif()
 
-include(${CPM_DOWNLOAD_LOCATION})
+# --- Get CPM
 
-# ---- Add dependencies ----
+include(cmake/CPM.cmake)
+
+# --- Add dependencies
+
+CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.6.0")
 
 include(cmake/CPM.cmake)
 
@@ -65,52 +58,25 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(MKL REQUIRED)
 
-# ---
+# --- Create library
 
-add_subdirectory(${pybind11_SOURCE_DIR})
+add_library(${PROJECT_NAME} INTERFACE)
 
-pybind11_add_module(python_module
-  src/python/main.cpp
-  src/python/constraint.cpp
-  src/python/problem.cpp
-  src/python/equation.cpp
-  src/python/node.cpp
-  src/python/objective.cpp
-  src/python/request.cpp
-  src/python/sparse_structure.cpp
-  src/python/variable.cpp
-  # objectives
-  src/python/lambda_constraint.cpp
-  src/python/lambda_objective.cpp
-  src/python/objectives/spring.cpp
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
+
+target_include_directories(
+  ${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                            $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 
-target_compile_features(python_module PRIVATE cxx_std_17)
+# --- Create an installable target
 
-target_compile_definitions(python_module PRIVATE
-  -DEQLIB_VERSION="${EQLIB_VERSION}"
+packageProject(
+  NAME ${PROJECT_NAME}
+  VERSION ${PROJECT_VERSION}
+  NAMESPACE ${PROJECT_NAME}
+  BINARY_DIR ${PROJECT_BINARY_DIR}
+  INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
+  INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
 )
-
-target_include_directories(python_module INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-)
-
-if(MSVC)
-  set(EQLIB_OUTPUT_DIRECTORY
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE        ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG          ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib
-    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib
-    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL     ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib)
-else()
-  set(EQLIB_OUTPUT_DIRECTORY
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib)
-endif()
-
-target_link_libraries(python_module PRIVATE spdlog Eigen tsl::robin_map MKL::RT)
-
-set_target_properties(python_module PROPERTIES OUTPUT_NAME eqlib_ext ${EQLIB_OUTPUT_DIRECTORY})
-
-install(TARGETS python_module LIBRARY DESTINATION eqlib)
-
-# install(TARGETS python_module DESTINATION bin)
