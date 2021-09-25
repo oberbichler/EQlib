@@ -6,6 +6,14 @@ project(eqlib_python LANGUAGES CXX)
 
 include(../cmake/CPM.cmake)
 
+CPMAddPackage("gh:/pybind/pybind11@2.7.1")
+
+CPMAddPackage("gh:gabime/spdlog@1.9.2")
+
+CPMAddPackage("gh:Tessil/robin-map@0.6.3")
+
+CPMAddPackage("gh:pybind/pybind11@2.7.1")
+
 CPMAddPackage(
   NAME Eigen
   VERSION 3.4.0
@@ -17,8 +25,6 @@ if(Eigen_ADDED)
   add_library(Eigen INTERFACE IMPORTED)
   target_include_directories(Eigen INTERFACE ${Eigen_SOURCE_DIR})
 endif()
-
-CPMAddPackage("gh:/pybind/pybind11@2.7.1")
 
 if(TEST_INSTALLED_VERSION)
   find_package(eqlib REQUIRED)
