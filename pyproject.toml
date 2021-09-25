@@ -11,6 +11,8 @@ requires = [
     "cmake>=3.21",
     "scikit-build>=0.12",
     "ninja",
+    "mkl>=2021.3.0",
+    "mkl-include>=2021.3.0",
     "mkl-devel>=2021.3.0",
 ]
 
