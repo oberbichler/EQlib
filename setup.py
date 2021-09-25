@@ -67,6 +67,7 @@ setup(
     author_email='thomas.oberbichler@gmail.com',
     ext_modules=[CMakeExtension('eqlib')],
     cmdclass=dict(build_ext=CMakeBuild),
+    setup_requires=['pybind11>=3.5', 'mkl', 'mkl-include'],
     install_requires=['msvc-runtime ; platform_system=="Windows"', 'numpy', 'scipy'],
     zip_safe=False,
 )
