@@ -87,7 +87,7 @@ pybind11_add_module(python_module
 
 target_compile_features(python_module PRIVATE cxx_std_17)
 
-target_compile_definitions(python_module PRIVATE
+target_compile_definitions(python_module INTERFACE
   -DEQLIB_VERSION="${EQLIB_VERSION}"
 )
 
