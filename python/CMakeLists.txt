@@ -4,6 +4,10 @@ project(eqlib_python LANGUAGES CXX)
 
 # --- Dependencies
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../cmake")
+
+find_package(MKL)
+
 include(../cmake/CPM.cmake)
 
 CPMAddPackage("gh:/pybind/pybind11@2.7.1")
@@ -37,7 +41,7 @@ endif()
 file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 pybind11_add_module(eqlib_python ${sources})
 
-target_link_libraries(eqlib_python PRIVATE eqlib::eqlib Eigen)
+target_link_libraries(eqlib_python PRIVATE eqlib::eqlib spdlog Eigen tsl::robin_map MKL::RT)
 
 set_target_properties(eqlib_python PROPERTIES CXX_STANDARD 17)
 
