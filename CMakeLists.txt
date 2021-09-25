@@ -92,9 +92,7 @@ target_compile_definitions(python_module PRIVATE
 )
 
 target_include_directories(python_module PRIVATE
-  include
-  external/robin-map/include
-  external/spdlog/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 if(MSVC)

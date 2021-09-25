@@ -104,10 +104,8 @@ find_path(MKL_INCLUDE_DIR
     /opt/intel
     /opt/intel/mkl
     $ENV{MKLROOT}
-    $ENV{MKLROOT}/include
     $ENV{ONEAPI_ROOT}/mkl/latest
     /opt/intel/compilers_and_libraries/linux/mkl
-    /opt/python/cp36-cp36m/include
   PATH_SUFFIXES
     include
     IntelSWTools/compilers_and_libraries/windows/mkl/include
@@ -241,7 +239,6 @@ function(find_mkl_library)
         ${ENV_LIBRARY_PATHS}
         /opt/intel/compilers_and_libraries/linux/mkl/lib
         ${PYTHON_INCLUDE_DIRS}
-        /opt/python/cp36-cp36m/lib
       PATH_SUFFIXES
         IntelSWTools/compilers_and_libraries/windows/mkl/lib/intel64
         IntelSWTools/compilers_and_libraries/windows/compiler/lib/intel64
