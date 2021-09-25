@@ -87,11 +87,11 @@ pybind11_add_module(python_module
 
 target_compile_features(python_module PRIVATE cxx_std_17)
 
-target_compile_definitions(python_module INTERFACE
+target_compile_definitions(python_module PRIVATE
   -DEQLIB_VERSION="${EQLIB_VERSION}"
 )
 
-target_include_directories(python_module PRIVATE
+target_include_directories(python_module INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
