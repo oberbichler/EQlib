@@ -91,8 +91,9 @@ target_compile_definitions(python_module PRIVATE
   -DEQLIB_VERSION="${EQLIB_VERSION}"
 )
 
-target_include_directories(python_module PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(python_module INTERFACE
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
 if(MSVC)
