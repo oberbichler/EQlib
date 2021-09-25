@@ -235,10 +235,10 @@ function(find_mkl_library)
         /opt/intel/tbb/lib
         /opt/intel/lib
         $ENV{MKLROOT}/lib
+        /opt/python/cp36-cp36m/include
         $ENV{ONEAPI_ROOT}/mkl/latest/lib
         ${ENV_LIBRARY_PATHS}
         /opt/intel/compilers_and_libraries/linux/mkl/lib
-        ${PYTHON_INCLUDE_DIRS}
       PATH_SUFFIXES
         IntelSWTools/compilers_and_libraries/windows/mkl/lib/intel64
         IntelSWTools/compilers_and_libraries/windows/compiler/lib/intel64
@@ -266,6 +266,7 @@ function(find_mkl_library)
         /opt/intel/tbb/lib
         /opt/intel/lib
         $ENV{MKLROOT}/lib
+        /opt/python/cp36-cp36m/include
         $ENV{ONEAPI_ROOT}/mkl/latest/lib
         ${ENV_LIBRARY_PATHS}
         /opt/intel/compilers_and_libraries/linux/mkl/lib
