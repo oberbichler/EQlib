@@ -1,9 +1,9 @@
 [dependencies]
 numpy = "^1.4.1"
 scipy = "^1.19.5"
-mkl = "^2021.3.0"
-mkl-include
-mkl-devel
+mkl = "^2021.3"
+mkl-include = "^2021.3"
+mkl-devel = "^2021.3"
 
 [build-system]
 requires = [
@@ -13,9 +13,9 @@ requires = [
     "cmake>=3.21",
     "scikit-build>=0.12",
     "ninja",
-    "mkl>=2021.3.0",
-    "mkl-include>=2021.3.0",
-    "mkl-devel>=2021.3.0",
+    "mkl>=2021.3",
+    "mkl-include>=2021.3",
+    "mkl-devel>=2021.3",
 ]
 
 build-backend = "setuptools.build_meta"
