@@ -43,18 +43,4 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
-        find / -name "libmkl_rt.*"  2>&1 | grep -v "Permission denied"
-        find / -name "mkl.h"  2>&1 | grep -v "Permission denied"
-        python -c "from sysconfig import get_paths; print(get_paths()['include'])"
-        python -c "from sysconfig import get_paths; print(get_paths())"
-
-    - name: Install package
-      run: |
-        pip install .
-        python -c "import eqlib; print('eqlib._USE_MKL', eqlib._USE_MKL)"
-      shell: pwsh
-
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        pytest
+        echo $PYTHON_INCLUDE_DIR
