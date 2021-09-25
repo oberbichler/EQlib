@@ -61,11 +61,10 @@ endif()
 
 # ---
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set($ENV{MKLROOT} ${PYTHON_EXECUTABLE}/..)
+message(NOTICE $ENV{MKLROOT})
 
-find_package(Python3 COMPONENTS Development)
-message(NOTICE ${Python3_INCLUDE_DIRS})
-message(NOTICE ${Python3_LIBRARY_DIRS})
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(MKL REQUIRED)
 

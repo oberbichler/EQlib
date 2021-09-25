@@ -13,11 +13,6 @@ except ImportError:
 VERSION_REGEX = re.compile(
     r'^\s*#\s*define\s+EQLIB_VERSION_([A-Z]+)\s+(.*)$', re.MULTILINE)
 
-from os import path
-from sysconfig import get_paths
-os.environ['MKLROOT'] = path.join(get_paths()['include'], '../../')
-print(os.environ['MKLROOT'])
-
 this_directory = os.path.abspath(os.path.dirname(__file__))
 
 with open(os.path.join('include/eqlib/common.h')) as f:
