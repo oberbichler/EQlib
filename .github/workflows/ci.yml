@@ -43,8 +43,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
-        find / -name "libmkl_rt.*"
-        find / -name "mkl.h"
+        find / -name "libmkl_rt.*"  2>&1 | grep -v "Permission denied"
+        find / -name "mkl.h"  2>&1 | grep -v "Permission denied"
 
     - name: Install package
       run: |
