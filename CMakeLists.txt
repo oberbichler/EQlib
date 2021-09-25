@@ -60,6 +60,9 @@ else()
     message("-- MKL not found")
 endif()
 
+add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
+target_link_libraries(eqlib PRIVATE mkl_rt)
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(eqlib PUBLIC -fsized-deallocation)
 endif()
