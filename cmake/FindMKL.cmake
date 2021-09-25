@@ -110,6 +110,7 @@ find_path(MKL_INCLUDE_DIR
   PATH_SUFFIXES
     include
     IntelSWTools/compilers_and_libraries/windows/mkl/include
+    ${PYTHON_INCLUDE_DIRS}
     )
 
 if(MKL_INCLUDE_DIR)
@@ -238,6 +239,7 @@ function(find_mkl_library)
         $ENV{ONEAPI_ROOT}/mkl/latest/lib
         ${ENV_LIBRARY_PATHS}
         /opt/intel/compilers_and_libraries/linux/mkl/lib
+        ${PYTHON_INCLUDE_DIRS}
       PATH_SUFFIXES
         IntelSWTools/compilers_and_libraries/windows/mkl/lib/intel64
         IntelSWTools/compilers_and_libraries/windows/compiler/lib/intel64
