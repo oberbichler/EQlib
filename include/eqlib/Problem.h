@@ -1,47 +1,21 @@
 #pragma once
 
-#include "Constraint.h"
-#include "Define.h"
-#include "LinearSolver.h"
-#include "Objective.h"
-#ifdef EQLIB_USE_MKL
-#include "PardisoLDLT.h"
-#endif
-#include "ProblemData.h"
-#include "Settings.h"
-#include "SimplicialLDLT.h"
-#include "SparseStructure.h"
-#include "Timer.h"
+#include "common.h"
+#include "objective.h"
+#include "constraint.h"
+#include "variable.h"
+#include "sparse_structure.h"
 
-#include <omp.h>
+#include <algorithm>
+#include <future>
+#include <stdexcept>
 
-#include <mutex>
-#include <set>
-#include <tuple>
-#include <utility>
-#include <vector>
-
-namespace eqlib {
-
-class Problem {
-private: // types
-    using Type = Problem;
-
-    using ElementsF = std::vector<Pointer<Objective>>;
-    using ElementsG = std::vector<Pointer<Constraint>>;
-
-    using Equations = std::vector<Pointer<Equation>>;
-    using Variables = std::vector<Pointer<Variable>>;
-
-    struct Index {
+namespace eqlib
+{
+    struct Index
+    {
         index local;
         index global;
-
-        Index(index local, index global)
-            : local(local)
-            , global(global)
-        {
-        }
 
         bool operator<(const Index& other) const noexcept
         {
@@ -49,1459 +23,1242 @@ private: // types
         }
     };
 
-private: // variables
-    double m_sigma;
-
-    int m_nb_threads;
-    int m_grainsize;
-
-    ElementsF m_elements_f;
-    ElementsG m_elements_g;
-
-    std::vector<index> m_active_elements_f;
-    std::vector<index> m_active_elements_g;
-
-    Equations m_equations;
-    Variables m_variables;
-
-    DenseMap<Pointer<Equation>, index> m_equation_indices;
-    DenseMap<Pointer<Variable>, index> m_variable_indices;
-
-    std::vector<index> m_element_f_nb_variables;
-    std::vector<index> m_element_g_nb_variables;
-    std::vector<index> m_element_g_nb_equations;
-
-    index m_max_element_n;
-    index m_max_element_m;
-
-    std::vector<std::vector<Index>> m_element_f_variable_indices;
-    std::vector<std::vector<Index>> m_element_g_equation_indices;
-    std::vector<std::vector<Index>> m_element_g_variable_indices;
-
-    std::vector<std::vector<index>> m_element_f_variable_indices_hi;
-
-    SparseStructure<double, int, true> m_structure_dg;
-    SparseStructure<double, int, true> m_structure_hm;
-
-    ProblemData m_data;
-
-    Pointer<LinearSolver> m_linear_solver;
-
-public: // constructors
-    Problem()
+    struct ObjectiveIndices
     {
-    }
+        ObjectiveIndices() = default;
 
-    Problem(ElementsF elements_f, ElementsG elements_g, const int nb_threads = 1, const int grainsize = 100)
-        : m_elements_f(std::move(elements_f))
-        , m_elements_g(std::move(elements_g))
-        , m_sigma(1.0)
-        , m_nb_threads(nb_threads)
-        , m_grainsize(grainsize)
-        , m_max_element_n(0)
-        , m_max_element_m(0)
-        , m_active_elements_f(length(m_elements_f))
-        , m_active_elements_g(length(m_elements_g))
-    {
-        Log::task_begin("Initialize problem...");
-
-        Timer timer;
-
-        const auto nb_elements_f = length(m_elements_f);
-        const auto nb_elements_g = length(m_elements_g);
-
-        Log::task_info("The objective consists of {} elements", nb_elements_f);
-        Log::task_info("The constraints consist of {} elements", nb_elements_g);
-
-        Log::task_step("Getting equations and variables...");
-
-        m_element_f_nb_variables.resize(nb_elements_f);
-        m_element_g_nb_variables.resize(nb_elements_g);
-        m_element_g_nb_equations.resize(nb_elements_g);
-
-        for (index i = 0; i < nb_elements_f; i++) {
-            const auto& element = *m_elements_f[i];
-
-            const index nb_variables = element.nb_variables();
-
-            m_element_f_nb_variables[i] = nb_variables;
-            m_max_element_n = std::max(m_max_element_n, nb_variables);
-        }
-
-        for (index i = 0; i < nb_elements_g; i++) {
-            const auto& element = *m_elements_g[i];
-
-            const index nb_equations = element.nb_equations();
-            const index nb_variables = element.nb_variables();
-
-            m_element_g_nb_variables[i] = nb_variables;
-            m_element_g_nb_equations[i] = nb_equations;
-
-            m_max_element_n = std::max(m_max_element_n, nb_variables);
-            m_max_element_m = std::max(m_max_element_m, nb_equations);
-        }
-
-        Log::task_step("Creating the set of unique equations...");
-
-        RobinSet<Pointer<Equation>> equation_set;
-
-        for (const auto& element : m_elements_g) {
-            for (const auto& equation : element->equations()) {
-                if (!equation->is_active()) {
-                    continue;
-                }
-
-                const auto [_, is_new] = equation_set.insert(equation);
-
-                if (is_new) {
-                    m_equations.push_back(equation);
-                }
-            }
-        }
-
-        Log::task_step("Creating the set of unique variables...");
-
-        RobinSet<Pointer<Variable>> variable_set;
-
-        for (const auto& element : m_elements_f) {
-            for (const auto& variable : element->variables()) {
-                if (!variable->is_active()) {
-                    continue;
-                }
-
-                const auto [_, is_new] = variable_set.insert(variable);
-
-                if (is_new) {
-                    m_variables.push_back(variable);
-                }
-            }
-        }
-
-        for (const auto& element : m_elements_g) {
-            for (const auto& variable : element->variables()) {
-                if (!variable->is_active()) {
-                    continue;
-                }
-
-                const auto [_, is_new] = variable_set.insert(variable);
-
-                if (is_new) {
-                    m_variables.push_back(variable);
-                }
-            }
-        }
-
-        const auto nb_equations = length(m_equations);
-        const auto nb_variables = length(m_variables);
-
-        Log::task_info("The problem contains {} variables", nb_variables);
-        Log::task_info("The problem contains {} constraint equations", nb_equations);
-
-        Log::task_step("Compute indices for variables and equations...");
-
-        m_equation_indices.set_empty_key(nullptr);
-        m_variable_indices.set_empty_key(nullptr);
-
-        m_equation_indices.resize(nb_equations);
-        m_variable_indices.resize(nb_variables);
-
-        for (index i = 0; i < length(m_equations); i++) {
-            const auto& equation = m_equations[i];
-            m_equation_indices[equation] = i;
-        }
-
-        for (index i = 0; i < length(m_variables); i++) {
-            const auto& variable = m_variables[i];
-            m_variable_indices[variable] = i;
-        }
-
-        Log::task_step("Compute indices for elements...");
-
-        // variable indices f
-
-        m_element_f_variable_indices.resize(nb_elements_f);
-        m_element_g_equation_indices.resize(nb_elements_g);
-        m_element_g_variable_indices.resize(nb_elements_g);
-
-        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
+        ObjectiveIndices(const Pointer<Objective>& objective, const index nb_variables, const index nb_constants) : m_objective(objective), variable_indices(nb_variables), constant_indices(nb_constants)
         {
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
-            for (index i = 0; i < nb_elements_f; i++) {
-                const auto& variables = m_elements_f[i]->variables();
-
-                std::vector<Index> variable_indices;
-                variable_indices.reserve(variables.size());
-
-                for (index local = 0; local < length(variables); local++) {
-                    const auto& variable = variables[local];
-
-                    if (!variable->is_active()) {
-                        continue;
-                    }
-
-                    const auto global = m_variable_indices[variable];
-
-                    variable_indices.emplace_back(local, global);
-                }
-
-                std::sort(variable_indices.begin(), variable_indices.end());
-
-                m_element_f_variable_indices[i] = std::move(variable_indices);
-            }
-
-            // equation indices g
-
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
-            for (index i = 0; i < nb_elements_g; i++) {
-                const auto& equations = m_elements_g[i]->equations();
-
-                std::vector<Index> equation_indices;
-                equation_indices.reserve(equations.size());
-
-                for (index local = 0; local < length(equations); local++) {
-                    const auto& equation = equations[local];
-
-                    if (!equation->is_active()) {
-                        continue;
-                    }
-
-                    const auto global = m_equation_indices[equation];
-
-                    equation_indices.emplace_back(local, global);
-                }
-
-                m_element_g_equation_indices[i] = std::move(equation_indices);
-            }
-
-            // variable indices g
-
-            #pragma omp for schedule(dynamic, m_grainsize)
-            for (index i = 0; i < nb_elements_g; i++) {
-                const auto& variables = m_elements_g[i]->variables();
-
-                std::vector<Index> variable_indices;
-                variable_indices.reserve(variables.size());
-
-                for (index local = 0; local < length(variables); local++) {
-                    const auto& variable = variables[local];
-
-                    if (!variable->is_active()) {
-                        continue;
-                    }
-
-                    const auto global = m_variable_indices[variable];
-
-                    variable_indices.emplace_back(local, global);
-                }
-
-                std::sort(variable_indices.begin(), variable_indices.end());
-
-                m_element_g_variable_indices[i] = std::move(variable_indices);
-            }
         }
 
-        Log::task_step("Analyse sparse patterns...");
+        // objective
 
-        const auto n = length(m_variables);
-        const auto m = length(m_equations);
+        Pointer<Objective> m_objective;
 
-        std::vector<std::vector<index>> pattern_dg(m);
-        std::vector<std::vector<index>> pattern_hm(n);
-        
-        std::vector<RobinSet<index>> pattern_dg_set(m);
-        std::vector<RobinSet<index>> pattern_hm_set(n);
-
-        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) shared(pattern_dg, pattern_hm)
+        Objective& objective()
         {
-            const auto current_nb_threats = omp_get_num_threads();
-            const auto thread_id = omp_get_thread_num();
-
-            for (index i = 0; i < length(m_elements_f); i++) {
-                const auto& variable_indices = m_element_f_variable_indices[i];
-
-                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
-
-                    if ((row.global / grainsize) % current_nb_threats != thread_id) {
-                        continue;
-                    }
-
-                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                        const auto col = variable_indices[col_i];
-
-                        pattern_hm_set[row.global].insert(col.global);
-                    }
-                }
-            }
-
-            for (index i = 0; i < length(m_elements_g); i++) {
-                const auto& equation_indices = m_element_g_equation_indices[i];
-                const auto& variable_indices = m_element_g_variable_indices[i];
-
-                for (const auto row : equation_indices) {
-                    if ((row.global / grainsize) % current_nb_threats != thread_id) {
-                        continue;
-                    }
-
-                    for (const auto col : variable_indices) {
-                        pattern_dg_set[row.global].insert(col.global);
-                    }
-                }
-
-                for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                    const auto row = variable_indices[row_i];
-
-                    if ((row.global / grainsize) % current_nb_threats != thread_id) {
-                        continue;
-                    }
-
-                    for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                        const auto col = variable_indices[col_i];
-
-                        pattern_hm_set[row.global].insert(col.global);
-                    }
-                }
-            }
-
-            for (index i = 0; i < m; i++) {
-                if ((i / grainsize) % current_nb_threats != thread_id) {
-                    continue;
-                }
-
-                std::vector<index> tmp;
-
-                tmp.reserve(length(pattern_dg_set[i]));
-                
-                tmp.insert(tmp.end(), pattern_dg_set[i].begin(), pattern_dg_set[i].end());
-
-                std::sort(tmp.begin(), tmp.end());
-
-                pattern_dg[i] = std::move(tmp);
-            }
-
-            for (index i = 0; i < n; i++) {
-                if ((i / grainsize) % current_nb_threats != thread_id) {
-                    continue;
-                }
-
-                std::vector<index> tmp;
-
-                tmp.reserve(length(pattern_hm_set[i]));
-                
-                tmp.insert(tmp.end(), pattern_hm_set[i].begin(), pattern_hm_set[i].end());
-
-                std::sort(tmp.begin(), tmp.end());
-
-                pattern_hm[i] = std::move(tmp);
-            }
+            return *m_objective;
         }
 
-        Log::task_step("Allocate memory...");
+        // variable indices
 
-        m_structure_dg = SparseStructure<double, int, true>::from_pattern(m, n, pattern_dg);
-        m_structure_hm = SparseStructure<double, int, true>::from_pattern(n, n, pattern_hm);
+        std::vector<Index> variable_indices;
 
-        Log::task_info("The hessian has {} nonzero entries ({:.3f}%)", m_structure_hm.nb_nonzeros(), m_structure_hm.density() * 100.0);
+        // constant indices
 
-        Log::task_info("The jacobian of the constraints has {} nonzero entries ({:.3f}%)", m_structure_dg.nb_nonzeros(), m_structure_dg.density() * 100.0);
+        std::vector<Index> constant_indices;
 
-        m_data.resize(n, m, m_structure_dg.nb_nonzeros(), m_structure_hm.nb_nonzeros(), m_max_element_n, m_max_element_m);
+        // sort
 
-        Log::task_info("The problem occupies {} MB", m_data.values().size() * 8.0 / 1'024 / 1'024);
-
-        Log::task_step("Initialize linear solver...");
-
-        #ifdef EQLIB_USE_MKL
-        m_linear_solver = new_<PardisoLDLT>();
-        #else
-        m_linear_solver = new_<SimplicialLDLT>();
-        #endif
-
-        Log::task_step("Initialize element boundaries...");
-
-        m_element_f_variable_indices_hi.resize(nb_elements_f);
-
-        for (index i = 0; i < nb_elements_f; i++)
+        void sort()
         {
-            const auto& element_indices = m_element_f_variable_indices[i];
-
-            std::vector<index> element_hi(length(element_indices));
-
-            for (index row_i = 0; row_i < length(element_indices); row_i++) {
-                const auto row = element_indices[row_i];
-                const auto col = element_indices.back();
-
-                element_hi[row_i] = m_structure_hm.get_index(row.global, col.global) + 1;
-            }
-
-            m_element_f_variable_indices_hi[i] = std::move(element_hi);
+            std::sort(variable_indices.begin(), variable_indices.end());
+            std::sort(constant_indices.begin(), constant_indices.end());
         }
+    };
 
-        Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
-    }
-
-private: // methods: computation
-    template <index TOrder>
-    void compute_element_f(ProblemData& data, const index i)
+    struct ConstraintIndices
     {
-        static_assert(0 <= TOrder && TOrder <= 2);
+        ConstraintIndices() = default;
 
-        const auto& element_f = *m_elements_f[i];
-
-        if (!element_f.is_active()) {
-            return;
+        ConstraintIndices(const Pointer<Constraint>& constraint, const index nb_equations, const index nb_variables, const index nb_constants) : m_constraint(constraint), equation_indices(nb_equations), variable_indices(nb_variables), constant_indices(nb_constants)
+        {
         }
 
-        const auto& variable_indices = m_element_f_variable_indices[i];
+        // constraint
 
-        if (variable_indices.empty()) {
-            return;
+        Pointer<Constraint> m_constraint;
+
+        Constraint& constraint()
+        {
+            return *m_constraint;
         }
 
-        const auto n = m_element_f_nb_variables[i];
+        // equation indices
 
-        index size_g = TOrder > 0 ? n : 0;
-        index size_h = TOrder > 1 ? n : 0;
+        std::vector<Index> equation_indices;
 
-        Map<Vector> g(data.m_buffer.data(), size_g);
-        Map<Matrix> h(data.m_buffer.data() + size_g, size_h, size_h);
+        // variable indices
 
-        Timer timer_element_compute;
+        std::vector<Index> variable_indices;
 
-        const double f = element_f.compute(g, h);
+        // constant indices
 
-        data.computation_time() += timer_element_compute.ellapsed();
+        std::vector<Index> constant_indices;
 
-        Timer timer_element_assemble;
+        // sort
 
-        data.f() += f;
-
-        for (index row_i = 0; row_i < length(variable_indices) && TOrder > 0; row_i++) {
-            const auto row = variable_indices[row_i];
-
-            data.df(row.global) += g(row.local);
-
-            auto lo = m_structure_hm.get_first_index(row.global);
-            const auto hi = m_element_f_variable_indices_hi[i][row_i];
-
-            for (index col_i = row_i; col_i < length(variable_indices) && TOrder > 1; col_i++) {
-                const auto col = variable_indices[col_i];
-
-                const index index = m_structure_hm.get_index_bounded(col.global, lo, hi);
-
-                if (row.local < col.local) {
-                    data.hm_value(index) += h(row.local, col.local);
-                } else {
-                    data.hm_value(index) += h(col.local, row.local);
-                }
-
-                lo = index;
-            }
+        void sort()
+        {
+            std::sort(equation_indices.begin(), equation_indices.end());
+            std::sort(variable_indices.begin(), variable_indices.end());
+            std::sort(constant_indices.begin(), constant_indices.end());
         }
+    };
 
-        data.assemble_time() += timer_element_assemble.ellapsed();
-    }
-
-    template <index TOrder>
-    void compute_element_g(ProblemData& data, const index i)
+    struct Problem
     {
-        static_assert(0 <= TOrder && TOrder <= 2);
-
-        const auto& element_g = *m_elements_g[i];
-
-        if (!element_g.is_active()) {
-            return;
+        Problem() : m_buffer_size(0), m_nb_nonzeros_dg(0), m_nb_nonzeros_hm(0), m_parallel_level(0), m_parallel_block_size(256)
+        {
         }
 
-        const auto& equation_indices = m_element_g_equation_indices[i];
-        const auto& variable_indices = m_element_g_variable_indices[i];
+        static Problem create(const std::vector<Pointer<Objective>>& objectives, const std::vector<Pointer<Constraint>>& constraints)
+        {
+            Logger::info("Create a new system");
 
-        if (equation_indices.empty() || variable_indices.empty()) {
-            return;
-        }
+            Problem result;
 
-        const auto m = m_element_g_nb_equations[i];
-        const auto n = m_element_g_nb_variables[i];
+            const index nb_objectives = len(objectives);
+            const index nb_constraints = len(constraints);
 
-        Timer timer_element_allocate;
+            Logger::info("{} objective elements", nb_objectives);
+            Logger::info("{} constraints elements", nb_constraints);
 
-        Vector fs(m);
-        std::vector<Ref<Vector>> gs;
-        std::vector<Ref<Matrix>> hs;
+            result.m_objective_indices = std::vector<ObjectiveIndices>(nb_objectives);
+            result.m_constraint_indices = std::vector<ConstraintIndices>(nb_constraints);
 
-        gs.reserve(m);
-        hs.reserve(m);
+            // index variables and equations
 
-        for (index k = 0; k < m; k++) {
-            Map<Vector> g(data.m_buffer.data() + k * n, n);
-            Map<Matrix> h(data.m_buffer.data() + m * n + k * n * n, n, n);
-            gs.push_back(g);
-            hs.push_back(h);
-        }
-
-        Timer timer_element_compute;
-
-        element_g.compute(fs, gs, hs);
-
-        data.computation_time() += timer_element_compute.ellapsed();
-
-        Timer timer_element_assemble;
-
-        for (const auto& equation_index : equation_indices) {
-            const auto& equation = m_equations[equation_index.global];
-
-            data.g(equation_index.global) += fs(equation_index.local);
-
-            if constexpr (TOrder < 1) {
-                continue;
-            }
-
-            auto& local_g = gs[equation_index.local];
-            auto& local_h = hs[equation_index.local];
-
-            local_h *= equation->multiplier();
-
-            for (index row_i = 0; row_i < length(variable_indices); row_i++) {
-                const auto row = variable_indices[row_i];
-
-                const index dg_value_i = m_structure_dg.get_index(equation_index.global, row.global);
-
-                data.dg_value(dg_value_i) += local_g(row.local);
-
-                if constexpr (TOrder < 2) {
-                    continue;
-                }
-
-                for (index col_i = row_i; col_i < length(variable_indices); col_i++) {
-                    const auto col = variable_indices[col_i];
-
-                    const index hm_value_i = m_structure_hm.get_index(row.global, col.global);
-
-                    data.hm_value(hm_value_i) += local_h(row.local, col.local);
-                }
-            }
-        }
-
-        data.assemble_time() += timer_element_assemble.ellapsed();
-    }
-
-public: // methods: computation
-    void update_active_elements()
-    {
-        m_active_elements_f.clear();
-
-        for (index i = 0; i < nb_elements_f(); i++) {
-            if (m_elements_f[i]->is_active()) {
-                m_active_elements_f.emplace_back(i);
-            }
-        }
-        
-        m_active_elements_g.clear();
-
-        for (index i = 0; i < nb_elements_g(); i++) {
-            if (m_elements_g[i]->is_active()) {
-                m_active_elements_g.emplace_back(i);
-            }
-        }
-    }
-
-    template <bool TParallel, bool TInfo, index TOrder>
-    void compute()
-    {
-        static_assert(0 <= TOrder && TOrder <= 2);
-
-        if constexpr (TInfo) {
-            Log::task_begin("Compute problem...");
-        }
-
-        Timer timer;
-
-        m_data.set_zero<TOrder>();
-
-        update_active_elements();
-
-        if constexpr (TParallel) {
-            ProblemData l_data(m_data);
-
-            #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
+            for (index i = 0; i < nb_objectives; i++)
             {
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < nb_elements_f(); i++) {
-                    compute_element_f<TOrder>(l_data, i);
+                const auto& objective = objectives[i];
+
+                index local_nb_constants = 0;
+
+                for (const auto& variable : objective->variables())
+                {
+                    if (variable->is_active())
+                    {
+                        result.m_variable_indices.try_emplace(variable, len(result.m_variable_indices));
+                    }
+                    else
+                    {
+                        local_nb_constants += 1;
+                        result.m_constant_indices.try_emplace(variable, len(result.m_constant_indices));
+                    }
                 }
 
-                if (sigma() != 1.0) {
-                    l_data.f() *= sigma();
+                const index local_nb_variables = objective->nb_variables() - local_nb_constants;
 
-                    if constexpr (TOrder > 0) {
-                        l_data.df() *= sigma();
+                result.m_objective_indices[i] = ObjectiveIndices(objective, local_nb_variables, local_nb_constants);
+            }
+
+            for (index i = 0; i < nb_constraints; i++)
+            {
+                const auto& constraint = constraints[i];
+
+                index local_nb_equations = 0;
+
+                for (const auto& equation : constraint->equations())
+                {
+                    if (equation->is_active())
+                    {
+                        local_nb_equations += 1;
+                        result.m_equation_indices.try_emplace(equation, len(result.m_equation_indices));
+                    }
+                }
+
+                index local_nb_constants = 0;
+
+                for (const auto& variable : constraint->variables())
+                {
+                    if (variable->is_active())
+                    {
+                        result.m_variable_indices.try_emplace(variable, len(result.m_variable_indices));
+                    }
+                    else
+                    {
+                        local_nb_constants += 1;
+                        result.m_constant_indices.try_emplace(variable, len(result.m_constant_indices));
+                    }
+                }
+
+                const index local_nb_variables = constraint->nb_variables() - local_nb_constants;
+
+                result.m_constraint_indices[i] = ConstraintIndices(constraint, local_nb_equations, local_nb_variables, local_nb_constants);
+            }
+
+            // collect equations
+
+            index nb_equations = len(result.m_equation_indices);
+
+            Logger::info("{} equations", nb_equations);
+
+            result.m_equations = Equations(nb_equations);
+
+            for (const auto& [equation, index] : result.m_equation_indices)
+            {
+                result.m_equations[index] = equation;
+            }
+
+            // collect variables
+
+            index nb_variables = len(result.m_variable_indices);
+
+            Logger::info("{} variables", nb_variables);
+
+            result.m_variables = Variables(nb_variables);
+
+            for (const auto& [variable, index] : result.m_variable_indices)
+            {
+                result.m_variables[index] = variable;
+            }
+
+            // collect constants
+
+            index nb_constants = len(result.m_constant_indices);
+
+            result.m_constants = Variables(nb_constants);
+
+            for (const auto& [constant, index] : result.m_constant_indices)
+            {
+                result.m_constants[index] = constant;
+            }
+
+            // assign indices
+
+            for (auto& objective_indices : result.m_objective_indices)
+            {
+                const auto& objective = objective_indices.objective();
+
+                auto variable_indices_it = objective_indices.variable_indices.begin();
+                auto constant_indices_it = objective_indices.constant_indices.begin();
+
+                for (index local_index = 0; local_index < objective.nb_variables(); local_index++)
+                {
+                    const auto variable = objective.variable(local_index);
+
+                    if (variable->is_active())
+                    {
+                        const index global_index = result.m_variable_indices[variable];
+                        *(variable_indices_it++) = { local_index, global_index };
+                    }
+                    else
+                    {
+                        const index global_index = result.m_constant_indices[variable];
+                        *(constant_indices_it++) = { local_index, global_index };
+                    }
+                }
+
+                objective_indices.sort();
+            }
+
+            for (auto& constraint_indices : result.m_constraint_indices)
+            {
+                const auto& constraint = constraint_indices.constraint();
+
+                auto equation_indices_it = constraint_indices.equation_indices.begin();
+
+                for (index local_index = 0; local_index < constraint.nb_equations(); local_index++)
+                {
+                    const auto equation = constraint.equation(local_index);
+
+                    if (equation->is_active())
+                    {
+                        const index global_index = result.m_equation_indices[equation];
+                        *(equation_indices_it++) = { local_index, global_index };
+                    }
+                }
+
+                auto variable_indices_it = constraint_indices.variable_indices.begin();
+                auto constant_indices_it = constraint_indices.constant_indices.begin();
+
+                for (index local_index = 0; local_index < constraint.nb_variables(); local_index++)
+                {
+                    const auto variable = constraint.variable(local_index);
+
+                    if (variable->is_active())
+                    {
+                        const index global_index = result.m_variable_indices[variable];
+                        *(variable_indices_it++) = { local_index, global_index };
+                    }
+                    else
+                    {
+                        const index global_index = result.m_constant_indices[variable];
+                        *(constant_indices_it++) = { local_index, global_index };
+                    }
+                }
+
+                constraint_indices.sort();
+            }
+
+            // pattern
+
+            std::vector<RobinSet<index>> pattern_dg(nb_equations);
+            std::vector<RobinSet<index>> pattern_hm(nb_variables);
+
+            for (auto& constraint_indices : result.m_constraint_indices)
+            {
+                const auto& equation_indices = constraint_indices.equation_indices;
+                const auto& variable_indices = constraint_indices.variable_indices;
+
+                for (auto& index_i : equation_indices)
+                {
+                    for (auto& index_j : variable_indices)
+                    {
+                        pattern_dg[index_i.global].insert(index_j.global);
+                    }
+                }
+
+                const index nb_variables = len(variable_indices);
+
+                for (index i = 0; i < nb_variables; i++)
+                {
+                    const index global_i = variable_indices[i].global;
+
+                    for (index j = i; j < nb_variables; j++)
+                    {
+                        const index global_j = variable_indices[j].global;
+
+                        pattern_hm[global_i].insert(global_j);
+                    }
+                }
+
+                // update buffer size
+
+                const auto& constraint = constraint_indices.constraint();
+
+                const index required_buffer_size = constraint.nb_equations() + constraint.nb_equations() * constraint.nb_variables() + constraint.nb_variables() * constraint.nb_variables();
+
+                if (required_buffer_size > result.m_buffer_size)
+                {
+                    result.m_buffer_size = required_buffer_size;
+                }
+            }
+
+            for (auto& objective_indices : result.m_objective_indices)
+            {
+                const index nb_variables = len(objective_indices.variable_indices);
+
+                // update pattern
+
+                for (index i = 0; i < nb_variables; i++)
+                {
+                    const index global_i = objective_indices.variable_indices[i].global;
+
+                    for (index j = i; j < nb_variables; j++)
+                    {
+                        const index global_j = objective_indices.variable_indices[j].global;
+
+                        pattern_hm[global_i].insert(global_j);
+                    }
+                }
+
+                // update buffer size
+
+                const auto& objective = objective_indices.objective();
+
+                const index required_buffer_size = objective.nb_variables() + objective.nb_variables() * objective.nb_variables();
+
+                if (required_buffer_size > result.m_buffer_size)
+                {
+                    result.m_buffer_size = required_buffer_size;
+                }
+            }
+
+            for (const auto& i : pattern_dg)
+            {
+                result.m_nb_nonzeros_dg += len(i);
+            }
+
+            for (const auto& i : pattern_hm)
+            {
+                result.m_nb_nonzeros_hm += len(i);
+            }
+
+            result.m_structure_dg = CsrStructure::from_pattern(nb_equations, nb_variables, pattern_dg);
+            result.m_structure_hm = CsrStructure::from_pattern(nb_variables, nb_variables, pattern_hm);
+
+            return result;
+        }
+
+        static Problem like(const Problem& prototype, const std::vector<Pointer<Objective>>& objectives, const std::vector<Pointer<Constraint>>& constraints)
+        {
+            Problem result;
+
+            result.m_equation_indices = prototype.m_equation_indices;
+            result.m_variable_indices = prototype.m_variable_indices;
+            result.m_constant_indices = prototype.m_constant_indices;
+
+            result.m_equations = prototype.m_equations;
+            result.m_variables = prototype.m_variables;
+            result.m_constants = prototype.m_constants;
+
+            result.m_buffer_size = prototype.m_buffer_size;
+            result.m_nb_nonzeros_dg = prototype.m_nb_nonzeros_dg;
+            result.m_nb_nonzeros_hm = prototype.m_nb_nonzeros_hm;
+
+            const index nb_objectives = len(objectives);
+            const index nb_constraints = len(constraints);
+
+            result.m_objective_indices = std::vector<ObjectiveIndices>(nb_objectives);
+            result.m_constraint_indices = std::vector<ConstraintIndices>(nb_constraints);
+
+            // index variables and equations
+
+            for (index i = 0; i < nb_objectives; i++)
+            {
+                const auto& objective = objectives[i];
+
+                index local_nb_constants = 0;
+
+                for (const auto& variable : objective->variables())
+                {
+                    if (!variable->is_active())
+                    {
+                        local_nb_constants += 1;
+                    }
+                }
+
+                const index local_nb_variables = objective->nb_variables() - local_nb_constants;
+
+                result.m_objective_indices[i] = ObjectiveIndices(objective, local_nb_variables, local_nb_constants);
+            }
+
+            for (index i = 0; i < nb_constraints; i++)
+            {
+                const auto& constraint = constraints[i];
+
+                index local_nb_equations = 0;
+
+                for (const auto& equation : constraint->equations())
+                {
+                    if (equation->is_active())
+                    {
+                        local_nb_equations += 1;
+                    }
+                }
+
+                index local_nb_constants = 0;
+
+                for (const auto& variable : constraint->variables())
+                {
+                    if (!variable->is_active())
+                    {
+                        local_nb_constants += 1;
+                    }
+                }
+
+                const index local_nb_variables = constraint->nb_variables() - local_nb_constants;
+
+                result.m_constraint_indices[i] = ConstraintIndices(constraint, local_nb_equations, local_nb_variables, local_nb_constants);
+            }
+
+            // assign indices
+
+            for (auto& objective_indices : result.m_objective_indices)
+            {
+                const auto& objective = objective_indices.objective();
+
+                auto variable_indices_it = objective_indices.variable_indices.begin();
+                auto constant_indices_it = objective_indices.constant_indices.begin();
+
+                for (index local_index = 0; local_index < objective.nb_variables(); local_index++)
+                {
+                    const auto variable = objective.variable(local_index);
+
+                    if (variable->is_active())
+                    {
+                        const auto it = prototype.m_variable_indices.find(variable);
+
+                        if (it != prototype.m_variable_indices.end())
+                        {
+                            const index global_index = it.value();
+                            *(variable_indices_it++) = { local_index, global_index };
+                        }
+                    }
+                    else
+                    {
+                        const auto it = prototype.m_constant_indices.find(variable);
+
+                        if (it != prototype.m_constant_indices.end())
+                        {
+                            const index global_index = it.value();
+                            *(constant_indices_it++) = { local_index, global_index };
+                        }
+                    }
+                }
+
+                objective_indices.sort();
+            }
+
+            for (auto& constraint_indices : result.m_constraint_indices)
+            {
+                const auto& constraint = constraint_indices.constraint();
+
+                auto equation_indices_it = constraint_indices.equation_indices.begin();
+
+                for (index local_index = 0; local_index < constraint.nb_equations(); local_index++)
+                {
+                    const auto equation = constraint.equation(local_index);
+
+                    if (equation->is_active())
+                    {
+                        const auto it = prototype.m_equation_indices.find(equation);
+
+                        if (it != prototype.m_equation_indices.end())
+                        {
+                            const index global_index = it.value();
+                            *(equation_indices_it++) = { local_index, global_index };
+                        }
+                    }
+                }
+
+                auto variable_indices_it = constraint_indices.variable_indices.begin();
+                auto constant_indices_it = constraint_indices.constant_indices.begin();
+
+                for (index local_index = 0; local_index < constraint.nb_variables(); local_index++)
+                {
+                    const auto variable = constraint.variable(local_index);
+
+                    if (variable->is_active())
+                    {
+                        const auto it = prototype.m_variable_indices.find(variable);
+
+                        if (it != prototype.m_variable_indices.end())
+                        {
+                            const index global_index = it.value();
+                            *(variable_indices_it++) = { local_index, global_index };
+                        }
+                    }
+                    else
+                    {
+                        const auto it = prototype.m_constant_indices.find(variable);
+
+                        if (it != prototype.m_constant_indices.end())
+                        {
+                            const index global_index = it.value();
+                            *(constant_indices_it++) = { local_index, global_index };
+                        }
+                    }
+                }
+
+                constraint_indices.sort();
+            }
+
+            return result;
+        }
+
+        // constants
+
+        const inline static Map<Vector> EmptyVector = Map<Vector>(nullptr, 0);
+
+        // variable indices
+
+        RobinMap<Pointer<Variable>, index> m_variable_indices;
+
+        index variable_index(const Pointer<Variable>& variable) const
+        {
+            const auto it = m_variable_indices.find(variable);
+
+            if (it == m_variable_indices.end())
+                return -1;
+
+            return it.value();
+        }
+
+        // constant indices
+
+        RobinMap<Pointer<Variable>, index> m_constant_indices;
+
+        index constant_index(const Pointer<Variable>& variable) const
+        {
+            const auto it = m_constant_indices.find(variable);
+
+            if (it == m_constant_indices.end())
+                return -1;
+
+            return it.value();
+        }
+
+        // equation indices
+
+        RobinMap<Pointer<Equation>, index> m_equation_indices;
+
+        index equation_index(const Pointer<Equation>& equation) const
+        {
+            const auto it = m_equation_indices.find(equation);
+
+            if (it == m_equation_indices.end())
+                return -1;
+
+            return it.value();
+        }
+
+        // objective indices
+
+        std::vector<ObjectiveIndices> m_objective_indices;
+
+        index nb_objectives() const
+        {
+            return len(m_objective_indices);
+        }
+
+        // constraint indices
+
+        std::vector<ConstraintIndices> m_constraint_indices;
+
+        index nb_constraints() const
+        {
+            return len(m_constraint_indices);
+        }
+
+        // equations
+
+        Equations m_equations;
+
+        index nb_equations() const
+        {
+            return len(m_equations);
+        }
+
+        const Equations& equations() const
+        {
+            return m_equations;
+        }
+
+        // variables
+
+        Variables m_variables;
+
+        index nb_variables() const
+        {
+            return len(m_variables);
+        }
+
+        const Variables& variables() const
+        {
+            return m_variables;
+        }
+
+        // constants
+
+        Variables m_constants;
+
+        index nb_constants() const
+        {
+            return len(m_constants);
+        }
+
+        const Variables& constants() const
+        {
+            return m_constants;
+        }
+
+        // structure_dg
+
+        CsrStructure m_structure_dg;
+
+        CsrStructure structure_dg() const
+        {
+            return m_structure_dg;
+        }
+
+        // structure_hm
+
+        CsrStructure m_structure_hm;
+
+        CsrStructure structure_hm() const
+        {
+            return m_structure_hm;
+        }
+
+        // compute f
+
+        template <Request R>
+        void _compute_block_f(const index block_begin, const index block_end, Ref<Vector> buffer, double& f, Ref<Vector> df, Ref<Vector> hm)
+        {
+            constexpr bool request_f = (R & Request::F) != 0;
+            constexpr bool request_df = (R & Request::Df) != 0;
+            constexpr bool request_hf = (R & Request::Hf) != 0;
+
+            for (index i = block_begin; i < block_end; i++)
+            {
+                auto& objective_indices = m_objective_indices[i];
+
+                auto& objective = objective_indices.objective();
+
+                if (!objective.is_active())
+                    return;
+
+                const index nb_variables = objective.nb_variables();
+
+                Map<Vector> local_df(buffer.data(), nb_variables);
+                Map<Matrix> local_hm(buffer.data() + nb_variables, nb_variables, nb_variables);
+
+                const double local_f = objective.compute(local_df, local_hm, R);
+
+                if constexpr (request_f)
+                    f += local_f;
+
+                if constexpr (request_df)
+                {
+                    for (index i = 0; i < len(objective_indices.variable_indices); i++)
+                    {
+                        const auto index_i = objective_indices.variable_indices[i];
+
+                        df(index_i.global) += local_df(index_i.local);
+                    }
+                }
+
+                if constexpr (request_hf)
+                {
+                    for (index i = 0; i < len(objective_indices.variable_indices); i++)
+                    {
+                        const auto index_i = objective_indices.variable_indices[i];
+
+                        for (index j = i; j < len(objective_indices.variable_indices); j++)
+                        {
+                            const auto index_j = objective_indices.variable_indices[j];
+
+                            const index idx = m_structure_hm.get_index(index_i.global, index_j.global);
+
+                            assert(idx >= 0);
+
+                            hm(idx) += local_hm(index_i.local, index_j.local);
+                        }
+                    }
+                }
+            }
+        }
+
+        template <Request R>
+        void _compute_f(std::atomic<index>& begin, const index end, Ref<Vector> buffer, double& f, Ref<Vector> df, Ref<Vector> hm, const index level)
+        {
+            if (end - begin <= 0)
+                return;
+
+            constexpr bool request_f = (R & Request::F) != 0;
+            constexpr bool request_df = (R & Request::Df) != 0;
+            constexpr bool request_hf = (R & Request::Hf) != 0;
+
+            if constexpr (!request_f && !request_df && !request_hf)
+                return;
+
+            if (level < m_parallel_level)
+            {
+                Vector future_buffer = Vector::Zero(len(buffer));
+                double future_f = 0.0;
+                Vector future_df = Vector::Zero(len(df));
+                Vector future_hm = Vector::Zero(len(hm));
+
+                auto future = std::async(std::launch::async, &Problem::_compute_f<R>, this, std::ref(begin), end, Ref<Vector>(future_buffer), std::ref(future_f), Ref<Vector>(future_df), Ref<Vector>(future_hm), level + 1);
+
+                _compute_f<R>(begin, end, buffer, f, df, hm, level + 1);
+
+                future.wait();
+
+                f += future_f;
+                df += future_df;
+                hm += future_hm;
+
+                return;
+            }
+
+            if (m_parallel_level == 0) // serial
+            {
+                _compute_block_f<R>(begin, end, buffer, f, df, hm);
+            }
+            else // parallel
+            {
+                while (true)
+                {
+                    const index block_begin = begin.fetch_add(m_parallel_block_size);
+
+                    if (block_begin >= end)
+                        break;
+
+                    const index block_end = std::min(block_begin + m_parallel_block_size, end);
+
+                    _compute_block_f<R>(block_begin, block_end, buffer, f, df, hm);
+                }
+            }
+        }
+
+        template <Request R>
+        void compute_f(Ref<Vector> buffer, double& f, Ref<Vector> df, Ref<Vector> hm)
+        {
+            std::atomic<index> i;
+
+            _compute_f<R>(i, len(m_objective_indices), buffer, f, df, hm, 0);
+        }
+
+        void compute_f(Ref<Vector> buffer, double& f, Ref<Vector> df, Ref<Vector> hm)
+        {
+            if (len(df) == 0 && len(hm) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::F);
+                compute_f<R>(buffer, f, EmptyVector, EmptyVector);
+            }
+            else if (len(hm) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::F | Request::Df);
+                compute_f<R>(buffer, f, df, EmptyVector);
+            }
+            else if (len(df) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::F | Request::Hf);
+                compute_f<R>(buffer, f, EmptyVector, hm);
+            }
+            else
+            {
+                constexpr Request R = static_cast<Request>(Request::F | Request::Df | Request::Hf);
+                compute_f<R>(buffer, f, df, hm);
+            }
+        }
+
+        void compute_f(double& f, Ref<Vector> df, Ref<Vector> hm)
+        {
+            Ref<Vector> b = buffer();
+            compute_f(b, f, df, hm);
+        }
+
+        // compute g
+
+        template <Request R>
+        void _compute_block_g(const index block_begin, const index block_end, Ref<Vector> buffer, Ref<Vector> g, Ref<Vector> dg, Ref<Vector> hm)
+        {
+            constexpr bool request_g = (R & Request::G) != 0;
+            constexpr bool request_dg = (R & Request::Dg) != 0;
+            constexpr bool request_hm = (R & Request::Hg) != 0;
+
+            if constexpr (!request_g && !request_dg && !request_hm)
+                return;
+
+            for (index i = block_begin; i < block_end; i++)
+            {
+                auto& constraint_indices = m_constraint_indices[i];
+
+                auto& constraint = constraint_indices.constraint();
+
+                if (!constraint.is_active())
+                    continue;
+
+                const index nb_equations = constraint.nb_equations();
+                const index nb_variables = constraint.nb_variables();
+
+                Map<Vector> local_g(buffer.data(), nb_equations);
+                Map<Matrix> local_dg(buffer.data() + nb_equations, nb_equations, nb_variables);
+                Map<Matrix> local_hm(buffer.data() + nb_equations + nb_equations * nb_variables, nb_variables, nb_variables);
+
+                constraint.compute(local_g, local_dg, local_hm, R);
+
+                if constexpr (request_g)
+                {
+                    for (index i = 0; i < len(constraint_indices.equation_indices); i++)
+                    {
+                        const auto index_i = constraint_indices.equation_indices[i];
+
+                        if constexpr (request_g)
+                            g(index_i.global) += local_g(index_i.local);
+
+                        if constexpr (request_dg)
+                        {
+                            for (index j = 0; j < len(constraint_indices.variable_indices); j++)
+                            {
+                                const auto index_j = constraint_indices.variable_indices[j];
+
+                                const index idx = m_structure_dg.get_index(index_i.global, index_j.global);
+
+                                assert(idx >= 0);
+
+                                dg(idx) += local_dg(index_i.local, index_j.local);
+                            }
+                        }
                     }
 
-                    if constexpr (TOrder > 1) {
-                        l_data.hm() *= sigma();
+                    if constexpr (request_hm)
+                    {
+                        for (index i = 0; i < len(constraint_indices.variable_indices); i++)
+                        {
+                            const auto index_i = constraint_indices.variable_indices[i];
+
+                            for (index j = i; j < len(constraint_indices.variable_indices); j++)
+                            {
+                                const auto index_j = constraint_indices.variable_indices[j];
+
+                                const index idx = m_structure_hm.get_index(index_i.global, index_j.global);
+
+                                assert(idx >= 0);
+
+                                hm(idx) += local_hm(index_i.local, index_j.local);
+                            }
+                        }
                     }
                 }
-
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
-                for (index i = 0; i < nb_elements_g(); i++) {
-                    compute_element_g<TOrder>(l_data, i);
-                }
-
-                #pragma omp critical
-                m_data += l_data;
-            }
-        } else {
-            for (index i = 0; i < nb_elements_f(); i++) {
-                compute_element_f<TOrder>(m_data, i);
-            }
-
-            if (sigma() != 1.0) {
-                m_data.f() *= sigma();
-
-                if constexpr (TOrder > 0) {
-                    m_data.df() *= sigma();
-                }
-
-                if constexpr (TOrder > 1) {
-                    m_data.hm() *= sigma();
-                }
-            }
-
-            for (index i = 0; i < nb_elements_g(); i++) {
-                compute_element_g<TOrder>(m_data, i);
             }
         }
 
-        if constexpr (TInfo) {
-            Log::task_info("Element computation took {} sec", m_data.computation_time());
-            Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
+        template <Request R>
+        void _compute_g(std::atomic<index>& begin, const index end, Ref<Vector> buffer, Ref<Vector> g, Ref<Vector> dg, Ref<Vector> hm, const index level)
+        {
+            if (end - begin <= 0)
+                return;
 
-            Log::task_end("Problem computed in {:.3f} sec", timer.ellapsed());
-        }
-    }
+            constexpr bool request_g = (R & Request::G) != 0;
+            constexpr bool request_dg = (R & Request::Dg) != 0;
+            constexpr bool request_hm = (R & Request::Hg) != 0;
 
-    template <bool TInfo, index TOrder>
-    void compute()
-    {
-        if (m_nb_threads == 1) {
-            compute<false, TInfo, TOrder>();
-        } else {
-            compute<true, TInfo, TOrder>();
-        }
-    }
+            if constexpr (!request_g && !request_dg && !request_hm)
+                return;
 
-    template <bool TInfo>
-    void compute(const index order = 2)
-    {
-        if (m_nb_threads == 1) {
-            switch (order) {
-            case 0:
-                compute<false, TInfo, 0>();
-                break;
-            case 1:
-                compute<false, TInfo, 1>();
-                break;
-            case 2:
-                compute<false, TInfo, 2>();
-                break;
-            default:
-                throw std::invalid_argument("order");
+            if (level < m_parallel_level)
+            {
+                Vector future_buffer = Vector::Zero(len(buffer));
+                Vector future_g = Vector::Zero(len(g));
+                Vector future_dg = Vector::Zero(len(dg));
+                Vector future_hm = Vector::Zero(len(hm));
+
+                auto future = std::async(std::launch::async, &Problem::_compute_g<R>, this, std::ref(begin), end, Ref<Vector>(future_buffer), Ref<Vector>(future_g), Ref<Vector>(future_dg), Ref<Vector>(future_hm), level + 1);
+
+                _compute_g<R>(begin, end, buffer, g, dg, hm, level + 1);
+
+                future.wait();
+
+                g += future_g;
+                dg += future_dg;
+                hm += future_hm;
+
+                return;
             }
-        } else {
-            switch (order) {
-            case 0:
-                compute<true, TInfo, 0>();
-                break;
-            case 1:
-                compute<true, TInfo, 1>();
-                break;
-            case 2:
-                compute<true, TInfo, 2>();
-                break;
-            default:
-                throw std::invalid_argument("order");
+
+            if (m_parallel_level == 0) // serial
+            {
+                _compute_block_g<R>(begin, end, buffer, g, dg, hm);
             }
-        }
-    }
+            else // parallel
+            {
+                while (true)
+                {
+                    const index block_begin = begin.fetch_add(m_parallel_block_size);
 
-    void compute(const index order = 2)
-    {
-        if (m_nb_threads == 1) {
-            switch (order) {
-            case 0:
-                compute<false, true, 0>();
-                break;
-            case 1:
-                compute<false, true, 1>();
-                break;
-            case 2:
-                compute<false, true, 2>();
-                break;
-            default:
-                throw std::invalid_argument("order");
-            }
-        } else {
-            switch (order) {
-            case 0:
-                compute<true, true, 0>();
-                break;
-            case 1:
-                compute<true, true, 1>();
-                break;
-            case 2:
-                compute<true, true, 2>();
-                break;
-            default:
-                throw std::invalid_argument("order");
-            }
-        }
-    }
+                    if (block_begin >= end)
+                        break;
 
-public: // methods
-    Vector hm_inv_v(Ref<const Vector> v)
-    {
-        if (nb_variables() == 0) {
-            return Vector(0);
-        }
+                    const index block_end = std::min(block_begin + m_parallel_block_size, end);
 
-        if (m_linear_solver->factorize(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm())) {
-            throw std::runtime_error("Factorization failed");
-        }
-
-        Vector x(nb_variables());
-
-        if (m_linear_solver->solve(m_structure_hm.ia(), m_structure_hm.ja(), m_data.hm(), v, x)) {
-            throw std::runtime_error("Solve failed");
-        }
-
-        return x;
-    }
-
-    Vector hm_v(Ref<const Vector> v) const
-    {
-        return hm().selfadjointView<Eigen::Upper>() * v.transpose();
-    }
-
-    Vector hm_diagonal()
-    {
-        Vector result(nb_variables());
-
-        for (int row = 0; row < nb_variables(); row++) {
-            const int i = m_structure_hm.ia(row);
-            result(row) = hm(i);
-        }
-
-        return result;
-    }
-
-    void set_hm_diagonal(Eigen::Ref<const Vector> value)
-    {
-        for (int row = 0; row < nb_variables(); row++) {
-            const int i = m_structure_hm.ia(row);
-            hm(i) = value(row);
-        }
-    }
-
-    void hm_add_diagonal(const double value)
-    {
-        for (int row = 0; row < nb_variables(); row++) {
-            const int i = m_structure_hm.ia(row);
-            hm(i) += value;
-        }
-    }
-
-    double hm_norm_inf() const
-    {
-        Vector row_sum = Vector::Zero(nb_variables());
-
-        for (int row = 0; row < nb_variables(); row++) {
-            for (int i = m_structure_hm.ia(row); i < m_structure_hm.ia(row + 1); i++) {
-                const int col = m_structure_hm.ja(i);
-
-                const double abs_value = std::abs(hm(i));
-
-                row_sum(row) += abs_value;
-
-                if (row != col) {
-                    row_sum(col) += abs_value;
+                    _compute_block_g<R>(block_begin, block_end, buffer, g, dg, hm);
                 }
             }
         }
 
-        return row_sum.maxCoeff();
-    }
+        template <Request R>
+        void compute_g(Ref<Vector> buffer, Ref<Vector> g, Ref<Vector> dg, Ref<Vector> hm)
+        {
+            std::atomic<index> i;
 
-    void scale(const double factor)
-    {
-        m_data.values() *= factor;
-    }
+            _compute_g<R>(i, len(m_constraint_indices), buffer, g, dg, hm, 0);
+        }
 
-    Pointer<Problem> clone() const
-    {
-        auto new_problem = new_<Problem>(*this);
-
-#ifdef EQLIB_USE_MKL
-        new_problem->m_linear_solver = new_<PardisoLDLT>();
-#else
-        new_problem->m_linear_solver = new_<SimplicialLDLT>();
-#endif
-
-        return new_problem;
-    }
-
-    std::string solver_name() const
-    {
-        return m_linear_solver->solver_name();
-    }
-
-    void remove_inactive_objectives()
-    {
-        index nb_active_elements_f = 0;
-
-        for (const auto& element : m_elements_f) {
-            if (element->is_active()) {
-                nb_active_elements_f += 1;
+        void compute_g(Ref<Vector> buffer, Ref<Vector> g, Ref<Vector> dg, Ref<Vector> hm)
+        {
+            if (len(g) == 0 && len(dg) == 0 && len(hm) == 0)
+            {
+                return;
+            }
+            else if (len(dg) == 0 && len(hm) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::G);
+                compute_g<R>(buffer, g, EmptyVector, EmptyVector);
+            }
+            else if (len(g) == 0 && len(hm) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::Dg);
+                compute_g<R>(buffer, EmptyVector, dg, EmptyVector);
+            }
+            else if (len(g) == 0 && len(dg) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::Hg);
+                compute_g<R>(buffer, EmptyVector, EmptyVector, hm);
+            }
+            else if (len(hm) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::G | Request::Dg);
+                compute_g<R>(buffer, g, dg, EmptyVector);
+            }
+            else if (len(dg) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::G | Request::Hg);
+                compute_g<R>(buffer, g, EmptyVector, hm);
+            }
+            else if (len(g) == 0)
+            {
+                constexpr Request R = static_cast<Request>(Request::Dg | Request::Hg);
+                compute_g<R>(buffer, EmptyVector, dg, hm);
+            }
+            else
+            {
+                constexpr Request R = static_cast<Request>(Request::G | Request::Dg | Request::Hg);
+                compute_g<R>(buffer, g, dg, hm);
             }
         }
 
-        ElementsF elements_f(nb_active_elements_f);
+        void compute_g(Ref<Vector> g, Ref<Vector> dg, Ref<Vector> hm)
+        {
+            Ref<Vector> b = buffer();
+            compute_g(b, g, dg, hm);
+        }
 
-        std::vector<index> element_f_nb_variables(nb_active_elements_f);
+        // compute
 
-        std::vector<std::vector<Index>> element_f_variable_indices(nb_active_elements_f);
+        template <Request R>
+        double compute(Ref<Vector> g, Ref<Vector> df, Ref<Vector> dg, Ref<Vector> hm)
+        {
+            double f = 0.0;
+            g.setZero();
+            df.setZero();
+            dg.setZero();
+            hm.setZero();
 
-        index max_element_n = 0;
+            Ref<Vector> b = buffer();
 
-        index j = 0;
+            compute_f<R>(b, f, df, hm);
+            compute_g<R>(b, g, dg, hm);
 
-        for (index i = 0; i < length(m_elements_f); i++) {
-            if (!m_elements_f[i]->is_active()) {
-                continue;
+            return f;
+        }
+
+        double compute(Ref<Vector> g, Ref<Vector> df, Ref<Vector> dg, Ref<Vector> hm)
+        {
+            double f = 0.0;
+            g.setZero();
+            df.setZero();
+            dg.setZero();
+            hm.setZero();
+
+            Ref<Vector> b = buffer();
+
+            compute_f(b, f, df, hm);
+            compute_g(b, g, dg, hm);
+
+            return f;
+        }
+
+        void eval(Ref<Vector> x)
+        {
+            set_x(x);
+
+            f() = compute(g(), df(), dg(), hm());
+        }
+
+        // buffer_size
+
+        index m_buffer_size;
+
+        index buffer_size() const
+        {
+            return m_buffer_size;
+        }
+
+        // buffer
+
+        Vector m_buffer;
+
+        Ref<Vector> buffer()
+        {
+            if (len(m_buffer) != buffer_size())
+                m_buffer.resize(buffer_size());
+
+            return m_buffer;
+        }
+
+        // nb_nonzeros_dg
+
+        index m_nb_nonzeros_dg;
+
+        index nb_nonzeros_dg() const
+        {
+            return m_nb_nonzeros_dg;
+        }
+
+        // nb_nonzeros_hm
+
+        index m_nb_nonzeros_hm;
+
+        index nb_nonzeros_hm() const
+        {
+            return m_nb_nonzeros_hm;
+        }
+
+        // f
+
+        double m_f;
+
+        double& f()
+        {
+            return m_f;
+        }
+
+        // g
+
+        Vector m_g;
+
+        Ref<Vector> g()
+        {
+            if (len(m_g) != nb_equations())
+                m_g.resize(nb_equations());
+
+            return m_g;
+        }
+
+        // df
+
+        Vector m_df;
+
+        Ref<Vector> df()
+        {
+            if (len(m_df) != nb_variables())
+                m_df.resize(nb_variables());
+
+            return m_df;
+        }
+
+        // dg
+
+        Vector m_dg;
+
+        Ref<Vector> dg()
+        {
+            if (len(m_dg) != nb_nonzeros_dg())
+                m_dg.resize(nb_nonzeros_dg());
+
+            return m_dg;
+        }
+
+        // hm
+
+        Vector m_hm;
+
+        Ref<Vector> hm()
+        {
+            if (len(m_hm) != nb_nonzeros_hm())
+                m_hm.resize(nb_nonzeros_hm());
+
+            return m_hm;
+        }
+
+        // x
+
+        Vector x() const
+        {
+            Vector result(nb_variables());
+
+            for (index i = 0; i < nb_variables(); i++)
+            {
+                result(i) = m_variables[i]->value();
             }
 
-            max_element_n = std::max(max_element_n, m_elements_f[i]->nb_variables());
-
-            element_f_nb_variables[j] = m_element_f_nb_variables[i];
-
-            element_f_variable_indices[j] = std::move(m_element_f_variable_indices[i]);
-
-            elements_f[j] = std::move(m_elements_f[i]);
-
-            j += 1;
+            return result;
         }
 
-        m_max_element_n = max_element_n;
+        void set_x(const Ref<const Vector>& value)
+        {
+            if (len(value) != nb_variables())
+            {
+                throw std::invalid_argument("invalid size");
+            }
 
-        m_element_f_nb_variables = std::move(element_f_nb_variables);
-
-        m_element_f_variable_indices = std::move(element_f_variable_indices);
-
-        m_elements_f = std::move(elements_f);
-    }
-
-    void remove_inactive_constraints()
-    {
-        index nb_active_elements_g = 0;
-
-        for (const auto& element : m_elements_g) {
-            if (element->is_active()) {
-                nb_active_elements_g += 1;
+            for (index i = 0; i < nb_variables(); i++)
+            {
+                m_variables[i]->set_value(value(i));
             }
         }
 
-        ElementsG elements_g(nb_active_elements_g);
-
-        std::vector<index> element_g_nb_variables(nb_active_elements_g);
-        std::vector<index> element_g_nb_equations(nb_active_elements_g);
-
-        std::vector<std::vector<Index>> element_g_equation_indices(nb_active_elements_g);
-        std::vector<std::vector<Index>> element_g_variable_indices(nb_active_elements_g);
-
-        index max_element_n = 0;
-        index max_element_m = 0;
-
-        index j = 0;
-
-        for (index i = 0; i < length(m_elements_g); i++) {
-            if (!m_elements_g[i]->is_active()) {
-                continue;
+        void add_x(const Ref<const Vector>& value)
+        {
+            if (len(value) != nb_variables())
+            {
+                throw std::invalid_argument("invalid size");
             }
 
-            max_element_n = std::max(max_element_n, m_elements_g[i]->nb_variables());
-            max_element_m = std::max(max_element_m, m_elements_g[i]->nb_equations());
-
-            element_g_nb_variables[j] = element_g_nb_variables[i];
-
-            element_g_nb_equations[j] = element_g_nb_equations[i];
-            element_g_variable_indices[j] = std::move(element_g_variable_indices[i]);
-            element_g_equation_indices[j] = std::move(element_g_equation_indices[i]);
-
-            elements_g[j] = std::move(m_elements_g[i]);
-
-            j += 1;
+            for (index i = 0; i < nb_variables(); i++)
+            {
+                m_variables[i]->m_value += value(i);
+            }
         }
 
-        m_max_element_n = max_element_n;
-        m_max_element_m = max_element_m;
+        void sub_x(const Ref<const Vector>& value)
+        {
+            if (len(value) != nb_variables())
+            {
+                throw std::invalid_argument("invalid size");
+            }
 
-        m_element_g_nb_equations = std::move(element_g_nb_equations);
-        m_element_g_nb_variables = std::move(element_g_nb_variables);
-
-        m_element_g_equation_indices = std::move(element_g_equation_indices);
-        m_element_g_variable_indices = std::move(element_g_variable_indices);
-
-        m_elements_g = std::move(elements_g);
-    }
-
-    void remove_inactive_elements()
-    {
-        remove_inactive_objectives();
-        remove_inactive_constraints();
-    }
-
-public: // methods: model properties
-    Pointer<LinearSolver> linear_solver() const noexcept
-    {
-        return m_linear_solver;
-    }
-
-    void set_linear_solver(const Pointer<LinearSolver> value)
-    {
-        if (value == nullptr) {
-            throw std::invalid_argument("Value is null");
+            for (index i = 0; i < nb_variables(); i++)
+            {
+                m_variables[i]->m_value -= value(i);
+            }
         }
 
-        m_linear_solver = value;
-    }
+        // x_lower_bounds
 
-    int nb_threads() const noexcept
-    {
-        return m_nb_threads;
-    }
+        Vector x_lower_bounds() const
+        {
+            Vector result(nb_variables());
 
-    void set_nb_threads(const int value) noexcept
-    {
-        m_nb_threads = value;
-    }
+            for (index i = 0; i < nb_variables(); i++)
+                result(i) = m_variables[i]->lower_bound();
 
-    int grainsize() const noexcept
-    {
-        return m_grainsize;
-    }
-
-    void set_grainsize(const int value) noexcept
-    {
-        m_grainsize = value;
-    }
-
-    bool is_constrained() const noexcept
-    {
-        return !m_equations.empty();
-    }
-
-    index nb_elements_f() const noexcept
-    {
-        return length(m_elements_f);
-    }
-
-    index nb_elements_g() const noexcept
-    {
-        return length(m_elements_g);
-    }
-
-    const Equations& equations() const noexcept
-    {
-        return m_equations;
-    }
-
-    const Variables& variables() const noexcept
-    {
-        return m_variables;
-    }
-
-    index nb_equations() const noexcept
-    {
-        return length(m_equations);
-    }
-
-    index nb_variables() const noexcept
-    {
-        return length(m_variables);
-    }
-
-    const Pointer<Variable>& variable(const index index) const
-    {
-        return m_variables.at(index);
-    }
-
-    index variable_index(const Pointer<Variable>& variable) const
-    {
-        const auto it = m_variable_indices.find(variable);
-
-        if (it == m_variable_indices.end()) {
-            return -1;
+            return result;
         }
 
-        return it->second;
-    }
+        void set_x_lower_bounds(const Ref<const Vector>& value)
+        {
+            if (len(value) != nb_variables())
+                throw std::invalid_argument("invalid size");
 
-    const Pointer<Equation>& equation(const index index) const
-    {
-        return m_equations.at(index);
-    }
-
-    index equation_index(const Pointer<Equation>& equation) const
-    {
-        const auto it = m_equation_indices.find(equation);
-
-        if (it == m_equation_indices.end()) {
-            return -1;
+            for (index i = 0; i < nb_variables(); i++)
+                m_variables[i]->set_lower_bound(value(i));
         }
 
-        return it->second;
-    }
+        // x_upper_bounds
 
-public: // methods: input
-    Vector x() const
-    {
-        Vector result(nb_variables());
+        Vector x_upper_bounds() const
+        {
+            Vector result(nb_variables());
 
-        for (index i = 0; i < length(result); i++) {
-            result(i) = variable(i)->value();
+            for (index i = 0; i < nb_variables(); i++)
+                result(i) = m_variables[i]->upper_bound();
+
+            return result;
         }
 
-        return result;
-    }
+        void set_x_upper_bounds(const Ref<const Vector>& value)
+        {
+            if (len(value) != nb_variables())
+                throw std::invalid_argument("invalid size");
 
-    void set_x(Ref<const Vector> value) const
-    {
-        if (length(value) != nb_variables()) {
-            throw std::runtime_error("Invalid size");
+            for (index i = 0; i < nb_variables(); i++)
+                m_variables[i]->set_upper_bound(value(i));
         }
 
-        for (index i = 0; i < length(value); i++) {
-            variable(i)->set_value(value[i]);
-        }
-    }
+        // parallel_level
 
-    void set_x(double* const value) const
-    {
-        set_x(Map<const Vector>(value, nb_variables()));
-    }
+        index m_parallel_level;
 
-    void add_x(Ref<const Vector> delta) const
-    {
-        if (length(delta) != nb_variables()) {
-            throw std::runtime_error("Invalid size");
+        index parallel_level() const
+        {
+            return m_parallel_level;
         }
 
-        for (index i = 0; i < length(delta); i++) {
-            variable(i)->value() += delta[i];
-        }
-    }
-
-    void add_x(double* const delta) const
-    {
-        add_x(Map<const Vector>(delta, nb_variables()));
-    }
-
-    void sub_x(Ref<const Vector> delta) const
-    {
-        if (length(delta) != nb_variables()) {
-            throw std::runtime_error("Invalid size");
+        void set_parallel_level(const index value)
+        {
+            m_parallel_level = value;
         }
 
-        for (index i = 0; i < length(delta); i++) {
-            variable(i)->value() -= delta[i];
-        }
-    }
+        // parallel_block_size
 
-    void sub_x(double* const delta) const
-    {
-        sub_x(Map<const Vector>(delta, nb_variables()));
-    }
+        index m_parallel_block_size;
 
-    Vector variable_multipliers() const
-    {
-        Vector result(nb_variables());
-
-        for (index i = 0; i < length(result); i++) {
-            result(i) = variable(i)->multiplier();
+        index parallel_block_size() const
+        {
+            return m_parallel_block_size;
         }
 
-        return result;
-    }
-
-    void set_variable_multipliers(Ref<const Vector> value) const
-    {
-        if (length(value) != nb_variables()) {
-            throw std::runtime_error("Invalid size");
+        void set_parallel_block_size(const index value)
+        {
+            m_parallel_block_size = value;
         }
-
-        for (index i = 0; i < length(value); i++) {
-            variable(i)->set_multiplier(value[i]);
-        }
-    }
-
-    void set_variable_multipliers(double* const value) const
-    {
-        set_variable_multipliers(Map<const Vector>(value, nb_variables()));
-    }
-
-    Vector equation_multipliers() const
-    {
-        Vector result(nb_equations());
-
-        for (index i = 0; i < length(result); i++) {
-            result(i) = equation(i)->multiplier();
-        }
-
-        return result;
-    }
-
-    void set_equation_multipliers(Ref<const Vector> value) const
-    {
-        if (length(value) != nb_equations()) {
-            throw std::runtime_error("Invalid size");
-        }
-
-        for (index i = 0; i < length(value); i++) {
-            equation(i)->set_multiplier(value[i]);
-        }
-    }
-
-    void set_equation_multipliers(double* const value) const
-    {
-        set_equation_multipliers(Map<const Vector>(value, nb_equations()));
-    }
-
-    double sigma() const noexcept
-    {
-        return m_sigma;
-    }
-
-    void set_sigma(const double value) noexcept
-    {
-        m_sigma = value;
-    }
-
-    std::vector<std::pair<double, double>> equation_bounds() const
-    {
-        std::vector<std::pair<double, double>> bounds(nb_equations());
-
-        for (index i = 0; i < nb_equations(); i++) {
-            bounds[i] = {equation(i)->lower_bound(), equation(i)->upper_bound()};
-        }
-
-        return bounds;
-    }
-
-    std::vector<std::pair<double, double>> variable_bounds() const
-    {
-        std::vector<std::pair<double, double>> bounds(nb_variables());
-
-        for (index i = 0; i < nb_variables(); i++) {
-            bounds[i] = {variable(i)->lower_bound(), variable(i)->upper_bound()};
-        }
-
-        return bounds;
-    }
-
-public: // methods: output values
-    Ref<Vector> values() noexcept
-    {
-        return Map<Vector>(m_data.values().data(), m_data.values().size());
-    }
-
-    Ref<const Vector> values() const noexcept
-    {
-        return Map<const Vector>(m_data.values().data(), m_data.values().size());
-    }
-
-public: // methods: output f
-    double f() const noexcept
-    {
-        return m_data.f();
-    }
-
-    void set_f(const double value) noexcept
-    {
-        m_data.f() = value;
-    }
-
-public: // methods: output g
-    Ref<Vector> g() noexcept
-    {
-        return m_data.g();
-    }
-
-    Ref<const Vector> g() const noexcept
-    {
-        return m_data.g();
-    }
-
-    double& g(const index index)
-    {
-        return m_data.g(index);
-    }
-
-    double g(const index index) const
-    {
-        return m_data.g(index);
-    }
-
-public: // methods: output df
-    Ref<Vector> df() noexcept
-    {
-        return m_data.df();
-    }
-
-    Ref<const Vector> df() const noexcept
-    {
-        return m_data.df();
-    }
-
-    double& df(const index index)
-    {
-        return m_data.df(index);
-    }
-
-    double df(const index index) const
-    {
-        return m_data.df(index);
-    }
-
-public: // methods: output dg
-    auto structure_dg() const
-    {
-        return m_structure_dg;
-    }
-
-    Ref<const Sparse> dg() const noexcept
-    {
-        return Map<const Sparse>(nb_equations(), nb_variables(), m_structure_dg.nb_nonzeros(), m_structure_dg.ia().data(), m_structure_dg.ja().data(), m_data.dg().data());
-    }
-
-    Ref<Vector> dg_values() noexcept
-    {
-        return m_data.dg();
-    }
-
-    Ref<const Vector> dg_values() const noexcept
-    {
-        return m_data.dg();
-    }
-
-    const std::vector<int>& dg_indptr() const noexcept
-    {
-        return m_structure_dg.ia();
-    }
-
-    const std::vector<int>& dg_indices() const noexcept
-    {
-        return m_structure_dg.ja();
-    }
-
-    double& dg(const index index)
-    {
-        return m_data.dg_value(index);
-    }
-
-    double dg(const index index) const
-    {
-        return m_data.dg_value(index);
-    }
-
-    double& dg(const index row, const index col)
-    {
-        const index index = m_structure_dg.get_index(row, col);
-        return m_data.dg_value(index);
-    }
-
-    double dg(const index row, const index col) const
-    {
-        const index index = m_structure_dg.get_index(row, col);
-        return m_data.dg_value(index);
-    }
-
-public: // methods: output hm
-    auto structure_hm() const
-    {
-        return m_structure_hm;
-    }
-
-    Map<const Sparse> hm() const noexcept
-    {
-        return Map<const Sparse>(m_structure_hm.rows(), m_structure_hm.cols(), m_structure_hm.nb_nonzeros(), m_structure_hm.ia().data(), m_structure_hm.ja().data(), m_data.hm().data());
-    }
-
-    Ref<Vector> hm_values() noexcept
-    {
-        return m_data.hm();
-    }
-
-    Ref<const Vector> hm_values() const noexcept
-    {
-        return m_data.hm();
-    }
-
-    const std::vector<int>& hm_indptr() const noexcept
-    {
-        return m_structure_hm.ia();
-    }
-
-    const std::vector<int>& hm_indices() const noexcept
-    {
-        return m_structure_hm.ja();
-    }
-
-    double& hm(const index index)
-    {
-        return m_data.hm_value(index);
-    }
-
-    double hm(const index index) const
-    {
-        return m_data.hm_value(index);
-    }
-
-    double& hm(const index row, const index col)
-    {
-        index index = m_structure_hm.get_index(row, col);
-        return m_data.hm_value(index);
-    }
-
-    double hm(const index row, const index col) const
-    {
-        index index = m_structure_hm.get_index(row, col);
-        return m_data.hm_value(index);
-    }
-
-public: // methods: python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-
-        const std::string name = "Problem";
-
-        py::object scipy_sparse = py::module::import("scipy.sparse");
-        py::object csr_matrix = scipy_sparse.attr("csr_matrix");
-
-        py::class_<Type, Holder>(m, name.c_str())
-            // constructors
-            .def(py::init<ElementsF, ElementsG, int, int>(), "objective"_a = py::list(), "constraints"_a = py::list(),
-                "nb_threads"_a = 1, "grainsize"_a = 100, py::keep_alive<1, 2>(), py::keep_alive<1, 3>())
-            // read-only properties
-            .def_property_readonly("is_constrained", &Type::is_constrained)
-            .def_property_readonly("equations", &Type::equations)
-            .def_property_readonly("variables", &Type::variables)
-            .def_property_readonly("g", py::overload_cast<>(&Type::g))
-            .def_property_readonly("df", py::overload_cast<>(&Type::df))
-            .def_property_readonly("dg", [=](Type& self) {
-                return csr_matrix(
-                    std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
-                    std::make_pair(self.nb_equations(), self.nb_variables()))
-                    .release();
-            })
-            .def_property_readonly("structure_dg", &Type::structure_dg)
-            .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
-            .def_property_readonly("dg_indptr", &Type::dg_indptr)
-            .def_property_readonly("dg_indices", &Type::dg_indices)
-            .def_property_readonly("hm", [=](Type& self) {
-                return csr_matrix(
-                    std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
-                    std::make_pair(self.nb_variables(), self.nb_variables()))
-                    .release();
-            })
-            .def_property_readonly("general_hm", [=](Type& self) {
-                const auto [structure, values] = self.structure_hm().to_general(self.hm_values());
-                return csr_matrix(
-                    std::make_tuple(values, structure.ja(), structure.ia()),
-                    std::make_pair(self.nb_variables(), self.nb_variables()),
-                    "copy"_a=true)
-                    .release();
-            })
-            .def_property_readonly("structure_hm", &Type::structure_hm)
-            .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
-            .def_property_readonly("hm_indptr", &Type::hm_indptr)
-            .def_property_readonly("hm_indices", &Type::hm_indices)
-            .def_property_readonly("hm_norm_inf", &Type::hm_norm_inf)
-            .def_property_readonly("nb_equations", &Type::nb_equations)
-            .def_property_readonly("nb_variables", &Type::nb_variables)
-            .def_property_readonly("values", py::overload_cast<>(&Type::values))
-            .def_property_readonly("equation_bounds", &Type::equation_bounds)
-            .def_property_readonly("variable_bounds", &Type::variable_bounds)
-            .def_property_readonly("nb_elements_f", &Type::nb_elements_f)
-            .def_property_readonly("nb_elements_g", &Type::nb_elements_g)
-            // properties
-            .def_property("linear_solver", &Type::linear_solver, &Type::set_linear_solver)
-            .def_property("f", &Type::f, &Type::set_f)
-            .def_property("nb_threads", &Type::nb_threads, &Type::set_nb_threads)
-            .def_property("grainsize", &Type::grainsize, &Type::set_grainsize)
-            .def_property("sigma", &Type::sigma, &Type::set_sigma)
-            .def_property("hm_diagonal", &Type::hm_diagonal, &Type::set_hm_diagonal)
-            .def_property("x", py::overload_cast<>(&Type::x, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
-            .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_variable_multipliers, py::const_))
-            .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
-            // methods
-            .def("add_x", py::overload_cast<Ref<const Vector>>(&Type::add_x, py::const_))
-            .def("sub_x", py::overload_cast<Ref<const Vector>>(&Type::sub_x, py::const_))
-            .def("variable_index", &Type::variable_index, "variable"_a)
-            .def("equation_index", &Type::equation_index, "equation"_a)
-            .def("clone", &Type::clone)
-            .def("remove_inactive_elements", &Type::remove_inactive_elements)
-            .def("compute", &Type::compute<true>, "order"_a = 2, py::call_guard<py::gil_scoped_release>())
-            .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
-            .def("hm_inv_v", &Type::hm_inv_v, py::call_guard<py::gil_scoped_release>())
-            .def("hm_v", &Type::hm_v)
-            .def("f_of", [](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(0);
-                return self.f();
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("g_of", [](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(0);
-                return Vector(self.g());
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("df_of", [](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(1);
-                return Vector(self.df());
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("dg_of", [=](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(1);
-                return csr_matrix(
-                    std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
-                    std::make_pair(self.nb_equations(), self.nb_variables()))
-                    .release();
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("hm_of", [=](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(2);
-                return csr_matrix(
-                    std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
-                    std::make_pair(self.nb_variables(), self.nb_variables()))
-                    .release();
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("hm_v_of", [=](Type& self, Ref<const Vector> x, Ref<const Vector> p) {
-                self.set_x(x);
-                self.compute<false>(2);
-                return self.hm_v(p);
-            },
-                "x"_a, "p"_a, py::call_guard<py::gil_scoped_release>())
-            .def("scale", &Type::scale, "factor"_a);
-    }
-};
+    };
 
 } // namespace eqlib

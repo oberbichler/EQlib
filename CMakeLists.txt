@@ -1,75 +1,117 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-# get commit hash
-execute_process(
-  COMMAND git log -1 --format=%h
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
+# ---- Project ----
+
+project(
+  eqlib
+  VERSION 2.0.0
+  LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
+#
 
-project(eqlib-py)
+set(CPM_DOWNLOAD_VERSION 0.32.0)
 
-include_directories(
-    "include"
-    ${CMAKE_BINARY_DIR}/generated
-    SYSTEM "external_libraries"
-)
-
-add_subdirectory(external_libraries/pybind11)
-
-add_definitions(
-    -DEIGEN_DEFAULT_TO_ROW_MAJOR
-    -DFMT_HEADER_ONLY
-    -DSPDLOG_FMT_EXTERNAL
-)
-
-pybind11_add_module(eqlib src/Module.cpp)
-
-if (DEFINED ENV{CONDA_PREFIX})
-    message("-- Found Anaconda: $ENV{CONDA_PREFIX}")
-
-    if(WIN32)
-        include_directories(SYSTEM $ENV{CONDA_PREFIX}/Library/include)
-        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{CONDA_PREFIX}/Library/lib")
-    else()
-        include_directories(SYSTEM $ENV{CONDA_PREFIX}/include)
-        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{CONDA_PREFIX}/lib")
-    endif()
+if(CPM_SOURCE_CACHE)
+  set(CPM_DOWNLOAD_LOCATION "${CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
+elseif(DEFINED ENV{CPM_SOURCE_CACHE})
+  set(CPM_DOWNLOAD_LOCATION "$ENV{CPM_SOURCE_CACHE}/cpm/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
 else()
-    message("-- Anaconda not found")
+  set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
 endif()
 
-if (DEFINED ENV{MKL_ROOT})
-    include_directories(SYSTEM $ENV{MKL_ROOT}/include)
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{MKL_ROOT}/lib")
+if(NOT (EXISTS ${CPM_DOWNLOAD_LOCATION}))
+  message(STATUS "Downloading CPM.cmake to ${CPM_DOWNLOAD_LOCATION}")
+  file(DOWNLOAD
+       https://github.com/TheLartians/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake
+       ${CPM_DOWNLOAD_LOCATION}
+  )
 endif()
 
-find_package(OpenMP)
-target_link_libraries(eqlib PRIVATE OpenMP::OpenMP_CXX)
+include(${CPM_DOWNLOAD_LOCATION})
 
-find_library(MKL_LIBRARY mkl_rt)
+# ---- Add dependencies ----
 
-if(MKL_LIBRARY)
-    message("-- Found MKL: ${MKL_LIBRARY}")
-    add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
-    target_link_libraries(eqlib PRIVATE ${MKL_LIBRARY})
-else()
-    message("-- MKL not found")
-endif()
+include(cmake/CPM.cmake)
 
-
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    target_compile_options(eqlib PUBLIC -fsized-deallocation)
-endif()
-
-
-configure_file(
-  ${CMAKE_SOURCE_DIR}/include/eqlib/Info.h.in
-  ${CMAKE_BINARY_DIR}/generated/eqlib/Info.h
+CPMAddPackage(
+  NAME HyperJet
+  VERSION 1.4.3
+  URL https://github.com/oberbichler/HyperJet/archive/refs/tags/v1.4.3.tar.gz
+  DOWNLOAD_ONLY YES 
 )
 
+CPMAddPackage("gh:gabime/spdlog@1.9.2")
 
-install(TARGETS eqlib DESTINATION bin)
+CPMAddPackage("gh:Tessil/robin-map@0.6.3")
+
+CPMAddPackage("gh:pybind/pybind11@2.7.1")
+
+CPMAddPackage(
+  NAME Eigen
+  VERSION 3.4.0
+  URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+  DOWNLOAD_ONLY YES 
+)
+
+if(Eigen_ADDED)
+  add_library(Eigen INTERFACE IMPORTED)
+  target_include_directories(Eigen INTERFACE ${Eigen_SOURCE_DIR})
+endif()
+
+# ---
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+find_package(MKL REQUIRED)
+
+# ---
+
+add_subdirectory(${pybind11_SOURCE_DIR})
+
+pybind11_add_module(python_module
+  src/python/main.cpp
+  src/python/constraint.cpp
+  src/python/problem.cpp
+  src/python/equation.cpp
+  src/python/node.cpp
+  src/python/objective.cpp
+  src/python/request.cpp
+  src/python/sparse_structure.cpp
+  src/python/variable.cpp
+  # objectives
+  src/python/lambda_constraint.cpp
+  src/python/lambda_objective.cpp
+  src/python/objectives/spring.cpp
+)
+
+target_compile_features(python_module PRIVATE cxx_std_17)
+
+target_compile_definitions(python_module PRIVATE
+  -DEQLIB_VERSION="${EQLIB_VERSION}"
+)
+
+target_include_directories(python_module PRIVATE
+  include
+  external/robin-map/include
+  external/spdlog/include
+)
+
+if(MSVC)
+  set(EQLIB_OUTPUT_DIRECTORY
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE        ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG          ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib
+    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL     ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib)
+else()
+  set(EQLIB_OUTPUT_DIRECTORY
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib)
+endif()
+
+target_link_libraries(python_module PRIVATE spdlog Eigen tsl::robin_map MKL::RT)
+
+set_target_properties(python_module PROPERTIES OUTPUT_NAME eqlib_ext ${EQLIB_OUTPUT_DIRECTORY})
+
+install(TARGETS python_module LIBRARY DESTINATION eqlib)
+
+# install(TARGETS python_module DESTINATION bin)
