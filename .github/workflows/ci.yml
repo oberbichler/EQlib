@@ -43,6 +43,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install hyperjet
+        find / -name "libmkl_rt.*"
+        find / -name "mkl.h"
 
     - name: Install package
       run: |
