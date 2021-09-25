@@ -61,10 +61,6 @@ endif()
 
 # ---
 
-find_package(PythonInterp)
-set($ENV{MKLROOT} ${PYTHON_EXECUTABLE}/..)
-message(NOTICE $ENV{MKLROOT})
-
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(MKL REQUIRED)
