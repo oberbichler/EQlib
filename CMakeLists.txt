@@ -61,6 +61,7 @@ endif()
 
 # ---
 
+find_package(PythonInterp)
 set($ENV{MKLROOT} ${PYTHON_EXECUTABLE}/..)
 message(NOTICE $ENV{MKLROOT})
 
