@@ -101,13 +101,13 @@ find_path(MKL_INCLUDE_DIR
     mkl_blas.h
     mkl_cblas.h
   PATHS
+    /opt/_internal/cpython-3.6.14/include
     /opt/intel
     /opt/intel/mkl
     $ENV{MKLROOT}
     $ENV{MKLROOT}/include
     $ENV{ONEAPI_ROOT}/mkl/latest
     /opt/intel/compilers_and_libraries/linux/mkl
-    /opt/python/cp36-cp36m/include
   PATH_SUFFIXES
     include
     IntelSWTools/compilers_and_libraries/windows/mkl/include
@@ -233,6 +233,7 @@ function(find_mkl_library)
         lib${mkl_args_LIBRARY_NAME}${md_suffix}
         ${mkl_args_LIBRARY_NAME}
       PATHS
+        /opt/_internal/cpython-3.6.14/lib
         /opt/intel/mkl/lib
         /opt/intel/tbb/lib
         /opt/intel/lib
@@ -240,8 +241,6 @@ function(find_mkl_library)
         $ENV{ONEAPI_ROOT}/mkl/latest/lib
         ${ENV_LIBRARY_PATHS}
         /opt/intel/compilers_and_libraries/linux/mkl/lib
-        ${PYTHON_INCLUDE_DIRS}
-        /opt/python/cp36-cp36m/lib
       PATH_SUFFIXES
         IntelSWTools/compilers_and_libraries/windows/mkl/lib/intel64
         IntelSWTools/compilers_and_libraries/windows/compiler/lib/intel64
@@ -265,6 +264,7 @@ function(find_mkl_library)
       NAMES
         ${CMAKE_STATIC_LIBRARY_PREFIX}${mkl_args_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
       PATHS
+        /opt/_internal/cpython-3.6.14/lib
         /opt/intel/mkl/lib
         /opt/intel/tbb/lib
         /opt/intel/lib
