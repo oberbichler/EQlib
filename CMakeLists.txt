@@ -8,9 +8,6 @@ project(
   LANGUAGES CXX
 )
 
-execute_process(COMMAND bash -c "find / -name mkl.h")
-execute_process(COMMAND bash -c "find / -name *mkl_rt.*")
-
 #
 
 set(CPM_DOWNLOAD_VERSION 0.32.0)
