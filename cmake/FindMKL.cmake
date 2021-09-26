@@ -95,13 +95,15 @@ if(NOT MKL_THREAD_LAYER STREQUAL MKL_THREAD_LAYER_LAST)
   set(MKL_THREAD_LAYER_LAST ${MKL_THREAD_LAYER} CACHE INTERNAL "" FORCE)
 endif()
 
+file(GLOB CIBUILDWHEELPY "/opt/_internal/cpython-*")
+
 find_path(MKL_INCLUDE_DIR
   NAMES
     mkl.h
     mkl_blas.h
     mkl_cblas.h
   PATHS
-    /opt/_internal/cpython-3.6.14/include
+    ${CIBUILDWHEELPY}/include
     /opt/intel
     /opt/intel/mkl
     $ENV{MKLROOT}
@@ -233,7 +235,7 @@ function(find_mkl_library)
         lib${mkl_args_LIBRARY_NAME}${md_suffix}
         ${mkl_args_LIBRARY_NAME}
       PATHS
-        /opt/_internal/cpython-3.6.14/lib
+        ${CIBUILDWHEELPY}/lib
         /opt/intel/mkl/lib
         /opt/intel/tbb/lib
         /opt/intel/lib
@@ -264,7 +266,7 @@ function(find_mkl_library)
       NAMES
         ${CMAKE_STATIC_LIBRARY_PREFIX}${mkl_args_LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
       PATHS
-        /opt/_internal/cpython-3.6.14/lib
+        ${CIBUILDWHEELPY}/lib
         /opt/intel/mkl/lib
         /opt/intel/tbb/lib
         /opt/intel/lib
