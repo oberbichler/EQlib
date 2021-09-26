@@ -79,6 +79,8 @@ pybind11_add_module(python_module
   src/python/objectives/spring.cpp
 )
 
+set_property(TARGET python_module PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 target_compile_features(python_module PRIVATE cxx_std_17)
 
 target_compile_definitions(python_module PRIVATE
@@ -100,7 +102,11 @@ else()
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib)
 endif()
 
-target_link_libraries(python_module PRIVATE spdlog::spdlog Eigen tsl::robin_map)
+target_link_libraries(python_module PRIVATE
+  spdlog::spdlog
+  Eigen
+  tsl::robin_map
+)
 
 set_target_properties(python_module PROPERTIES OUTPUT_NAME eqlib_ext ${EQLIB_OUTPUT_DIRECTORY})
 
