@@ -9,6 +9,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
 
+#include <eqlib/constraint.h>
 #include <eqlib/objective.h>
 
 namespace py = pybind11;
