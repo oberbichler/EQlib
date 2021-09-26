@@ -18,3 +18,7 @@ build-backend = "setuptools.build_meta"
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+
+[tool.cibuildwheel]
+test-requires = "numpy pytest scipy"
+test-command = "pytest {project}/tests"
