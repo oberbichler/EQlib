@@ -8,6 +8,8 @@ project(
   LANGUAGES CXX
 )
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #
 
 set(CPM_DOWNLOAD_VERSION 0.32.0)
@@ -42,6 +44,7 @@ CPMAddPackage(
 )
 
 CPMAddPackage("gh:gabime/spdlog@1.9.2")
+set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 CPMAddPackage("gh:Tessil/robin-map@0.6.3")
 
@@ -78,8 +81,6 @@ pybind11_add_module(python_module
   src/python/lambda_objective.cpp
   src/python/objectives/spring.cpp
 )
-
-set_property(TARGET python_module PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_compile_features(python_module PRIVATE cxx_std_17)
 
