@@ -100,7 +100,7 @@ else()
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib)
 endif()
 
-target_link_libraries(python_module PRIVATE spdlog Eigen tsl::robin_map)
+target_link_libraries(python_module PRIVATE spdlog::spdlog Eigen tsl::robin_map)
 
 set_target_properties(python_module PROPERTIES OUTPUT_NAME eqlib_ext ${EQLIB_OUTPUT_DIRECTORY})
 
