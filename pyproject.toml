@@ -20,7 +20,7 @@ addopts = "-ra -q"
 testpaths = ["tests"]
 
 [tool.cibuildwheel]
-skip = ["pp*-", "*-win32", "*-manylinux_i686", "*-arm64", "*-universal2"]
+skip = ["pp*", "*-win32", "*-manylinux_i686", "*-arm64", "*-universal2"]
 test-requires = "numpy pytest scipy"
 test-command = "pytest {project}"
 
