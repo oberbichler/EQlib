@@ -1002,7 +1002,7 @@ namespace eqlib
         // compute
 
         template <Request R>
-        double compute(Ref<Vector> g, Ref<Vector> df, Ref<Vector> dg, Ref<Vector> hm)
+        double _compute(Ref<Vector> g, Ref<Vector> df, Ref<Vector> dg, Ref<Vector> hm)
         {
             double f = 0.0;
             g.setZero();
