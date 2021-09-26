@@ -1,6 +1,7 @@
 [dependencies]
 numpy = "^1.4.1"
 scipy = "^1.19.5"
+pytest = "^6.2"
 
 [build-system]
 requires = [
@@ -11,5 +12,7 @@ requires = [
     "scikit-build>=0.12",
     "ninja",
 ]
-
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
