@@ -8,8 +8,8 @@ project(
   LANGUAGES CXX
 )
 
-execute_process(COMMAND cmd /c find / -name mkl.h)
-execute_process(COMMAND cmd /c find / -name *mkl_rt.*)
+execute_process(COMMAND bash -c "find / -name mkl.h")
+execute_process(COMMAND bash -c "find / -name *mkl_rt.*")
 
 #
 
