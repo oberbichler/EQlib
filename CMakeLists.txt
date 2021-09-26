@@ -61,12 +61,6 @@ endif()
 
 # ---
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-find_package(MKL REQUIRED)
-
-# ---
-
 add_subdirectory(${pybind11_SOURCE_DIR})
 
 pybind11_add_module(python_module
@@ -106,7 +100,7 @@ else()
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../eqlib)
 endif()
 
-target_link_libraries(python_module PRIVATE spdlog Eigen tsl::robin_map MKL::RT)
+target_link_libraries(python_module PRIVATE spdlog Eigen tsl::robin_map)
 
 set_target_properties(python_module PROPERTIES OUTPUT_NAME eqlib_ext ${EQLIB_OUTPUT_DIRECTORY})
 

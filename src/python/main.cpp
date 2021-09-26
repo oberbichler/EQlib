@@ -22,11 +22,7 @@ PYBIND11_MODULE(eqlib_ext, m)
     m.attr("__status__") = "Development";
 
     m.def("show_config", [] {
-        MKLVersion Version;
- 
-        mkl_get_version(&Version);
-
-        py::print("EQlib", EQLIB_VERSION, "with MKL", Version.MajorVersion, Version.MinorVersion, Version.UpdateVersion);
+        py::print("EQlib", EQLIB_VERSION);
     });
 
     bind_constraint(m);

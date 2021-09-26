@@ -12,8 +12,6 @@
 #include <limits>
 #include <memory>
 
-#include <mkl.h>
-
 #define EQLIB_VERSION_MAJOR 1
 #define EQLIB_VERSION_MINOR 0
 #define EQLIB_VERSION_PATCH 0.dev1
