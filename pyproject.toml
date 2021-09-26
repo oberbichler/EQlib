@@ -21,4 +21,4 @@ testpaths = ["tests"]
 
 [tool.cibuildwheel]
 test-requires = "numpy pytest scipy"
-test-command = "pytest {project}/tests"
+test-command = "pytest {project}"
