@@ -24,5 +24,5 @@ skip = ["pp*-", "*-win32", "*-manylinux_i686", "*-arm64", "*-universal2"]
 test-requires = "numpy pytest scipy"
 test-command = "pytest {project}"
 
-[tool.cibuildwheel.linux]
-environment = { CPM_SOURCE_CACHE="/host/.cache/CPM" }
+#[tool.cibuildwheel.linux]
+#environment = { CPM_SOURCE_CACHE="/host/.cache/CPM" }
