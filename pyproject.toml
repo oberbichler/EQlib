@@ -6,7 +6,7 @@ dependencies = [
 
 [project.optional-dependencies]
 tests = [
-  'pytest',
+  'pytest>=6',
 ]
 
 [build-system]
