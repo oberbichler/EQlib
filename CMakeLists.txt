@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 # --- Project
 
@@ -113,8 +113,6 @@ if(${MKL_FOUND})
     target_compile_definitions(python_module PRIVATE EIGEN_USE_MKL_ALL EQLIB_USE_MKL)
     target_link_libraries(python_module PRIVATE MKL::MKL)
 endif()
-
-message(${EQLIB_OUTPUT_DIRECTORY})
 
 set_target_properties(python_module PROPERTIES OUTPUT_NAME eqlib_ext ${EQLIB_OUTPUT_DIRECTORY})
 

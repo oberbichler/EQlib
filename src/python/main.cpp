@@ -18,7 +18,9 @@ void bind_lambda_constraint(py::module_&, py::module_&);
 
 // eqlib::linear_solvers
 void bind_linear_solver(py::module&, py::module&);
+#ifdef EQLIB_USE_MKL
 void bind_pardiso_ldlt(py::module&, py::module&);
+#endif
 void bind_simplicial_ldlt(py::module&, py::module&);
 
 PYBIND11_MODULE(eqlib_ext, m)
@@ -46,7 +48,7 @@ PYBIND11_MODULE(eqlib_ext, m)
 
     // eqlib::objectives
     auto objectives_submodule = m.def_submodule("objectives");
-    
+
     bind_lambda_objective(m, objectives_submodule);
     bind_spring(objectives_submodule);
 
@@ -57,6 +59,8 @@ PYBIND11_MODULE(eqlib_ext, m)
     // eqlib::linear_solvers
     auto linear_solvers_submodule = m.def_submodule("linear_solvers");
     bind_linear_solver(m, linear_solvers_submodule);
+#ifdef EQLIB_USE_MKL
     bind_pardiso_ldlt(m, linear_solvers_submodule);
+#endif
     bind_simplicial_ldlt(m, linear_solvers_submodule);
 }

@@ -1,3 +1,5 @@
+#ifdef EQLIB_USE_MKL
+
 #include "../common.h"
 
 #include <eqlib/linear_solvers/pardiso_ldlt.h>
@@ -12,3 +14,5 @@ void bind_pardiso_ldlt(py::module &m, py::module &s)
     py::class_<PardisoLDLT, LinearSolver, Pointer<PardisoLDLT>>(s, "PardisoLDLT")
         .def(py::init<>());
 }
+
+#endif
