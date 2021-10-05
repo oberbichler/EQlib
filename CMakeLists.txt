@@ -48,7 +48,7 @@ set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 CPMAddPackage("gh:Tessil/robin-map@0.6.3")
 
-CPMAddPackage("gh:pybind/pybind11@2.7.1")
+CPMAddPackage("gh:pybind/pybind11@2.8.0")
 
 CPMAddPackage(
   NAME Eigen
