@@ -2,7 +2,7 @@
 
 #include <eqlib/objective.h>
 
-void bind_objective(py::module &m)
+void bind_objective(py::module_ &m)
 {
     namespace py = pybind11;
     using namespace eqlib;
@@ -19,13 +19,11 @@ void bind_objective(py::module &m)
         }
     };
 
-    auto cls = bind<Objective, PyObjective>(m, "Objective");
-
-    cls
+    bind<Objective, PyObjective>(m, "Objective")
         .def(py::init<>())
         .def_property("is_active", &Objective::is_active, &Objective::set_is_active)
         .def_property("name", &Objective::name, &Objective::set_name)
-        .def_property_readonly("nb_variables", &Objective::nb_variables)
-        .def_property("variables", &Objective::variables, &Objective::set_variables)
-        .def_property("variable_values", &Objective::variable_values, &Objective::set_variable_values);
+        .def_property_readonly("nb_parameters", &Objective::nb_parameters)
+        .def_property("parameters", &Objective::parameters, &Objective::set_parameters)
+        .def_property("parameter_values", &Objective::parameter_values, &Objective::set_parameter_values);
 }

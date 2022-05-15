@@ -5,7 +5,7 @@
 #include "objective.h"
 #include "request.h"
 #include "sparse_structure.h"
-#include "variable.h"
+#include "parameter.h"
 #ifdef EQLIB_USE_MKL
 #include "linear_solvers/pardiso_ldlt.h"
 #else
@@ -18,6 +18,7 @@
 #include <stdexcept>
 
 namespace eqlib {
+
 struct Index {
     index local;
     index global;
@@ -132,23 +133,23 @@ struct Problem {
         result.m_objective_indices = std::vector<ObjectiveIndices>(nb_objectives);
         result.m_constraint_indices = std::vector<ConstraintIndices>(nb_constraints);
 
-        // index variables and equations
+        // index parameters and equations
 
         for (index i = 0; i < nb_objectives; i++) {
             const auto& objective = objectives[i];
 
             index local_nb_constants = 0;
 
-            for (const auto& variable : objective->variables()) {
-                if (variable->is_active()) {
-                    result.m_variable_indices.try_emplace(variable, len(result.m_variable_indices));
+            for (const auto& parameter : objective->parameters()) {
+                if (parameter->is_active()) {
+                    result.m_variable_indices.try_emplace(parameter, len(result.m_variable_indices));
                 } else {
                     local_nb_constants += 1;
-                    result.m_constant_indices.try_emplace(variable, len(result.m_constant_indices));
+                    result.m_constant_indices.try_emplace(parameter, len(result.m_constant_indices));
                 }
             }
 
-            const index local_nb_variables = objective->nb_variables() - local_nb_constants;
+            const index local_nb_variables = objective->nb_parameters() - local_nb_constants;
 
             result.m_objective_indices[i] = ObjectiveIndices(objective, local_nb_variables, local_nb_constants);
         }
@@ -167,16 +168,16 @@ struct Problem {
 
             index local_nb_constants = 0;
 
-            for (const auto& variable : constraint->variables()) {
-                if (variable->is_active()) {
-                    result.m_variable_indices.try_emplace(variable, len(result.m_variable_indices));
+            for (const auto& parameter : constraint->parameters()) {
+                if (parameter->is_active()) {
+                    result.m_variable_indices.try_emplace(parameter, len(result.m_variable_indices));
                 } else {
                     local_nb_constants += 1;
-                    result.m_constant_indices.try_emplace(variable, len(result.m_constant_indices));
+                    result.m_constant_indices.try_emplace(parameter, len(result.m_constant_indices));
                 }
             }
 
-            const index local_nb_variables = constraint->nb_variables() - local_nb_constants;
+            const index local_nb_variables = constraint->nb_parameters() - local_nb_constants;
 
             result.m_constraint_indices[i] = ConstraintIndices(constraint, local_nb_equations, local_nb_variables, local_nb_constants);
         }
@@ -199,7 +200,7 @@ struct Problem {
 
         // Logger::info("{} variables", nb_variables);
 
-        result.m_variables = Variables(nb_variables);
+        result.m_variables = Parameters(nb_variables);
 
         for (const auto& [variable, index] : result.m_variable_indices) {
             result.m_variables[index] = variable;
@@ -209,7 +210,7 @@ struct Problem {
 
         index nb_constants = len(result.m_constant_indices);
 
-        result.m_constants = Variables(nb_constants);
+        result.m_constants = Parameters(nb_constants);
 
         for (const auto& [constant, index] : result.m_constant_indices) {
             result.m_constants[index] = constant;
@@ -223,14 +224,14 @@ struct Problem {
             auto variable_indices_it = objective_indices.variable_indices.begin();
             auto constant_indices_it = objective_indices.constant_indices.begin();
 
-            for (index local_index = 0; local_index < objective.nb_variables(); local_index++) {
-                const auto variable = objective.variable(local_index);
+            for (index local_index = 0; local_index < objective.nb_parameters(); local_index++) {
+                const auto parameter = objective.parameter(local_index);
 
-                if (variable->is_active()) {
-                    const index global_index = result.m_variable_indices[variable];
+                if (parameter->is_active()) {
+                    const index global_index = result.m_variable_indices[parameter];
                     *(variable_indices_it++) = { local_index, global_index };
                 } else {
-                    const index global_index = result.m_constant_indices[variable];
+                    const index global_index = result.m_constant_indices[parameter];
                     *(constant_indices_it++) = { local_index, global_index };
                 }
             }
@@ -255,14 +256,14 @@ struct Problem {
             auto variable_indices_it = constraint_indices.variable_indices.begin();
             auto constant_indices_it = constraint_indices.constant_indices.begin();
 
-            for (index local_index = 0; local_index < constraint.nb_variables(); local_index++) {
-                const auto variable = constraint.variable(local_index);
+            for (index local_index = 0; local_index < constraint.nb_parameters(); local_index++) {
+                const auto parameter = constraint.parameter(local_index);
 
-                if (variable->is_active()) {
-                    const index global_index = result.m_variable_indices[variable];
+                if (parameter->is_active()) {
+                    const index global_index = result.m_variable_indices[parameter];
                     *(variable_indices_it++) = { local_index, global_index };
                 } else {
-                    const index global_index = result.m_constant_indices[variable];
+                    const index global_index = result.m_constant_indices[parameter];
                     *(constant_indices_it++) = { local_index, global_index };
                 }
             }
@@ -301,7 +302,7 @@ struct Problem {
 
             const auto& constraint = constraint_indices.constraint();
 
-            const index required_buffer_size = constraint.nb_equations() + constraint.nb_equations() * constraint.nb_variables() + constraint.nb_variables() * constraint.nb_variables();
+            const index required_buffer_size = constraint.nb_equations() + constraint.nb_equations() * constraint.nb_parameters() + constraint.nb_parameters() * constraint.nb_parameters();
 
             if (required_buffer_size > result.m_buffer_size) {
                 result.m_buffer_size = required_buffer_size;
@@ -327,7 +328,7 @@ struct Problem {
 
             const auto& objective = objective_indices.objective();
 
-            const index required_buffer_size = objective.nb_variables() + objective.nb_variables() * objective.nb_variables();
+            const index required_buffer_size = objective.nb_parameters() + objective.nb_parameters() * objective.nb_parameters();
 
             if (required_buffer_size > result.m_buffer_size) {
                 result.m_buffer_size = required_buffer_size;
@@ -370,20 +371,20 @@ struct Problem {
         result.m_objective_indices = std::vector<ObjectiveIndices>(nb_objectives);
         result.m_constraint_indices = std::vector<ConstraintIndices>(nb_constraints);
 
-        // index variables and equations
+        // index parameters and equations
 
         for (index i = 0; i < nb_objectives; i++) {
             const auto& objective = objectives[i];
 
             index local_nb_constants = 0;
 
-            for (const auto& variable : objective->variables()) {
+            for (const auto& variable : objective->parameters()) {
                 if (!variable->is_active()) {
                     local_nb_constants += 1;
                 }
             }
 
-            const index local_nb_variables = objective->nb_variables() - local_nb_constants;
+            const index local_nb_variables = objective->nb_parameters() - local_nb_constants;
 
             result.m_objective_indices[i] = ObjectiveIndices(objective, local_nb_variables, local_nb_constants);
         }
@@ -401,13 +402,13 @@ struct Problem {
 
             index local_nb_constants = 0;
 
-            for (const auto& variable : constraint->variables()) {
+            for (const auto& variable : constraint->parameters()) {
                 if (!variable->is_active()) {
                     local_nb_constants += 1;
                 }
             }
 
-            const index local_nb_variables = constraint->nb_variables() - local_nb_constants;
+            const index local_nb_variables = constraint->nb_parameters() - local_nb_constants;
 
             result.m_constraint_indices[i] = ConstraintIndices(constraint, local_nb_equations, local_nb_variables, local_nb_constants);
         }
@@ -420,18 +421,18 @@ struct Problem {
             auto variable_indices_it = objective_indices.variable_indices.begin();
             auto constant_indices_it = objective_indices.constant_indices.begin();
 
-            for (index local_index = 0; local_index < objective.nb_variables(); local_index++) {
-                const auto variable = objective.variable(local_index);
+            for (index local_index = 0; local_index < objective.nb_parameters(); local_index++) {
+                const auto parameter = objective.parameter(local_index);
 
-                if (variable->is_active()) {
-                    const auto it = prototype.m_variable_indices.find(variable);
+                if (parameter->is_active()) {
+                    const auto it = prototype.m_variable_indices.find(parameter);
 
                     if (it != prototype.m_variable_indices.end()) {
                         const index global_index = it.value();
                         *(variable_indices_it++) = { local_index, global_index };
                     }
                 } else {
-                    const auto it = prototype.m_constant_indices.find(variable);
+                    const auto it = prototype.m_constant_indices.find(parameter);
 
                     if (it != prototype.m_constant_indices.end()) {
                         const index global_index = it.value();
@@ -464,18 +465,18 @@ struct Problem {
             auto variable_indices_it = constraint_indices.variable_indices.begin();
             auto constant_indices_it = constraint_indices.constant_indices.begin();
 
-            for (index local_index = 0; local_index < constraint.nb_variables(); local_index++) {
-                const auto variable = constraint.variable(local_index);
+            for (index local_index = 0; local_index < constraint.nb_parameters(); local_index++) {
+                const auto parameter = constraint.parameter(local_index);
 
-                if (variable->is_active()) {
-                    const auto it = prototype.m_variable_indices.find(variable);
+                if (parameter->is_active()) {
+                    const auto it = prototype.m_variable_indices.find(parameter);
 
                     if (it != prototype.m_variable_indices.end()) {
                         const index global_index = it.value();
                         *(variable_indices_it++) = { local_index, global_index };
                     }
                 } else {
-                    const auto it = prototype.m_constant_indices.find(variable);
+                    const auto it = prototype.m_constant_indices.find(parameter);
 
                     if (it != prototype.m_constant_indices.end()) {
                         const index global_index = it.value();
@@ -496,9 +497,9 @@ struct Problem {
 
     // variable indices
 
-    RobinMap<Pointer<Variable>, index> m_variable_indices;
+    RobinMap<Pointer<Parameter>, index> m_variable_indices;
 
-    index variable_index(const Pointer<Variable>& variable) const
+    index variable_index(const Pointer<Parameter>& variable) const
     {
         const auto it = m_variable_indices.find(variable);
 
@@ -510,9 +511,9 @@ struct Problem {
 
     // constant indices
 
-    RobinMap<Pointer<Variable>, index> m_constant_indices;
+    RobinMap<Pointer<Parameter>, index> m_constant_indices;
 
-    index constant_index(const Pointer<Variable>& variable) const
+    index constant_index(const Pointer<Parameter>& variable) const
     {
         const auto it = m_constant_indices.find(variable);
 
@@ -570,28 +571,28 @@ struct Problem {
 
     // variables
 
-    Variables m_variables;
+    Parameters m_variables;
 
     index nb_variables() const
     {
         return len(m_variables);
     }
 
-    const Variables& variables() const
+    const Parameters& variables() const
     {
         return m_variables;
     }
 
     // constants
 
-    Variables m_constants;
+    Parameters m_constants;
 
     index nb_constants() const
     {
         return len(m_constants);
     }
 
-    const Variables& constants() const
+    const Parameters& constants() const
     {
         return m_constants;
     }
@@ -629,8 +630,8 @@ struct Problem {
     void _compute_block_f(const index block_begin, const index block_end, Ref<Vector> buffer, double& f, Ref<Vector> df, Ref<Vector> hm)
     {
         constexpr bool request_f = (R & Request::F) != 0;
-        constexpr bool request_df = (R & Request::Df) != 0;
-        constexpr bool request_hf = (R & Request::Hf) != 0;
+        constexpr bool request_df = (R & Request::DF) != 0;
+        constexpr bool request_hf = (R & Request::HF) != 0;
 
         for (index i = block_begin; i < block_end; i++) {
             auto& objective_indices = m_objective_indices[i];
@@ -638,17 +639,18 @@ struct Problem {
             auto& objective = objective_indices.objective();
 
             if (!objective.is_active())
-                return;
+                continue;
 
-            const index nb_variables = objective.nb_variables();
+            const index nb_parameters = objective.nb_parameters();
 
-            Map<Vector> local_df(buffer.data(), nb_variables);
-            Map<Matrix> local_hm(buffer.data() + nb_variables, nb_variables, nb_variables);
+            Map<Vector> local_df(buffer.data(), nb_parameters);
+            Map<Matrix> local_hm(buffer.data() + nb_parameters, nb_parameters, nb_parameters);
 
             const double local_f = objective.compute(local_df, local_hm, R);
 
-            if constexpr (request_f)
+            if constexpr (request_f) {
                 f += local_f;
+            }
 
             if constexpr (request_df) {
                 for (index i = 0; i < len(objective_indices.variable_indices); i++) {
@@ -667,7 +669,7 @@ struct Problem {
 
                         const index idx = m_structure_hm.get_index(index_i.global, index_j.global);
 
-                        assert(idx >= 0);
+                        assert(0 <= idx && idx < len(hm));
 
                         hm(idx) += local_hm(index_i.local, index_j.local);
                     }
@@ -710,13 +712,13 @@ struct Problem {
         Vector future_df;
         Vector future_hm;
 
-        if (request & Request::Df)
+        if (request & Request::DF)
             future_df = Vector::Zero(len(df));
 
-        if (request & Request::Hf)
+        if (request & Request::HF)
             future_hm = Vector::Zero(len(hm));
 
-        if ((request & Request::Df) || (request & Request::Hf))
+        if ((request & Request::DF) || (request & Request::HF))
             future_buffer.resize(buffer_size());
 
         while (true) {
@@ -734,10 +736,10 @@ struct Problem {
         if (request & Request::F)
             f += future_f;
 
-        if (request & Request::Df)
+        if (request & Request::DF)
             df += future_df;
 
-        if (request & Request::Hf)
+        if (request & Request::HF)
             hm += future_hm;
 
         mutex.unlock();
@@ -749,8 +751,8 @@ struct Problem {
     void _compute_block_g(const index block_begin, const index block_end, Ref<Vector> buffer, Ref<Vector> g, Ref<Vector> dg, Ref<Vector> hm)
     {
         constexpr bool request_g = (R & Request::G) != 0;
-        constexpr bool request_dg = (R & Request::Dg) != 0;
-        constexpr bool request_hg = (R & Request::Hg) != 0;
+        constexpr bool request_dg = (R & Request::DG) != 0;
+        constexpr bool request_hg = (R & Request::HG) != 0;
 
         if constexpr (!request_g && !request_dg && !request_hg)
             return;
@@ -764,11 +766,11 @@ struct Problem {
                 continue;
 
             const index nb_equations = constraint.nb_equations();
-            const index nb_variables = constraint.nb_variables();
+            const index nb_parameters = constraint.nb_parameters();
 
             Map<Vector> local_g(buffer.data(), nb_equations);
-            Map<Matrix> local_dg(buffer.data() + nb_equations, nb_equations, nb_variables);
-            Map<Matrix> local_hm(buffer.data() + nb_equations + nb_equations * nb_variables, nb_variables, nb_variables);
+            Map<Matrix> local_dg(buffer.data() + nb_equations, nb_equations, nb_parameters);
+            Map<Matrix> local_hm(buffer.data() + nb_equations + nb_equations * nb_parameters, nb_parameters, nb_parameters);
 
             constraint.compute(local_g, local_dg, local_hm, R);
 
@@ -801,7 +803,7 @@ struct Problem {
 
                             const index idx = m_structure_hm.get_index(index_i.global, index_j.global);
 
-                            assert(idx >= 0);
+                            assert(0 <= idx && idx < len(hm));
 
                             hm(idx) += local_hm(index_i.local, index_j.local);
                         }
@@ -848,13 +850,13 @@ struct Problem {
         if (request & Request::G)
             future_g = Vector::Zero(len(g));
 
-        if (request & Request::Dg)
+        if (request & Request::DG)
             future_dg = Vector::Zero(len(dg));
 
-        if (request & Request::Hg)
+        if (request & Request::HG)
             future_hm = Vector::Zero(len(hm));
 
-        if ((request & Request::G) || (request & Request::Dg) || (request & Request::Hg))
+        if ((request & Request::G) || (request & Request::DG) || (request & Request::HG))
             future_buffer.resize(buffer_size());
 
         while (true) {
@@ -872,10 +874,10 @@ struct Problem {
         if (request & Request::G)
             g += future_g;
 
-        if (request & Request::Dg)
+        if (request & Request::DG)
             dg += future_dg;
 
-        if (request & Request::Hg)
+        if (request & Request::HG)
             hm += future_hm;
 
         mutex.unlock();
@@ -936,13 +938,13 @@ struct Problem {
             request = static_cast<Request>(request | Request::G);
 
         if (len(df) != 0)
-            request = static_cast<Request>(request | Request::Df);
+            request = static_cast<Request>(request | Request::DF);
 
         if (len(dg) != 0)
-            request = static_cast<Request>(request | Request::Dg);
+            request = static_cast<Request>(request | Request::DG);
 
         if (len(hm) != 0)
-            request = static_cast<Request>(request | Request::Hm);
+            request = static_cast<Request>(request | Request::HM);
 
         double f = 0.0;
         g.setZero();
@@ -955,6 +957,29 @@ struct Problem {
         _compute(request, b, f, g, df, dg, hm);
 
         return f;
+    }
+
+    double compute(const Request request)
+    {
+        // double dummy;
+
+        // Map<Vector> g(&dummy, 0);
+        // Map<Vector> df(&dummy, 0);
+        // Map<Vector> dg(&dummy, 0);
+        // Map<Vector> hm(&dummy, 0);
+
+        // if (request & Request::G) {
+        //     g = this->g();
+        // }
+
+        Vector dummy(0);
+
+        Ref<Vector> g = (request & Request::G) ? this->g() : dummy;
+        Ref<Vector> df = (request & Request::DF) ? this->df() : dummy;
+        Ref<Vector> dg = (request & Request::DG) ? dg_values() : dummy;
+        Ref<Vector> hm = (request & Request::HM) ? hm_values() : dummy;
+
+        return compute(g, df, dg, hm);
     }
 
     void eval(Ref<Vector> x)
@@ -1219,6 +1244,13 @@ struct Problem {
         m_linear_solver = value;
     }
 
+    // df_norm
+    
+    double df_norm()
+    {
+        return m_df.norm();
+    }
+
     // hm_inv_v
     
     Vector hm_inv_v(Ref<const Vector> v)
@@ -1227,13 +1259,13 @@ struct Problem {
             return Vector(0);
         }
 
-        if (m_linear_solver->factorize(m_structure_hm.ia(), m_structure_hm.ja(), hm_values())) {
+        if (linear_solver()->factorize(m_structure_hm.ia(), m_structure_hm.ja(), hm_values())) {
             throw std::runtime_error("Factorization failed");
         }
 
         Vector x(nb_variables());
 
-        if (m_linear_solver->solve(m_structure_hm.ia(), m_structure_hm.ja(), hm_values(), v, x)) {
+        if (linear_solver()->solve(m_structure_hm.ia(), m_structure_hm.ja(), hm_values(), v, x)) {
             throw std::runtime_error("Solve failed");
         }
 
@@ -1313,6 +1345,31 @@ struct Problem {
     void scale_hm(const double factor)
     {
         hm_values() *= factor;
+    }
+
+    // newton_step
+    
+    void newton_step()
+    {
+        if (nb_variables() == 0) {
+            return;
+        }
+
+        if (linear_solver()->factorize(m_structure_hm.ia(), m_structure_hm.ja(), hm_values())) {
+            throw std::runtime_error("Factorization failed");
+        }
+
+        Vector x(nb_variables());
+
+        if (linear_solver()->solve(m_structure_hm.ia(), m_structure_hm.ja(), hm_values(), df(), x)) {
+            throw std::runtime_error("Solve failed");
+        }
+
+        for (index i = 0; i < nb_variables(); i++) {
+            auto& variable = *m_variables[i];
+            
+            variable.set_value(variable.value() - x[i]);
+        }
     }
 };
 

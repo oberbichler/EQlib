@@ -16,7 +16,7 @@ namespace py = pybind11;
 using namespace py::literals;
 
 template <typename T>
-auto bind(py::module &m, const std::string &name)
+auto bind(py::module_ &m, const std::string &name)
 {
     using namespace eqlib;
 
@@ -26,7 +26,7 @@ auto bind(py::module &m, const std::string &name)
 }
 
 template <typename T, typename Trampoline>
-auto bind(py::module &m, const std::string &name)
+auto bind(py::module_ &m, const std::string &name)
 {
     using namespace eqlib;
 
@@ -36,7 +36,7 @@ auto bind(py::module &m, const std::string &name)
 }
 
 template <typename T>
-auto bind_objective(py::module &m, const std::string &name)
+auto bind_objective(py::module_ &m, const std::string &name)
 {
     using namespace eqlib;
 
@@ -46,7 +46,7 @@ auto bind_objective(py::module &m, const std::string &name)
 }
 
 template <typename T>
-auto bind_constraint(py::module &m, const std::string &name)
+auto bind_constraint(py::module_ &m, const std::string &name)
 {
     using namespace eqlib;
 

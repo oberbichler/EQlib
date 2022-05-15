@@ -11,11 +11,11 @@ namespace objectives {
 struct LambdaObjective : public Objective {
     using Fn = std::function<double(Ref<const Vector>, Ref<Vector>, Ref<Matrix>, const Request)>;
 
-    LambdaObjective(Variables variables, Fn fn)
+    LambdaObjective(Parameters parameters, Fn fn)
         : Objective()
         , _fn(fn)
     {
-        set_variables(variables);
+        set_parameters(parameters);
     }
 
     // function
@@ -26,7 +26,7 @@ struct LambdaObjective : public Objective {
 
     double compute(Ref<Vector> df, Ref<Matrix> hm, const Request request)
     {
-        const Vector x = variable_values();
+        const Vector x = parameter_values();
         return _fn(x, df, hm, request);
     }
 };

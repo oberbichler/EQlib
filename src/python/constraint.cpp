@@ -2,7 +2,7 @@
 
 #include <eqlib/constraint.h>
 
-void bind_constraint(py::module &m)
+void bind_constraint(py::module_ &m)
 {
     namespace py = pybind11;
     using namespace eqlib;
@@ -19,15 +19,13 @@ void bind_constraint(py::module &m)
         }
     };
 
-    auto constraint_cls = bind<Constraint, PyConstraint>(m, "Constraint");
-
-    constraint_cls
+    bind<Constraint, PyConstraint>(m, "Constraint")
         .def(py::init<>())
         .def_property("is_active", &Constraint::is_active, &Constraint::set_is_active)
         .def_property("name", &Constraint::name, &Constraint::set_name)
         .def_property_readonly("nb_equations", &Constraint::nb_equations)
-        .def_property_readonly("nb_variables", &Constraint::nb_variables)
+        .def_property_readonly("nb_parameters", &Constraint::nb_parameters)
         .def_property("equations", &Constraint::equations, &Constraint::set_equations)
-        .def_property("variables", &Constraint::variables, &Constraint::set_variables)
-        .def_property("variable_values", &Constraint::variable_values, &Constraint::set_variable_values);
+        .def_property("parameters", &Constraint::parameters, &Constraint::set_parameters)
+        .def_property("parameter_values", &Constraint::parameter_values, &Constraint::set_parameter_values);
 }

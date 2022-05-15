@@ -2,7 +2,7 @@
 
 #include <eqlib/linear_solver.h>
 
-void bind_linear_solver(py::module &m, py::module &s)
+void bind_linear_solver(py::module_ &m, py::module_ &s)
 {
     namespace py = pybind11;
     using namespace eqlib;

@@ -6,8 +6,9 @@ void bind_problem(py::module_&);
 void bind_equation(py::module_&);
 void bind_node(py::module_&);
 void bind_objective(py::module_&);
-void bind_sparse_structure(py::module& m);
-void bind_variable(py::module_&);
+void bind_parameter(py::module_&);
+void bind_request(py::module_&);
+void bind_sparse_structure(py::module_&);
 
 // eqlib::objectives
 void bind_lambda_objective(py::module_&, py::module_&);
@@ -17,11 +18,11 @@ void bind_spring(py::module_&);
 void bind_lambda_constraint(py::module_&, py::module_&);
 
 // eqlib::linear_solvers
-void bind_linear_solver(py::module&, py::module&);
+void bind_linear_solver(py::module_&, py::module_&);
 #ifdef EQLIB_USE_MKL
-void bind_pardiso_ldlt(py::module&, py::module&);
+void bind_pardiso_ldlt(py::module_&, py::module_&);
 #endif
-void bind_simplicial_ldlt(py::module&, py::module&);
+void bind_simplicial_ldlt(py::module_&, py::module_&);
 
 PYBIND11_MODULE(eqlib_ext, m)
 {
@@ -38,13 +39,17 @@ PYBIND11_MODULE(eqlib_ext, m)
         py::print("EQlib", EQLIB_VERSION);
     });
 
+    m.attr("LO") = eqlib::LOWEST;
+    m.attr("HI") = eqlib::HIGHEST;
+
+    bind_request(m);
     bind_constraint(m);
     bind_problem(m);
     bind_equation(m);
     bind_node(m);
     bind_objective(m);
+    bind_parameter(m);
     bind_sparse_structure(m);
-    bind_variable(m);
 
     // eqlib::objectives
     auto objectives_submodule = m.def_submodule("objectives");

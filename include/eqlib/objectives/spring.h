@@ -11,11 +11,11 @@ namespace objectives {
 
 struct Spring : public Objective {
     Spring(const Pointer<Node>& node)
-        : Objective()
+        : Objective(3)
     {
-        add_variable(node->x());
-        add_variable(node->y());
-        add_variable(node->z());
+        m_parameters[0] = node->x();
+        m_parameters[1] = node->y();
+        m_parameters[2] = node->z();
     }
 
     // compute

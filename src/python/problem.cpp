@@ -2,28 +2,18 @@
 
 #include <eqlib/problem.h>
 
-void bind_problem(py::module& m)
+void bind_problem(py::module_& m)
 {
     using namespace eqlib;
 
-    py::enum_<Request>(m, "Request", py::arithmetic())
-        .value("F", Request::F)
-        .value("DF", Request::Df)
-        .value("G", Request::G)
-        .value("DG", Request::Dg)
-        .value("HF", Request::Hf)
-        .value("HG", Request::Hg)
-        .export_values();
-
-    auto problem_cls = bind<Problem>(m, "Problem");
-
-    py::object scipy_sparse = py::module::import("scipy.sparse");
+    py::object scipy_sparse = py::module_::import("scipy.sparse");
     py::object csr_matrix = scipy_sparse.attr("csr_matrix");
 
-    problem_cls
+    bind<Problem>(m, "Problem")
         .def(py::init<>(&Problem::create), "objectives"_a = py::list(), "constraints"_a = py::list(), py::keep_alive<1, 2>(), py::keep_alive<1, 3>())
         .def_static("like", &Problem::like, "prototype"_a, "objectives"_a = py::list(), "constraints"_a = py::list(), py::keep_alive<1, 2>(), py::keep_alive<1, 3>())
-        .def("compute", py::overload_cast<Ref<Vector>, Ref<Vector>, Ref<Vector>, Ref<Vector>>(&Problem::compute), "g"_a = py::array(), "df"_a = py::array(), "dg"_a = py::array(), "hm"_a = py::array(), py::call_guard<py::gil_scoped_release>())
+        .def("compute_to", py::overload_cast<Ref<Vector>, Ref<Vector>, Ref<Vector>, Ref<Vector>>(&Problem::compute), "g"_a = py::array(), "df"_a = py::array(), "dg"_a = py::array(), "hm"_a = py::array(), py::call_guard<py::gil_scoped_release>())
+        .def("compute", py::overload_cast<Request>(&Problem::compute), "request"_a = Request::All, py::call_guard<py::gil_scoped_release>())
         .def_property_readonly("structure_dg", &Problem::structure_dg)
         .def_property_readonly("structure_hm", &Problem::structure_hm)
         .def_property_readonly("nb_objectives", &Problem::nb_objectives)
@@ -46,6 +36,7 @@ void bind_problem(py::module& m)
         .def("add_x", &Problem::add_x, "value"_a)
         .def("sub_x", &Problem::sub_x, "value"_a)
         .def("eval", &Problem::eval, "x"_a)
+        .def_property_readonly("linear_solver", &Problem::linear_solver)
         .def_property_readonly("f", &Problem::f)
         .def_property_readonly("g", &Problem::g)
         .def_property_readonly("df", &Problem::df)
@@ -64,6 +55,9 @@ void bind_problem(py::module& m)
         .def_property_readonly("hm_values", &Problem::hm_values)
         .def_property("hm_diagonal", &Problem::hm_diagonal, &Problem::set_hm_diagonal)
         .def("hm_add_diagonal", &Problem::hm_add_diagonal)
+        .def("newton_step", &Problem::newton_step)
+        .def("hm_inv_v", &Problem::hm_inv_v, "v"_a)
+        .def("hm_v", &Problem::hm_v, "v"_a)
         .def("scale_hm", &Problem::scale_hm, "factor"_a)
         .def_property_readonly("hm_norm_inf", &Problem::hm_norm_inf);
 }

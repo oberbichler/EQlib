@@ -2,7 +2,7 @@
 
 #include <eqlib/linear_solvers/simplicial_ldlt.h>
 
-void bind_simplicial_ldlt(py::module &m, py::module &s)
+void bind_simplicial_ldlt(py::module_ &m, py::module_ &s)
 {
     namespace py = pybind11;
     using namespace eqlib;

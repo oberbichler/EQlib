@@ -2,7 +2,7 @@
 
 #include <eqlib/node.h>
 
-void bind_node(py::module& m)
+void bind_node(py::module_& m)
 {
     namespace py = pybind11;
     using namespace eqlib;

@@ -2,7 +2,7 @@
 
 #include "common.h"
 #include "request.h"
-#include "variable.h"
+#include "parameter.h"
 
 #include <string>
 #include <vector>
@@ -13,6 +13,13 @@ struct Objective {
     Objective()
         : m_is_active(true)
         , m_name("")
+    {
+    }
+
+    Objective(const index nb_parameters)
+        : m_is_active(true)
+        , m_name("")
+        , m_parameters(nb_parameters)
     {
     }
 
@@ -44,52 +51,52 @@ struct Objective {
         m_name = value;
     }
 
-    // variables
+    // parameters
 
-    std::vector<Pointer<Variable>> m_variables;
+    Parameters m_parameters;
 
-    const index nb_variables() const
+    const index nb_parameters() const
     {
-        return len(m_variables);
+        return len(m_parameters);
     }
 
-    const Pointer<Variable>& variable(const index i) const
+    const Pointer<Parameter>& parameter(const index i) const
     {
-        return m_variables[i];
+        return m_parameters[i];
     }
 
-    const std::vector<Pointer<Variable>>& variables() const
+    const Parameters& parameters() const
     {
-        return m_variables;
+        return m_parameters;
     }
 
-    void set_variables(std::vector<Pointer<Variable>>& value)
+    void set_parameters(Parameters& value)
     {
-        m_variables = value;
+        m_parameters = value;
     }
 
-    void add_variable(Pointer<Variable> value)
+    void add_parameter(Pointer<Parameter> value)
     {
-        m_variables.push_back(value);
+        m_parameters.push_back(value);
     }
 
-    // variable_values
+    // parameter_values
 
-    Vector variable_values() const
+    Vector parameter_values() const
     {
-        Vector values(nb_variables());
-        for (index i = 0; i < nb_variables(); i++) {
-            values(i) = variable(i)->value();
+        Vector values(nb_parameters());
+        for (index i = 0; i < nb_parameters(); i++) {
+            values(i) = parameter(i)->value();
         }
         return values;
     }
 
-    void set_variable_values(const Ref<Vector> values)
+    void set_parameter_values(const Ref<Vector> values)
     {
-        assert(len(values) == nb_variables());
+        assert(len(values) == nb_parameters());
 
-        for (index i = 0; i < nb_variables(); i++) {
-            variable(i)->set_value(values(i));
+        for (index i = 0; i < nb_parameters(); i++) {
+            parameter(i)->set_value(values(i));
         }
     }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "variable.h"
+#include "parameter.h"
 
 namespace eqlib {
 
@@ -8,17 +8,17 @@ struct Node {
     Node()
         : m_name("")
     {
-        m_x = new_<Variable>(0);
-        m_y = new_<Variable>(0);
-        m_z = new_<Variable>(0);
+        m_x = new_<Parameter>(0);
+        m_y = new_<Parameter>(0);
+        m_z = new_<Parameter>(0);
     }
 
     Node(const double x, const double y, const double z, const std::string& name)
         : m_name(name)
     {
-        m_x = new_<Variable>(x);
-        m_y = new_<Variable>(y);
-        m_z = new_<Variable>(z);
+        m_x = new_<Parameter>(x);
+        m_y = new_<Parameter>(y);
+        m_z = new_<Parameter>(z);
     }
 
     // name
@@ -37,27 +37,27 @@ struct Node {
 
     // x
 
-    Pointer<Variable> m_x;
+    Pointer<Parameter> m_x;
 
-    Pointer<Variable> x()
+    Pointer<Parameter> x()
     {
         return m_x;
     }
 
     // y
 
-    Pointer<Variable> m_y;
+    Pointer<Parameter> m_y;
 
-    Pointer<Variable> y()
+    Pointer<Parameter> y()
     {
         return m_y;
     }
 
     // z
 
-    Pointer<Variable> m_z;
+    Pointer<Parameter> m_z;
 
-    Pointer<Variable> z()
+    Pointer<Parameter> z()
     {
         return m_z;
     }

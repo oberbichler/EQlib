@@ -2,7 +2,7 @@
 
 #include <eqlib/sparse_structure.h>
 
-void bind_sparse_structure(py::module &m)
+void bind_sparse_structure(py::module_ &m)
 {
     using namespace eqlib;
 

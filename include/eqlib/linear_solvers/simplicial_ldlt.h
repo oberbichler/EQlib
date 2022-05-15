@@ -33,7 +33,10 @@ public: // methods
             return false;
         }
 
-        Map<const ColMajorSparse> m(ia.size() - 1, ia.size() - 1, ja.size(), ia.data(), ja.data(), a.data());
+        const index size = ia.size() - 1;
+        const index nnz = ja.size();
+
+        Map<const ColMajorSparse> m(size, size, nnz, ia.data(), ja.data(), a.data());
 
         m_solver.analyzePattern(m);
 
@@ -52,7 +55,10 @@ public: // methods
             return true;
         }
 
-        Map<const ColMajorSparse> m(ia.size() - 1, ia.size() - 1, ja.size(), ia.data(), ja.data(), a.data());
+        const index size = ia.size() - 1;
+        const index nnz = ja.size();
+
+        Map<const ColMajorSparse> m(size, size, nnz, ia.data(), ja.data(), a.data());
 
         m_solver.factorize(m);
 

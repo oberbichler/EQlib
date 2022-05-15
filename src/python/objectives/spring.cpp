@@ -2,7 +2,7 @@
 
 #include <eqlib/objectives/spring.h>
 
-void bind_spring(py::module &m)
+void bind_spring(py::module_ &m)
 {
     namespace py = pybind11;
     using namespace eqlib;

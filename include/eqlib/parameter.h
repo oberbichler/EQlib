@@ -8,8 +8,8 @@
 
 namespace eqlib {
 
-struct Variable {
-    Variable(const double value)
+struct Parameter {
+    Parameter(const double value)
         : m_value(value)
         , m_is_active(true)
         , m_name("")
@@ -18,7 +18,7 @@ struct Variable {
     {
     }
 
-    Variable(const double value, const bool is_active)
+    Parameter(const double value, const bool is_active)
         : m_value(value)
         , m_is_active(is_active)
         , m_name("")
@@ -27,7 +27,7 @@ struct Variable {
     {
     }
 
-    Variable(const double value, const bool is_active, const std::string& name)
+    Parameter(const double value, const bool is_active, const std::string& name)
         : m_value(value)
         , m_is_active(is_active)
         , m_name(name)
@@ -36,7 +36,7 @@ struct Variable {
     {
     }
 
-    Variable(const double value, const std::pair<double, double> bounds, const bool is_active, const std::string& name)
+    Parameter(const double value, const std::pair<double, double> bounds, const bool is_active, const std::string& name)
         : m_value(value)
         , m_is_active(is_active)
         , m_name(name)
@@ -116,6 +116,6 @@ struct Variable {
     }
 };
 
-using Variables = std::vector<Pointer<Variable>>;
+using Parameters = std::vector<Pointer<Parameter>>;
 
 } // namespace eqlib

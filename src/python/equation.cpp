@@ -2,7 +2,7 @@
 
 #include <eqlib/equation.h>
 
-void bind_equation(py::module &m)
+void bind_equation(py::module_ &m)
 {
     using namespace eqlib;
 

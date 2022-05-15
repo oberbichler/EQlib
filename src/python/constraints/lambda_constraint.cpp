@@ -1,9 +1,9 @@
 #include "../common.h"
 
-#include <eqlib/variable.h>
+#include <eqlib/parameter.h>
 #include <eqlib/constraints/lambda_constraint.h>
 
-void bind_lambda_constraint(py::module &m, py::module &s)
+void bind_lambda_constraint(py::module_ &m, py::module_ &s)
 {
     namespace py = pybind11;
     using namespace eqlib;
@@ -13,12 +13,12 @@ void bind_lambda_constraint(py::module &m, py::module &s)
     auto cls = bind_constraint<LambdaConstraint>(s, "LambdaConstraint");
 
     cls
-        .def(py::init<Equations, Variables, LambdaConstraint::Fn>(), "equations"_a, "variables"_a, "fn"_a);
+        .def(py::init<Equations, Parameters, LambdaConstraint::Fn>(), "equations"_a, "parameters"_a, "fn"_a);
 
-    m.def("constraint", [](const Equations& equations, const Variables& variables) {
+    m.def("constraint", [](const Equations& equations, const Parameters& parameters) {
         auto factory = [=](LambdaConstraint::Fn fn) {
-            return LambdaConstraint(equations, variables, fn);
+            return LambdaConstraint(equations, parameters, fn);
         };
         return py::cpp_function(factory, "fn"_a);
-    }, "equations"_a, "variables"_a);
+    }, "equations"_a, "parameters"_a);
 }

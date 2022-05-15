@@ -39,12 +39,12 @@ CPMAddPackage(
     DOWNLOAD_ONLY YES 
 )
 
-CPMAddPackage("gh:gabime/spdlog@1.9.2")
+CPMAddPackage("gh:gabime/spdlog@1.10.0")
 set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-CPMAddPackage("gh:Tessil/robin-map@0.6.3")
+CPMAddPackage("gh:Tessil/robin-map@1.0.1")
 
-CPMAddPackage("gh:pybind/pybind11@2.7.1")
+CPMAddPackage("gh:pybind/pybind11@2.9.2")
 
 CPMAddPackage(
     NAME Eigen
@@ -71,9 +71,9 @@ pybind11_add_module(python_module
     src/python/linear_solver.cpp
     src/python/node.cpp
     src/python/objective.cpp
+    src/python/parameter.cpp
     src/python/request.cpp
     src/python/sparse_structure.cpp
-    src/python/variable.cpp
     # eqlib::objectives
     src/python/objectives/lambda_objective.cpp
     src/python/objectives/spring.cpp

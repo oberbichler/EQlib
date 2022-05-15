@@ -13,11 +13,11 @@ tests = [
 
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel",
-    "cmake>=3.21",
-    "scikit-build>=0.12",
-    "ninja",
+  "setuptools>=42",
+  "wheel",
+  "cmake>=3.21",
+  "scikit-build>=0.12",
+  "ninja",
 ]
 build-backend = "setuptools.build_meta"
 
