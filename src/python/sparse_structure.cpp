@@ -6,9 +6,7 @@ void bind_sparse_structure(py::module_ &m)
 {
     using namespace eqlib;
 
-    auto csr_structure_cls = bind<CsrStructure>(m, "CsrStructure");
-
-    csr_structure_cls
+    bind<CsrStructure>(m, "CsrStructure")
         .def(py::init<int, int, std::vector<int>, std::vector<int>>(), "rows"_a, "cols"_a, "ia"_a, "ja"_a)
         .def_property_readonly("rows", &CsrStructure::rows)
         .def_property_readonly("cols", &CsrStructure::cols)

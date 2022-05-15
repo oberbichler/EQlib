@@ -6,9 +6,7 @@ void bind_equation(py::module_ &m)
 {
     using namespace eqlib;
 
-    auto equation_cls = bind<Equation>(m, "Equation");
-
-    equation_cls
+    bind<Equation>(m, "Equation")
         .def(py::init<const bool, const std::string>(), "is_active"_a = true, "name"_a = "")
         .def_property("value", &Equation::value, &Equation::set_value)
         .def_property("is_active", &Equation::is_active, &Equation::set_is_active)
