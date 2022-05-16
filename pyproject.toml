@@ -1,5 +1,6 @@
 [project]
 name = "eqlib"
+version = "1.0.0"
 requires-python = ">=3.6"
 dependencies = [
   'hyperjet>=1.4',
