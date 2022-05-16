@@ -974,10 +974,26 @@ struct Problem {
 
         Vector dummy(0);
 
-        Ref<Vector> g = (request & Request::G) ? this->g() : dummy;
-        Ref<Vector> df = (request & Request::DF) ? this->df() : dummy;
-        Ref<Vector> dg = (request & Request::DG) ? dg_values() : dummy;
-        Ref<Vector> hm = (request & Request::HM) ? hm_values() : dummy;
+        Ref<Vector> g(dummy);
+        Ref<Vector> df(dummy);
+        Ref<Vector> dg(dummy);
+        Ref<Vector> hm(dummy);
+        
+        if (request & Request::G) {
+            g = this->g();
+        }
+
+        if (request & Request::DF) {
+            df = this->df();
+        }
+
+        if (request & Request::DG) {
+            dg = dg_values();
+        }
+        
+        if (request & Request::HM) {
+            hm = hm_values();
+        }
 
         return compute(g, df, dg, hm);
     }
