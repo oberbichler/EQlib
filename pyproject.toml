@@ -30,7 +30,7 @@ addopts = "-ra -q"
 testpaths = ["tests"]
 
 [tool.cibuildwheel]
-build = "cp39-*"
+build = "cp3*-*"
 skip = ["*-win32", "*-manylinux_i686", "*-arm64", "*-universal2"]
 test-requires = "hyperjet>=1.4 numpy>=1.19.5 pytest>6 scipy>=1.4.1"
 test-command = "pytest {project}/tests"
