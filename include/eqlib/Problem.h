@@ -932,11 +932,11 @@ public: // methods
             max_element_n = std::max(max_element_n, m_elements_g[i]->nb_variables());
             max_element_m = std::max(max_element_m, m_elements_g[i]->nb_equations());
 
-            element_g_nb_variables[j] = element_g_nb_variables[i];
+            element_g_nb_variables[j] = m_element_g_nb_variables[i];
 
-            element_g_nb_equations[j] = element_g_nb_equations[i];
-            element_g_variable_indices[j] = std::move(element_g_variable_indices[i]);
-            element_g_equation_indices[j] = std::move(element_g_equation_indices[i]);
+            element_g_nb_equations[j] = m_element_g_nb_equations[i];
+            element_g_variable_indices[j] = std::move(m_element_g_variable_indices[i]);
+            element_g_equation_indices[j] = std::move(m_element_g_equation_indices[i]);
 
             elements_g[j] = std::move(m_elements_g[i]);
 
