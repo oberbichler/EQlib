@@ -71,54 +71,10 @@ public: // methods
         m_name = value;
     }
 
-protected: // methods
+public: // methods: setters
     void set_variables(const std::vector<Pointer<Variable>>& value)
     {
         m_variables = value;
-    }
-
-public: // python
-    template <typename T>
-    class PyObjective : public T {
-    public: // constructor
-        using T::T;
-
-    public: // methods
-        double compute(Ref<Vector> g, Ref<Matrix> h) const override
-        {
-            pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(double, T, compute, g, h);
-        }
-    };
-
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Trampoline = PyObjective<Type>;
-        using Holder = Pointer<Type>;
-
-        py::class_<Type, Trampoline, Holder>(m, "Objective")
-            // constructors
-            .def(py::init<>())
-            .def(py::init<index>(), "nb_variables"_a)
-            // read-only properties
-            .def_property_readonly("nb_variables", &Type::nb_variables)
-            // properties
-            .def_property("is_active", &Type::is_active, &Type::set_active)
-            .def_property("name", &Type::name, &Type::set_name)
-            .def_property("variables", &Type::variables, &Type::set_variables)
-            // methods
-            .def("compute", &Type::compute, "g"_a, "h"_a)
-            .def("compute_all", [](const Type& self) {
-                Vector g(self.nb_variables());
-                Matrix h(self.nb_variables(), self.nb_variables());
-                const double f = self.compute(g, h);
-                return std::make_tuple(f, g, h);
-            })
-            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal);
     }
 };
 

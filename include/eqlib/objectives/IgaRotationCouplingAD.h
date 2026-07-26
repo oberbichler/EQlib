@@ -190,21 +190,6 @@ public: // methods
             return compute<2>(g, h);
         }
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-        using Base = Objective;
-
-        py::class_<Type, Base, Holder>(m, "IgaRotationCouplingAD")
-            .def(py::init<std::vector<Pointer<Node>>, std::vector<Pointer<Node>>>(), "nodes_a"_a, "nodes_b"_a)
-            .def("add", &Type::add, "shape_functions"_a, "shape_functions_b"_a, "axis"_a, "weight"_a);
-    }
 }; // class IgaRotationCouplingAD
 
 } // namespace eqlib

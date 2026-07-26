@@ -62,7 +62,14 @@ FetchContent_MakeAvailable(eigen fmt spdlog robin_map)
 
 # --- module
 
-pybind11_add_module(eqlib src/Module.cpp)
+pybind11_add_module(eqlib
+    src/Module.cpp
+    src/bindings/core.cpp
+    src/bindings/elements.cpp
+    src/bindings/objectives.cpp
+    src/bindings/problem.cpp
+    src/bindings/solvers.cpp
+)
 
 target_include_directories(eqlib PRIVATE
     include

@@ -56,19 +56,6 @@ public: // methods
 
         return alpha;
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        py::class_<Type>(m, "Armijo")
-            .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
-            // methods
-            .def("search", &Type::search, py::call_guard<py::gil_scoped_release>(), "search_direction"_a, "alpha_init"_a = true, "reset"_a = true);
-    }
 }; // class Armijo
 
 } // namespace eqlib

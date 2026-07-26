@@ -6,8 +6,6 @@
 
 #include <fmt/format.h>
 
-#include <pybind11/pybind11.h>
-
 #include <tsl/robin_map.h>
 #include <tsl/robin_set.h>
 

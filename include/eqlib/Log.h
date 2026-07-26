@@ -2,8 +2,6 @@
 
 #include "Define.h"
 
-#include <pybind11/pybind11.h>
-
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
@@ -131,29 +129,6 @@ public: // methods
         }
 
         s_console->critical(format, std::forward<TArgs>(args)...);
-    }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        py::class_<Type>(m, "Log")
-            .def_property_static("info_level", [](py::object) { return Type::info_level(); }, [](py::object, const int value) { Type::set_info_level(value); })
-            .def_static("debug", [](const std::string& message) { Type::debug("{}", message); }, "message"_a)
-            .def_static("info", [](const std::string& message) { Type::info("{}", message); }, "message"_a)
-            .def_static("info", [](const int level, const std::string& message) { Type::info(level, "{}", message); },
-                "level"_a, "message"_a)
-            .def_static("error", [](const std::string& message) { Type::error("{}", message); }, "message"_a)
-            .def_static("error", [](const int level, const std::string& message) { Type::error(level, "{}", message); },
-                "level"_a, "message"_a)
-            .def_static("warn", [](const int level, const std::string& message) { Type::warn(level, "{}", message); },
-                "level"_a, "message"_a)
-            .def_static("critical", [](const std::string& message) { Type::critical("{}", message); }, "message"_a)
-            .def_static("critical", [](const int level, const std::string& message) { Type::critical(level, "{}", message); },
-                "level"_a, "message"_a);
     }
 };
 

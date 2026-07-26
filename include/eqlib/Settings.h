@@ -8,7 +8,7 @@ namespace eqlib {
 
 using Settings = std::unordered_map<std::string, std::variant<int, double, std::string>>;
 
-std::string get_or_default(const Settings& options, const std::string key, const std::string default_value)
+inline std::string get_or_default(const Settings& options, const std::string key, const std::string default_value)
 {
     const auto& it = options.find(key);
 
@@ -19,7 +19,7 @@ std::string get_or_default(const Settings& options, const std::string key, const
     return std::get<std::string>(it->second);
 }
 
-int get_or_default(const Settings& options, const std::string key, const int default_value)
+inline int get_or_default(const Settings& options, const std::string key, const int default_value)
 {
     const auto& it = options.find(key);
 
@@ -30,7 +30,7 @@ int get_or_default(const Settings& options, const std::string key, const int def
     return std::get<int>(it->second);
 }
 
-double get_or_default(const Settings& options, const std::string key, const double default_value)
+inline double get_or_default(const Settings& options, const std::string key, const double default_value)
 {
     const auto& it = options.find(key);
 

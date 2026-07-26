@@ -162,31 +162,6 @@ public: // operators
     {
         return value();
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-
-        py::class_<Type, Holder>(m, "Variable")
-            // constructors
-            .def(py::init<double, double, double, bool, double, std::string>(), "value"_a = 0.0, "lower_bound"_a = -infinity, "upper_bound"_a = infinity, "is_active"_a = true, "multiplier"_a = 1.0, "name"_a = "")
-            .def(py::init<>())
-            // methods
-            .def("__float__", &Type::operator double)
-            .def("clamp", &Type::clamp)
-            // properties
-            .def_property("value", py::overload_cast<>(&Type::value, py::const_), &Type::set_value)
-            .def_property("lower_bound", &Type::lower_bound, &Type::set_lower_bound)
-            .def_property("upper_bound", &Type::upper_bound, &Type::set_upper_bound)
-            .def_property("is_active", &Type::is_active, &Type::set_active)
-            .def_property("multiplier", &Type::multiplier, &Type::set_multiplier)
-            .def_property("name", &Type::name, &Type::set_name);
-    }
 };
 
 } // namespace eqlib

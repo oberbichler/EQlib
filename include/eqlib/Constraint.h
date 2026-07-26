@@ -89,7 +89,7 @@ public: // methods
         m_name = value;
     }
 
-protected: // methods
+public: // methods: setters
     void set_equations(const std::vector<Pointer<Equation>>& value)
     {
         m_equations = value;
@@ -98,48 +98,6 @@ protected: // methods
     void set_variables(const std::vector<Pointer<Variable>>& value)
     {
         m_variables = value;
-    }
-
-public: // python
-    template <typename T>
-    class PyConstraint : public T {
-    public: // constructor
-        using T::T;
-
-    public: // methods
-        void compute(Ref<Vector> rs, const std::vector<Ref<Vector>>& gs, const std::vector<Ref<Matrix>>& hs) const override
-        {
-            pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(void, T, compute, rs, gs, hs);
-        }
-    };
-
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Type = Constraint;
-        using Trampoline = PyConstraint<Type>;
-        using Holder = Pointer<Type>;
-
-        py::class_<Type, Trampoline, Holder>(m, "Constraint")
-            // constructors
-            .def(py::init<>())
-            .def(py::init<index, index>(), "nb_equations"_a, "nb_variables"_a)
-            // read-only properties
-            .def_property_readonly("nb_equations", &Type::nb_equations)
-            .def_property_readonly("nb_variables", &Type::nb_variables)
-            // properties
-            .def_property("equations", &Type::equations, &Type::set_equations)
-            .def_property("is_active", &Type::is_active, &Type::set_active)
-            .def_property("name", &Type::name, &Type::set_name)
-            .def_property("variables", &Type::variables, &Type::set_variables)
-            // methods
-            .def("compute", &Type::compute, "fs"_a, "gs"_a, "hs"_a)
-            .def("equation", &Type::equation, "index"_a, py::return_value_policy::reference_internal)
-            .def("variable", &Type::variable, "index"_a, py::return_value_policy::reference_internal);
     }
 };
 

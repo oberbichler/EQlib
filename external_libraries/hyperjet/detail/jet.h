@@ -697,6 +697,7 @@ public: // operators
     }
 
 public: // python
+#if defined(PYBIND11_VERSION_MAJOR)
     template <typename TModule>
     static void register_python(TModule& m, const std::string name)
     {
@@ -800,6 +801,7 @@ public: // python
             .def("__copy__", [](const Type& self) { return self; })
             .def("__deepcopy__", [](const Type& self, py::dict& memo) { return self; }, "memodict"_a);
     }
+#endif // defined(PYBIND11_VERSION_MAJOR)
 };
 
 // abs

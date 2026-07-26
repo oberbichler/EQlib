@@ -186,28 +186,6 @@ public: // methods
 
         Log::task_end("System solved in {:.3f} sec", timer.elapsed());
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        py::class_<Type>(m, "NewtonRaphson")
-            .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
-            .def("run", &Type::run, py::call_guard<py::gil_scoped_release>())
-            // properties
-            .def_property("damping", &Type::damping, &Type::set_damping)
-            .def_property("maxiter", &Type::maxiter, &Type::set_maxiter)
-            .def_property("rtol", &Type::rtol, &Type::set_rtol)
-            // read-only properties
-            .def_property_readonly("iterations", &Type::iterations)
-            .def_property_readonly("rnorm", &Type::rnorm)
-            .def_property_readonly("fevals", &Type::fevals)
-            .def_property_readonly("gevals", &Type::gevals)
-            .def_property_readonly("hevals", &Type::hevals);
-    }
 };
 
 } // namespace eqlib

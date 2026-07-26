@@ -79,23 +79,6 @@ public: // operators
     {
         return value();
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-
-        py::class_<Type, Holder>(m, "Parameter")
-            .def(py::init<>())
-            .def(py::init<double, std::string>(), "value"_a = 0.0, "name"_a = "")
-            .def_property("value", &Type::value, &Type::set_value)
-            .def_property("name", &Type::name, &Type::set_name)
-            .def("__float__", &Type::operator double);
-    }
 };
 
 } // namespace eqlib

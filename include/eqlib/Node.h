@@ -159,38 +159,6 @@ public: // methods
     {
         return m_variables.find(name) != m_variables.end();
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-
-        py::class_<Type, Holder>(m, "Node", py::dynamic_attr())
-            // constructors
-            .def(py::init<>())
-            .def(py::init<double, double, double>(), "x"_a = 0, "y"_a = 0, "z"_a = 0)
-            // readonly properties
-            .def_property_readonly("x", &Type::x)
-            .def_property_readonly("y", &Type::y)
-            .def_property_readonly("z", &Type::z)
-            .def_property_readonly("ref_x", &Type::ref_x)
-            .def_property_readonly("ref_y", &Type::ref_y)
-            .def_property_readonly("ref_z", &Type::ref_z)
-            // properties
-            .def_property("ref_location", &Type::ref_location, &Type::set_ref_location)
-            .def_property("act_location", &Type::act_location, &Type::set_act_location)
-            .def_property("displacements", &Type::displacements, &Type::set_displacements)
-            .def_property("name", &Type::name, &Type::set_name)
-            // methods
-            .def("equation", &Type::equation, "name"_a, py::return_value_policy::reference_internal)
-            .def("variable", &Type::variable, "name"_a, py::return_value_policy::reference_internal)
-            .def("has_equation", &Type::has_equation, "name"_a)
-            .def("has_variable", &Type::has_variable, "name"_a);
-    }
 };
 
 } // namespace eqlib

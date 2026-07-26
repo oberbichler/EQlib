@@ -181,21 +181,6 @@ public: // methods
             return compute<2>(g, h);
         }
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-        using Base = Objective;
-
-        py::class_<Type, Base, Holder>(m, "IgaShell3PAD")
-            .def(py::init<std::vector<Pointer<Node>>, double, double, double>(), "nodes"_a, "thickness"_a, "youngs_modulus"_a, "poissons_ratio"_a)
-            .def("add", &Type::add, "shape_functions"_a, "weight"_a);
-    }
 }; // class IgaShell3PAD
 
 } // namespace eqlib
