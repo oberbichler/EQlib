@@ -10,9 +10,9 @@
 
 namespace eqlib {
 
-class SteepestDecent {
+class SteepestDescent {
 private: // types
-    using Type = eqlib::SteepestDecent;
+    using Type = eqlib::SteepestDescent;
 
 private: // members
     Pointer<Problem> m_problem;
@@ -31,7 +31,7 @@ private: // members
 
 private: // methods
 public: // constructor
-    SteepestDecent(Pointer<Problem> problem)
+    SteepestDescent(Pointer<Problem> problem)
         : m_problem(problem)
         , m_maxiter(100)
         , m_rtol(1e-6)
@@ -177,7 +177,7 @@ public: // methods
             }
         }
 
-        Log::task_end("System solved in {:.3f} sec", timer.ellapsed());
+        Log::task_end("System solved in {:.3f} sec", timer.elapsed());
     }
 
 public: // python
@@ -187,7 +187,7 @@ public: // python
         namespace py = pybind11;
         using namespace pybind11::literals;
 
-        py::class_<Type>(m, "SteepestDecent")
+        py::class_<Type>(m, "SteepestDescent")
             .def(py::init<Pointer<eqlib::Problem>>(), "problem"_a)
             .def("run", &Type::run, py::call_guard<py::gil_scoped_release>())
             // properties
@@ -200,6 +200,9 @@ public: // python
             .def_property_readonly("fevals", &Type::fevals)
             .def_property_readonly("gevals", &Type::gevals)
             .def_property_readonly("hevals", &Type::hevals);
+
+        // deprecated misspelled alias
+        m.attr("SteepestDecent") = m.attr("SteepestDescent");
     }
 };
 

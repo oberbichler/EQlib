@@ -439,7 +439,7 @@ public: // constructors
             m_element_f_variable_indices_hi[i] = std::move(element_hi);
         }
 
-        Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
+        Log::task_end("Problem initialized in {:.3f} sec", timer.elapsed());
     }
 
 private: // methods: computation
@@ -472,7 +472,7 @@ private: // methods: computation
 
         const double f = element_f.compute(g, h);
 
-        data.computation_time() += timer_element_compute.ellapsed();
+        data.computation_time() += timer_element_compute.elapsed();
 
         Timer timer_element_assemble;
 
@@ -501,7 +501,7 @@ private: // methods: computation
             }
         }
 
-        data.assemble_time() += timer_element_assemble.ellapsed();
+        data.assemble_time() += timer_element_assemble.elapsed();
     }
 
     template <index TOrder>
@@ -545,7 +545,7 @@ private: // methods: computation
 
         element_g.compute(fs, gs, hs);
 
-        data.computation_time() += timer_element_compute.ellapsed();
+        data.computation_time() += timer_element_compute.elapsed();
 
         Timer timer_element_assemble;
 
@@ -584,7 +584,7 @@ private: // methods: computation
             }
         }
 
-        data.assemble_time() += timer_element_assemble.ellapsed();
+        data.assemble_time() += timer_element_assemble.elapsed();
     }
 
 public: // methods: computation
@@ -678,7 +678,7 @@ public: // methods: computation
             Log::task_info("Element computation took {} sec", m_data.computation_time());
             Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
 
-            Log::task_end("Problem computed in {:.3f} sec", timer.ellapsed());
+            Log::task_end("Problem computed in {:.3f} sec", timer.elapsed());
         }
     }
 

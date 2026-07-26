@@ -31,7 +31,7 @@ public: // methods
         m_start = now();
     }
 
-    double ellapsed() const noexcept
+    double elapsed() const noexcept
     {
         const Duration duration = now() - m_start;
         return duration.count();
@@ -47,7 +47,9 @@ public: // python
         py::class_<Type>(m, "Timer")
             .def(py::init<>())
             .def("start", &Type::start)
-            .def_property_readonly("ellapsed", &Type::ellapsed);
+            .def_property_readonly("elapsed", &Type::elapsed)
+            // deprecated misspelled alias
+            .def_property_readonly("ellapsed", &Type::elapsed);
     }
 };
 

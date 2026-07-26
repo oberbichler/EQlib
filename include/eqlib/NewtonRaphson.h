@@ -184,7 +184,7 @@ public: // methods
             }
         }
 
-        Log::task_end("System solved in {:.3f} sec", timer.ellapsed());
+        Log::task_end("System solved in {:.3f} sec", timer.elapsed());
     }
 
 public: // python
