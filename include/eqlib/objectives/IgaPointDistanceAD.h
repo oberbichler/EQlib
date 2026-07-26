@@ -89,14 +89,14 @@ public: // methods
                     const index rd = r % 3;
                     const index ri = r / 3;
 
-                    g(0 + r) = result.g(0 + rd) * shape_functions_a(0, ri);
+                    g(0 + r) += result.g(0 + rd) * shape_functions_a(0, ri);
                 }
 
                 for (index r = 0; r < b; r++) {
                     const index rd = r % 3;
                     const index ri = r / 3;
 
-                    g(a + r) = result.g(3 + rd) * shape_functions_b(0, ri);
+                    g(a + r) += result.g(3 + rd) * shape_functions_b(0, ri);
                 }
             }
 
@@ -113,7 +113,7 @@ public: // methods
                             continue;
                         }
 
-                        h(0 + r, 0 + s) = result.h(0 + rd, 0 + sd) * shape_functions_a(0, ri) * shape_functions_a(0, si);
+                        h(0 + r, 0 + s) += result.h(0 + rd, 0 + sd) * shape_functions_a(0, ri) * shape_functions_a(0, si);
                     }
 
                     for (index s = 0; s < b; s++) {
@@ -124,7 +124,7 @@ public: // methods
                             continue;
                         }
 
-                        h(0 + r, a + s) = result.h(0 + rd, 3 + sd) * shape_functions_a(0, ri) * shape_functions_b(0, si);
+                        h(0 + r, a + s) += result.h(0 + rd, 3 + sd) * shape_functions_a(0, ri) * shape_functions_b(0, si);
                     }
                 }
 
@@ -140,7 +140,7 @@ public: // methods
                             continue;
                         }
 
-                        h(a + r, a + s) = result.h(3 + rd, 3 + sd) * shape_functions_b(0, ri) * shape_functions_b(0, si);
+                        h(a + r, a + s) += result.h(3 + rd, 3 + sd) * shape_functions_b(0, ri) * shape_functions_b(0, si);
                     }
                 }
             }

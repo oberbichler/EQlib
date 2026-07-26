@@ -80,6 +80,14 @@ public: // methods
 
         double f = 0;
 
+        if constexpr (TOrder > 0) {
+            g.setZero();
+        }
+
+        if constexpr (TOrder > 1) {
+            h.setZero();
+        }
+
         for (const auto& [shape_functions_a, shape_functions_b, ref_a3_a, ref_a3_b, axis, weight] : m_data) {
             const auto a1_a = Space::template variables<0, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(1)));
             const auto a2_a = Space::template variables<3, 3>(evaluate_act_geometry(m_nodes_a, shape_functions_a.row(2)));
@@ -111,14 +119,14 @@ public: // methods
                     const index rd = r % 3;
                     const index ri = r / 3;
 
-                    g(0 + r) = result.g(0 + rd) * shape_functions_a(1, ri) + result.g(3 + rd) * shape_functions_a(2, ri);
+                    g(0 + r) += result.g(0 + rd) * shape_functions_a(1, ri) + result.g(3 + rd) * shape_functions_a(2, ri);
                 }
 
                 for (index r = 0; r < b; r++) {
                     const index rd = r % 3;
                     const index ri = r / 3;
 
-                    g(a + r) = result.g(6 + rd) * shape_functions_b(1, ri) + result.g(9 + rd) * shape_functions_b(2, ri);
+                    g(a + r) += result.g(6 + rd) * shape_functions_b(1, ri) + result.g(9 + rd) * shape_functions_b(2, ri);
                 }
             }
 
@@ -131,7 +139,7 @@ public: // methods
                         const index sd = s % 3;
                         const index si = s / 3;
 
-                        h(0 + r, 0 + s) = result.h(0 + rd, 0 + sd) * shape_functions_a(1, ri) * shape_functions_a(1, si)
+                        h(0 + r, 0 + s) += result.h(0 + rd, 0 + sd) * shape_functions_a(1, ri) * shape_functions_a(1, si)
                             + result.h(3 + rd, 0 + sd) * shape_functions_a(2, ri) * shape_functions_a(1, si)
                             + result.h(0 + rd, 3 + sd) * shape_functions_a(1, ri) * shape_functions_a(2, si)
                             + result.h(3 + rd, 3 + sd) * shape_functions_a(2, ri) * shape_functions_a(2, si);
@@ -141,7 +149,7 @@ public: // methods
                         const index sd = s % 3;
                         const index si = s / 3;
 
-                        h(0 + r, a + s) = result.h(0 + rd, 6 + sd) * shape_functions_a(1, ri) * shape_functions_b(1, si)
+                        h(0 + r, a + s) += result.h(0 + rd, 6 + sd) * shape_functions_a(1, ri) * shape_functions_b(1, si)
                             + result.h(3 + rd, 6 + sd) * shape_functions_a(2, ri) * shape_functions_b(1, si)
                             + result.h(0 + rd, 9 + sd) * shape_functions_a(1, ri) * shape_functions_b(2, si)
                             + result.h(3 + rd, 9 + sd) * shape_functions_a(2, ri) * shape_functions_b(2, si);
@@ -156,7 +164,7 @@ public: // methods
                         const index sd = s % 3;
                         const index si = s / 3;
 
-                        h(a + r, 0 + s) = result.h(6 + rd, 0 + sd) * shape_functions_b(1, ri) * shape_functions_a(1, si)
+                        h(a + r, 0 + s) += result.h(6 + rd, 0 + sd) * shape_functions_b(1, ri) * shape_functions_a(1, si)
                             + result.h(9 + rd, 0 + sd) * shape_functions_b(2, ri) * shape_functions_a(1, si)
                             + result.h(6 + rd, 3 + sd) * shape_functions_b(1, ri) * shape_functions_a(2, si)
                             + result.h(9 + rd, 3 + sd) * shape_functions_b(2, ri) * shape_functions_a(2, si);
@@ -166,7 +174,7 @@ public: // methods
                         const index sd = s % 3;
                         const index si = s / 3;
 
-                        h(a + r, a + s) = result.h(6 + rd, 6 + sd) * shape_functions_b(1, ri) * shape_functions_b(1, si)
+                        h(a + r, a + s) += result.h(6 + rd, 6 + sd) * shape_functions_b(1, ri) * shape_functions_b(1, si)
                             + result.h(9 + rd, 6 + sd) * shape_functions_b(2, ri) * shape_functions_b(1, si)
                             + result.h(6 + rd, 9 + sd) * shape_functions_b(1, ri) * shape_functions_b(2, si)
                             + result.h(9 + rd, 9 + sd) * shape_functions_b(2, ri) * shape_functions_b(2, si);
