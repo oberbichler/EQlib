@@ -102,26 +102,26 @@ public: // methods
     HYPERJET_INLINE static std::vector<Type> variables(std::vector<Scalar> values)
     {
         const auto nb_variables = length(values);
-        
+
         std::vector<Type> variables(nb_variables);
-        
+
         for (index i = 0; i < nb_variables; i++) {
             variables[i] = Type::variable(values.size(), i, values[i]);
         }
-        
+
         return variables;
     }
 
     HYPERJET_INLINE static std::vector<Type> variables(std::vector<Scalar> values, const index size, const index offset)
     {
         const auto nb_variables = length(values);
-        
+
         std::vector<Type> variables(nb_variables);
-        
+
         for (index i = 0; i < nb_variables; i++) {
             variables[i] = Type::variable(size, offset + i, values[i]);
         }
-        
+
         return variables;
     }
 
@@ -196,7 +196,7 @@ public: // methods
         auto result = Jet<TScalar, Dynamic>::zero(size);
 
         result.f() = f();
-        
+
         backward_to(xs, result.g());
 
         return result;
@@ -219,7 +219,7 @@ public: // methods
         const index size = length(xs);
 
         auto result = Jet<TScalar, Dynamic>::zero(size);
-        
+
         result.f() = f();
 
         forward_to(xs, result.g());
@@ -449,7 +449,7 @@ public: // operators
     }
 
     // abs
-    
+
     HYPERJET_INLINE Type abs() const
     {
         return m_f < 0 ? -(*this) : *this;
@@ -697,6 +697,7 @@ public: // operators
     }
 
 public: // python
+#if defined(PYBIND11_VERSION_MAJOR)
     template <typename TModule>
     static void register_python(TModule& m, const std::string name)
     {
@@ -800,6 +801,7 @@ public: // python
             .def("__copy__", [](const Type& self) { return self; })
             .def("__deepcopy__", [](const Type& self, py::dict& memo) { return self; }, "memodict"_a);
     }
+#endif // defined(PYBIND11_VERSION_MAJOR)
 };
 
 // abs

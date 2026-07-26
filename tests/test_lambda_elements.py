@@ -1,5 +1,4 @@
 import eqlib as eq
-
 import numpy as np
 import pytest
 
@@ -7,10 +6,11 @@ hj = pytest.importorskip("hyperjet")
 
 from numpy.testing import assert_equal
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import os
-    print(f'pid: {os.getpid()}')
+    import sys
+
+    print(f"pid: {os.getpid()}")
     pytest.main(sys.argv)
 
 

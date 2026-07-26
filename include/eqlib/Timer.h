@@ -31,23 +31,10 @@ public: // methods
         m_start = now();
     }
 
-    double ellapsed() const noexcept
+    double elapsed() const noexcept
     {
         const Duration duration = now() - m_start;
         return duration.count();
-    }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace py::literals;
-
-        py::class_<Type>(m, "Timer")
-            .def(py::init<>())
-            .def("start", &Type::start)
-            .def_property_readonly("ellapsed", &Type::ellapsed);
     }
 };
 

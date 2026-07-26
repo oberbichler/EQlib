@@ -278,8 +278,8 @@ public: // methods
     }
 
     /*
-    * https://github.com/scipy/scipy/blob/3b36a574dc657d1ca116f6e230be694f3de31afc/scipy/sparse/sparsetools/csr.h#L380
-    */
+     * https://github.com/scipy/scipy/blob/3b36a574dc657d1ca116f6e230be694f3de31afc/scipy/sparse/sparsetools/csr.h#L380
+     */
     static Type convert_from(SparseStructure<TScalar, TIndex, !TRowMajor> other, Ref<Vector> values)
     {
         const auto nb_nonzeros = other.nb_nonzeros();
@@ -340,42 +340,13 @@ public: // methods
         for (TIndex i = 0; i < size_i; i++) {
             for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
                 const TIndex j = m_ja[k];
-                if constexpr(TRowMajor) {
+                if constexpr (TRowMajor) {
                     action(i, j, idx++);
                 } else {
                     action(j, i, idx++);
                 }
             }
         }
-    }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m, const std::string& name)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-
-        py::class_<Type, Holder>(m, name.c_str())
-            // constructors
-            .def(py::init<TIndex, TIndex, std::vector<TIndex>, std::vector<TIndex>>(), "rows"_a, "cols"_a, "ia"_a, "ja"_a)
-            // static methods
-            .def_static("convert_from", &Type::convert_from, "other"_a, "values"_a)
-            .def_static("from_pattern", &Type::from_pattern<std::vector<std::set<TIndex>>>, "rows"_a, "cols"_a, "pattern"_a)
-            // methods
-            .def("to_general", py::overload_cast<>(&Type::to_general, py::const_))
-            .def("to_general", py::overload_cast<Ref<const Vector>>(&Type::to_general, py::const_))
-            .def("get_index", &Type::get_index, "i"_a, "j"_a)
-            .def("for_each", &Type::for_each, "action"_a)
-            // read-only properties
-            .def_property_readonly("rows", &Type::rows)
-            .def_property_readonly("cols", &Type::cols)
-            .def_property_readonly("nb_nonzeros", &Type::nb_nonzeros)
-            .def_property_readonly("density", &Type::density)
-            .def_property_readonly("ia", py::overload_cast<>(&Type::ia, py::const_))
-            .def_property_readonly("ja", py::overload_cast<>(&Type::ja, py::const_));
     }
 };
 

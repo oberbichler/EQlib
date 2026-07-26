@@ -90,21 +90,6 @@ public: // methods
             return compute<2>(g, h);
         }
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-        using Base = Objective;
-
-        py::class_<Type, Base, Holder>(m, "IgaPointLocation")
-            .def(py::init<std::vector<Pointer<Node>>>(), "nodes"_a)
-            .def("add", &Type::add, "shape_functions"_a, "target"_a, "weight"_a);
-    }
 }; // class IgaPointLocation
 
 } // namespace eqlib

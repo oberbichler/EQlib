@@ -84,21 +84,6 @@ public: // methods
 
         return !success;
     }
-
-public: // python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Base = LinearSolver;
-        using Holder = Pointer<Type>;
-
-        py::class_<Type, Base, Holder>(m, "SparseLU")
-            // constructors
-            .def(py::init<>());
-    }
 };
 
 } // namespace eqlib

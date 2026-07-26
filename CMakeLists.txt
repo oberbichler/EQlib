@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 
 project(eqlib LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- version info
@@ -62,7 +62,14 @@ FetchContent_MakeAvailable(eigen fmt spdlog robin_map)
 
 # --- module
 
-pybind11_add_module(eqlib src/Module.cpp)
+pybind11_add_module(eqlib
+    src/Module.cpp
+    src/bindings/core.cpp
+    src/bindings/elements.cpp
+    src/bindings/objectives.cpp
+    src/bindings/problem.cpp
+    src/bindings/solvers.cpp
+)
 
 target_include_directories(eqlib PRIVATE
     include

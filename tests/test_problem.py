@@ -1,14 +1,13 @@
 import eqlib as eq
-
 import numpy as np
 import pytest
-
 from numpy.testing import assert_equal
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import os
-    print(f'pid: {os.getpid()}')
+    import sys
+
+    print(f"pid: {os.getpid()}")
     pytest.main(sys.argv)
 
 
@@ -30,9 +29,9 @@ class ConstantObjective(eq.Objective):
 
 @pytest.fixture
 def problem():
-    x1 = eq.Variable(name='x1', value=2.0)
-    x2 = eq.Variable(name='x2', value=7.0)
-    x3 = eq.Variable(name='x3', value=9.0)
+    x1 = eq.Variable(name="x1", value=2.0)
+    x2 = eq.Variable(name="x2", value=7.0)
+    x3 = eq.Variable(name="x3", value=9.0)
 
     elements = [
         ConstantObjective([x1, x2], 1, [2, 3], [[4, -5.6], [-5.6, 6.2]]),
@@ -111,12 +110,12 @@ def test_compute_invalid_order_throws(problem):
     with pytest.raises(ValueError) as ex:
         problem.compute(-1)
 
-    assert_equal('order', str(ex.value))
+    assert_equal("order", str(ex.value))
 
     with pytest.raises(ValueError) as ex:
         problem.compute(4)
 
-    assert_equal('order', str(ex.value))
+    assert_equal("order", str(ex.value))
 
 
 def test_hm_diagonal(problem):
@@ -154,4 +153,7 @@ def test_scale(problem):
 
     assert_equal(problem.f, 4 * 1.5)
     assert_equal(problem.df, np.multiply([2, 8.1, 7], 1.5))
-    assert_equal(problem.hm.toarray(), np.multiply([[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]], 1.5))
+    assert_equal(
+        problem.hm.toarray(),
+        np.multiply([[4, -5.6, 0], [0, 4.2, 6], [0, 0, 11.3]], 1.5),
+    )

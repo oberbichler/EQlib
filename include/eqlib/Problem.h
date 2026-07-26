@@ -3,6 +3,7 @@
 #include "Constraint.h"
 #include "Define.h"
 #include "LinearSolver.h"
+#include "Log.h"
 #include "Objective.h"
 #ifdef EQLIB_USE_MKL
 #include "PardisoLDLT.h"
@@ -29,7 +30,7 @@ inline int omp_get_thread_num() { return 0; }
 namespace eqlib {
 
 class Problem {
-private: // types
+public: // types
     using Type = Problem;
 
     using ElementsF = std::vector<Pointer<Objective>>;
@@ -225,9 +226,9 @@ public: // constructors
         m_element_g_equation_indices.resize(nb_elements_g);
         m_element_g_variable_indices.resize(nb_elements_g);
 
-        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f; i++) {
                 const auto& variables = m_elements_f[i]->variables();
 
@@ -253,7 +254,7 @@ public: // constructors
 
             // equation indices g
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& equations = m_elements_g[i]->equations();
 
@@ -277,7 +278,7 @@ public: // constructors
 
             // variable indices g
 
-            #pragma omp for schedule(dynamic, m_grainsize)
+#pragma omp for schedule(dynamic, m_grainsize)
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& variables = m_elements_g[i]->variables();
 
@@ -309,11 +310,11 @@ public: // constructors
 
         std::vector<std::vector<index>> pattern_dg(m);
         std::vector<std::vector<index>> pattern_hm(n);
-        
+
         std::vector<RobinSet<index>> pattern_dg_set(m);
         std::vector<RobinSet<index>> pattern_hm_set(n);
 
-        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) shared(pattern_dg, pattern_hm)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) shared(pattern_dg, pattern_hm)
         {
             const auto current_nb_threats = omp_get_num_threads();
             const auto thread_id = omp_get_thread_num();
@@ -373,7 +374,7 @@ public: // constructors
                 std::vector<index> tmp;
 
                 tmp.reserve(length(pattern_dg_set[i]));
-                
+
                 tmp.insert(tmp.end(), pattern_dg_set[i].begin(), pattern_dg_set[i].end());
 
                 std::sort(tmp.begin(), tmp.end());
@@ -389,7 +390,7 @@ public: // constructors
                 std::vector<index> tmp;
 
                 tmp.reserve(length(pattern_hm_set[i]));
-                
+
                 tmp.insert(tmp.end(), pattern_hm_set[i].begin(), pattern_hm_set[i].end());
 
                 std::sort(tmp.begin(), tmp.end());
@@ -413,18 +414,17 @@ public: // constructors
 
         Log::task_step("Initialize linear solver...");
 
-        #ifdef EQLIB_USE_MKL
+#ifdef EQLIB_USE_MKL
         m_linear_solver = new_<PardisoLDLT>();
-        #else
+#else
         m_linear_solver = new_<SimplicialLDLT>();
-        #endif
+#endif
 
         Log::task_step("Initialize element boundaries...");
 
         m_element_f_variable_indices_hi.resize(nb_elements_f);
 
-        for (index i = 0; i < nb_elements_f; i++)
-        {
+        for (index i = 0; i < nb_elements_f; i++) {
             const auto& element_indices = m_element_f_variable_indices[i];
 
             std::vector<index> element_hi(length(element_indices));
@@ -439,7 +439,7 @@ public: // constructors
             m_element_f_variable_indices_hi[i] = std::move(element_hi);
         }
 
-        Log::task_end("Problem initialized in {:.3f} sec", timer.ellapsed());
+        Log::task_end("Problem initialized in {:.3f} sec", timer.elapsed());
     }
 
 private: // methods: computation
@@ -472,7 +472,7 @@ private: // methods: computation
 
         const double f = element_f.compute(g, h);
 
-        data.computation_time() += timer_element_compute.ellapsed();
+        data.computation_time() += timer_element_compute.elapsed();
 
         Timer timer_element_assemble;
 
@@ -501,7 +501,7 @@ private: // methods: computation
             }
         }
 
-        data.assemble_time() += timer_element_assemble.ellapsed();
+        data.assemble_time() += timer_element_assemble.elapsed();
     }
 
     template <index TOrder>
@@ -545,7 +545,7 @@ private: // methods: computation
 
         element_g.compute(fs, gs, hs);
 
-        data.computation_time() += timer_element_compute.ellapsed();
+        data.computation_time() += timer_element_compute.elapsed();
 
         Timer timer_element_assemble;
 
@@ -584,7 +584,7 @@ private: // methods: computation
             }
         }
 
-        data.assemble_time() += timer_element_assemble.ellapsed();
+        data.assemble_time() += timer_element_assemble.elapsed();
     }
 
 public: // methods: computation
@@ -597,7 +597,7 @@ public: // methods: computation
                 m_active_elements_f.emplace_back(i);
             }
         }
-        
+
         m_active_elements_g.clear();
 
         for (index i = 0; i < nb_elements_g(); i++) {
@@ -625,9 +625,9 @@ public: // methods: computation
         if constexpr (TParallel) {
             ProblemData l_data(m_data);
 
-            #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_f(); i++) {
                     compute_element_f<TOrder>(l_data, i);
                 }
@@ -644,12 +644,12 @@ public: // methods: computation
                     }
                 }
 
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_g(); i++) {
                     compute_element_g<TOrder>(l_data, i);
                 }
 
-                #pragma omp critical
+#pragma omp critical
                 m_data += l_data;
             }
         } else {
@@ -678,7 +678,7 @@ public: // methods: computation
             Log::task_info("Element computation took {} sec", m_data.computation_time());
             Log::task_info("Assembly of the system took {} sec", m_data.assemble_time());
 
-            Log::task_end("Problem computed in {:.3f} sec", timer.ellapsed());
+            Log::task_end("Problem computed in {:.3f} sec", timer.elapsed());
         }
     }
 
@@ -1377,132 +1377,6 @@ public: // methods: output hm
     {
         index index = m_structure_hm.get_index(row, col);
         return m_data.hm_value(index);
-    }
-
-public: // methods: python
-    template <typename TModule>
-    static void register_python(TModule& m)
-    {
-        namespace py = pybind11;
-        using namespace pybind11::literals;
-
-        using Holder = Pointer<Type>;
-
-        const std::string name = "Problem";
-
-        py::object scipy_sparse = py::module::import("scipy.sparse");
-        py::object csr_matrix = scipy_sparse.attr("csr_matrix");
-
-        py::class_<Type, Holder>(m, name.c_str())
-            // constructors
-            .def(py::init<ElementsF, ElementsG, int, int>(), "objective"_a = py::list(), "constraints"_a = py::list(),
-                "nb_threads"_a = 1, "grainsize"_a = 100, py::keep_alive<1, 2>(), py::keep_alive<1, 3>())
-            // read-only properties
-            .def_property_readonly("is_constrained", &Type::is_constrained)
-            .def_property_readonly("equations", &Type::equations)
-            .def_property_readonly("variables", &Type::variables)
-            .def_property_readonly("g", py::overload_cast<>(&Type::g))
-            .def_property_readonly("df", py::overload_cast<>(&Type::df))
-            .def_property_readonly("dg", [=](Type& self) {
-                return csr_matrix(
-                    std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
-                    std::make_pair(self.nb_equations(), self.nb_variables()))
-                    .release();
-            })
-            .def_property_readonly("structure_dg", &Type::structure_dg)
-            .def_property_readonly("dg_values", py::overload_cast<>(&Type::dg_values))
-            .def_property_readonly("dg_indptr", &Type::dg_indptr)
-            .def_property_readonly("dg_indices", &Type::dg_indices)
-            .def_property_readonly("hm", [=](Type& self) {
-                return csr_matrix(
-                    std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
-                    std::make_pair(self.nb_variables(), self.nb_variables()))
-                    .release();
-            })
-            .def_property_readonly("general_hm", [=](Type& self) {
-                const auto [structure, values] = self.structure_hm().to_general(self.hm_values());
-                return csr_matrix(
-                    std::make_tuple(values, structure.ja(), structure.ia()),
-                    std::make_pair(self.nb_variables(), self.nb_variables()),
-                    "copy"_a=true)
-                    .release();
-            })
-            .def_property_readonly("structure_hm", &Type::structure_hm)
-            .def_property_readonly("hm_values", py::overload_cast<>(&Type::hm_values))
-            .def_property_readonly("hm_indptr", &Type::hm_indptr)
-            .def_property_readonly("hm_indices", &Type::hm_indices)
-            .def_property_readonly("hm_norm_inf", &Type::hm_norm_inf)
-            .def_property_readonly("nb_equations", &Type::nb_equations)
-            .def_property_readonly("nb_variables", &Type::nb_variables)
-            .def_property_readonly("values", py::overload_cast<>(&Type::values))
-            .def_property_readonly("equation_bounds", &Type::equation_bounds)
-            .def_property_readonly("variable_bounds", &Type::variable_bounds)
-            .def_property_readonly("nb_elements_f", &Type::nb_elements_f)
-            .def_property_readonly("nb_elements_g", &Type::nb_elements_g)
-            // properties
-            .def_property("linear_solver", &Type::linear_solver, &Type::set_linear_solver)
-            .def_property("f", &Type::f, &Type::set_f)
-            .def_property("nb_threads", &Type::nb_threads, &Type::set_nb_threads)
-            .def_property("grainsize", &Type::grainsize, &Type::set_grainsize)
-            .def_property("sigma", &Type::sigma, &Type::set_sigma)
-            .def_property("hm_diagonal", &Type::hm_diagonal, &Type::set_hm_diagonal)
-            .def_property("x", py::overload_cast<>(&Type::x, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_x, py::const_))
-            .def_property("variable_multipliers", py::overload_cast<>(&Type::variable_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_variable_multipliers, py::const_))
-            .def_property("equation_multipliers", py::overload_cast<>(&Type::equation_multipliers, py::const_), py::overload_cast<Ref<const Vector>>(&Type::set_equation_multipliers, py::const_))
-            // methods
-            .def("add_x", py::overload_cast<Ref<const Vector>>(&Type::add_x, py::const_))
-            .def("sub_x", py::overload_cast<Ref<const Vector>>(&Type::sub_x, py::const_))
-            .def("variable_index", &Type::variable_index, "variable"_a)
-            .def("equation_index", &Type::equation_index, "equation"_a)
-            .def("clone", &Type::clone)
-            .def("remove_inactive_elements", &Type::remove_inactive_elements)
-            .def("compute", &Type::compute<true>, "order"_a = 2, py::call_guard<py::gil_scoped_release>())
-            .def("hm_add_diagonal", &Type::hm_add_diagonal, "value"_a)
-            .def("hm_inv_v", &Type::hm_inv_v, py::call_guard<py::gil_scoped_release>())
-            .def("hm_v", &Type::hm_v)
-            .def("f_of", [](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(0);
-                return self.f();
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("g_of", [](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(0);
-                return Vector(self.g());
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("df_of", [](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(1);
-                return Vector(self.df());
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("dg_of", [=](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(1);
-                return csr_matrix(
-                    std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
-                    std::make_pair(self.nb_equations(), self.nb_variables()))
-                    .release();
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("hm_of", [=](Type& self, Ref<const Vector> x) {
-                self.set_x(x);
-                self.compute<false>(2);
-                return csr_matrix(
-                    std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
-                    std::make_pair(self.nb_variables(), self.nb_variables()))
-                    .release();
-            },
-                "x"_a, py::call_guard<py::gil_scoped_release>())
-            .def("hm_v_of", [=](Type& self, Ref<const Vector> x, Ref<const Vector> p) {
-                self.set_x(x);
-                self.compute<false>(2);
-                return self.hm_v(p);
-            },
-                "x"_a, "p"_a, py::call_guard<py::gil_scoped_release>())
-            .def("scale", &Type::scale, "factor"_a);
     }
 };
 

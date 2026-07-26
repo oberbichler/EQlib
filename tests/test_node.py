@@ -1,13 +1,12 @@
 import eqlib as eq
-
 import pytest
-
 from numpy.testing import assert_equal
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import os
-    print(f'pid: {os.getpid()}')
+    import sys
+
+    print(f"pid: {os.getpid()}")
     pytest.main(sys.argv)
 
 
@@ -27,10 +26,10 @@ def test_init(node):
 
 
 def test_dynamic_attributes(node):
-    node.test_attribute = 'test value'
+    node.test_attribute = "test value"
 
-    assert_equal(hasattr(node, 'test_attribute'), True)
-    assert_equal(node.test_attribute, 'test value')
+    assert_equal(hasattr(node, "test_attribute"), True)
+    assert_equal(node.test_attribute, "test value")
 
 
 def test_getters_and_setters(node):
