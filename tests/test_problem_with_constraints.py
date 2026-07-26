@@ -1,7 +1,8 @@
 import eqlib as eq
 
-import hyperjet as hj
 import pytest
+
+hj = pytest.importorskip("hyperjet")
 
 from numpy.testing import assert_almost_equal, assert_equal
 
@@ -14,7 +15,7 @@ if __name__ == '__main__':
 
 def explode(value, g, h):
     g[:] = value.g
-    h[:] = value.h
+    h[:] = value.hm()
     return value.f
 
 
@@ -26,7 +27,7 @@ class F1(eq.Objective):
         self.variables = [self.x1, self.x2]
 
     def compute(self, g, h):
-        x1, x2 = hj.HyperJet.variables([self.x1, self.x2])
+        x1, x2 = hj.variables([self.x1, self.x2])
         r = x1**2 + x2**2
         return explode(r, g, h)
 
@@ -39,7 +40,7 @@ class F2(eq.Objective):
         self.variables = [self.x2, self.x3]
 
     def compute(self, g, h):
-        x2, x3 = hj.HyperJet.variables([self.x2, self.x3])
+        x2, x3 = hj.variables([self.x2, self.x3])
         r = x2**2 - x3
         return explode(r, g, h)
 
@@ -54,7 +55,7 @@ class C1(eq.Constraint):
         self.variables = [self.x1, self.x3]
 
     def compute(self, fs, gs, hs):
-        x1, x3 = hj.HyperJet.variables([self.x1, self.x3])
+        x1, x3 = hj.variables([self.x1, self.x3])
         rs = [x1**2 + x1 * x3]
         for k in range(len(rs)):
             fs[k] = explode(rs[k], gs[k], hs[k])
@@ -70,7 +71,7 @@ class C2(eq.Constraint):
         self.variables = [self.x3]
 
     def compute(self, fs, gs, hs):
-        x3, = hj.HyperJet.variables([self.x3])
+        x3, = hj.variables([self.x3])
         rs = [x3**2, x3]
         for k in range(len(rs)):
             fs[k] = explode(rs[k], gs[k], hs[k])
@@ -86,7 +87,7 @@ class C3(eq.Constraint):
         self.variables = [self.x4]
 
     def compute(self, fs, gs, hs):
-        x4, = hj.HyperJet.variables([self.x4])
+        x4, = hj.variables([self.x4])
         rs = [-x4, x4]
         for k in range(len(rs)):
             fs[k] = explode(rs[k], gs[k], hs[k])
@@ -101,7 +102,7 @@ class C4(eq.Constraint):
         self.variables = [self.x2]
 
     def compute(self, fs, gs, hs):
-        x2, = hj.HyperJet.variables([self.x2])
+        x2, = hj.variables([self.x2])
         rs = [x2]
         for k in range(len(rs)):
             fs[k] = explode(rs[k], gs[k], hs[k])

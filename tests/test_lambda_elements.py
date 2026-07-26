@@ -1,8 +1,9 @@
 import eqlib as eq
 
-import hyperjet as hj
 import numpy as np
 import pytest
+
+hj = pytest.importorskip("hyperjet")
 
 from numpy.testing import assert_equal
 
@@ -15,7 +16,7 @@ if __name__ == '__main__':
 
 def explode(value, g, h):
     g[:] = value.g
-    h[:] = value.h
+    h[:] = value.hm()
     return value.f
 
 
@@ -27,7 +28,7 @@ def test_lambda_constraint():
     x2 = eq.Variable(2)
 
     def compute(equations, variables, fs, gs, hs):
-        x1, x2 = hj.HyperJet.variables(variables)
+        x1, x2 = hj.variables(variables)
         f1 = x1**2 + x1 * x2 + x2**3
         f2 = x1**3 + x1 * x2 + x2**2
         fs[0] = explode(f1, gs[0], hs[0])
@@ -51,7 +52,7 @@ def test_lambda_objective():
     x2 = eq.Variable(2)
 
     def compute(variables, g, h):
-        x1, x2 = hj.HyperJet.variables(variables)
+        x1, x2 = hj.variables(variables)
         f = x1**2 + x1 * x2 + x2**3
         return explode(f, g, h)
 

@@ -50,8 +50,7 @@ public: // constructors
             m_indices.resize(size_i);
 
             for (TIndex i = 0; i < size_i; i++) {
-                m_indices[i].set_empty_key(-1);
-                m_indices[i].resize(m_ia[i + 1] - m_ia[i]);
+                m_indices[i].reserve(m_ia[i + 1] - m_ia[i]);
                 for (TIndex k = m_ia[i]; k < m_ia[i + 1]; k++) {
                     const TIndex j = m_ja[k];
                     m_indices[i][j] = k;

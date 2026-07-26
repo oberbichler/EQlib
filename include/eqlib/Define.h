@@ -11,8 +11,6 @@
 #include <tsl/robin_map.h>
 #include <tsl/robin_set.h>
 
-#include <sparsehash/dense_hash_map>
-
 #include <limits>
 #include <string>
 #include <variant>
@@ -56,7 +54,7 @@ template <typename TKey, typename TValue>
 using RobinMap = tsl::robin_map<TKey, TValue>;
 
 template <typename TKey, typename TValue>
-using DenseMap = google::dense_hash_map<TKey, TValue>;
+using DenseMap = tsl::robin_map<TKey, TValue>;
 
 // --- linear algebra
 
@@ -77,10 +75,10 @@ using Map = Eigen::Map<T>;
 
 // --- format
 
-template <typename... Args>
-std::string format(Args&&... args)
+template <typename... TArgs>
+std::string format(fmt::format_string<TArgs...> format_string, TArgs&&... args)
 {
-    return fmt::format(std::forward<Args>(args)...);
+    return fmt::format(format_string, std::forward<TArgs>(args)...);
 }
 
 template <typename T>
