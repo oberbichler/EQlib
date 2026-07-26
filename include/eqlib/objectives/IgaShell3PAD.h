@@ -66,7 +66,7 @@ public: // methods
         const Vector3d ref_a3 = ref_a1.cross(ref_a2).normalized();
 
         const Vector3d ref_a(ref_a1.dot(ref_a1), ref_a2.dot(ref_a2), ref_a1.dot(ref_a2));
-        const Vector3d ref_b(ref_a1_1.dot(ref_a3), ref_a1_2.dot(ref_a3), ref_a2_2.dot(ref_a3));
+        const Vector3d ref_b(ref_a1_1.dot(ref_a3), ref_a2_2.dot(ref_a3), ref_a1_2.dot(ref_a3));
 
         const Vector3d e1 = ref_a1.normalized();
         const Vector3d e2 = (ref_a2 - ref_a2.dot(e1) * e1).normalized();
