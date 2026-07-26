@@ -118,7 +118,7 @@ public: // methods
 
         const auto it = std::lower_bound(lower, upper, j);
 
-        if (*it != j || it == upper) {
+        if (it == upper || *it != j) {
             return -1;
         }
 
@@ -153,7 +153,7 @@ public: // methods
 
             const auto it = std::lower_bound(lower, upper, j);
 
-            if (*it != j || it == upper) {
+            if (it == upper || *it != j) {
                 return -1;
             }
 

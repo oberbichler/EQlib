@@ -60,6 +60,22 @@ def test_csr_square(csr_square):
     assert_equal(structure.density, 7 / 16)
 
 
+def test_get_index_missing_column_past_last_row():
+    # A column that is absent and larger than every stored column of the LAST
+    # row drives the internal lower_bound to the end of the ja buffer. The C++
+    # lookup used to dereference that end iterator before checking it against
+    # the end (an out-of-bounds read on the last row; verified and fixed under
+    # AddressSanitizer). The observable contract is simply -1.
+    structure = eq.RowMajorSparseStructure(2, 4, [0, 1, 2], [0, 1])
+
+    assert_equal(structure.get_index(0, 0), 0)
+    assert_equal(structure.get_index(1, 1), 1)
+    # missing, past the end of the last row's stored columns
+    assert_equal(structure.get_index(1, 3), -1)
+    # missing in an earlier row
+    assert_equal(structure.get_index(0, 3), -1)
+
+
 def test_csr_convert_from(csr_rectangular):
     a = np.array([0, 1, 2, 3, 4, 5], float)
 
