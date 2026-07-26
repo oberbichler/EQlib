@@ -83,6 +83,11 @@ target_compile_definitions(eqlib PRIVATE
     SPDLOG_FMT_EXTERNAL
 )
 
+if(MSVC)
+    # fmt >= 11 requires the UTF-8 source and execution charset
+    target_compile_options(eqlib PRIVATE /utf-8)
+endif()
+
 # --- OpenMP (optional)
 
 find_package(OpenMP COMPONENTS CXX)
