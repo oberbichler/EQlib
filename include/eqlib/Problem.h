@@ -13,7 +13,12 @@
 #include "SparseStructure.h"
 #include "Timer.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#else
+inline int omp_get_num_threads() { return 1; }
+inline int omp_get_thread_num() { return 0; }
+#endif
 
 #include <mutex>
 #include <set>
@@ -199,11 +204,8 @@ public: // constructors
 
         Log::task_step("Compute indices for variables and equations...");
 
-        m_equation_indices.set_empty_key(nullptr);
-        m_variable_indices.set_empty_key(nullptr);
-
-        m_equation_indices.resize(nb_equations);
-        m_variable_indices.resize(nb_variables);
+        m_equation_indices.reserve(nb_equations);
+        m_variable_indices.reserve(nb_variables);
 
         for (index i = 0; i < length(m_equations); i++) {
             const auto& equation = m_equations[i];

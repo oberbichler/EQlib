@@ -1,75 +1,111 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.24)
 
-# get commit hash
-execute_process(
-  COMMAND git log -1 --format=%h
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+project(eqlib LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(eqlib-py)
+# --- version info
 
-include_directories(
-    "include"
-    ${CMAKE_BINARY_DIR}/generated
-    SYSTEM "external_libraries"
+if(NOT DEFINED EQLIB_VERSION)
+    if(DEFINED SKBUILD_PROJECT_VERSION)
+        set(EQLIB_VERSION ${SKBUILD_PROJECT_VERSION})
+    else()
+        set(EQLIB_VERSION "dev")
+    endif()
+endif()
+
+execute_process(
+    COMMAND git log -1 --format=%h
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
 )
 
-add_subdirectory(external_libraries/pybind11)
-
-add_definitions(
-    -DEIGEN_DEFAULT_TO_ROW_MAJOR
-    -DFMT_HEADER_ONLY
-    -DSPDLOG_FMT_EXTERNAL
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/eqlib/Info.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/eqlib/Info.h
 )
+
+# --- dependencies
+
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(pybind11 CONFIG REQUIRED)
+
+include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)
+
+# header-only dependencies: only the sources are downloaded, their build
+# systems are skipped (SOURCE_SUBDIR points to a directory without CMakeLists)
+FetchContent_Declare(eigen
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+    SOURCE_SUBDIR cmake_disabled
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_Declare(fmt
+    URL https://github.com/fmtlib/fmt/archive/refs/tags/11.1.4.tar.gz
+    SOURCE_SUBDIR cmake_disabled
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_Declare(spdlog
+    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.15.2.tar.gz
+    SOURCE_SUBDIR cmake_disabled
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_Declare(robin_map
+    URL https://github.com/Tessil/robin-map/archive/refs/tags/v1.3.0.tar.gz
+    SOURCE_SUBDIR cmake_disabled
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(eigen fmt spdlog robin_map)
+
+# --- module
 
 pybind11_add_module(eqlib src/Module.cpp)
 
-if (DEFINED ENV{CONDA_PREFIX})
-    message("-- Found Anaconda: $ENV{CONDA_PREFIX}")
+target_include_directories(eqlib PRIVATE
+    include
+    ${CMAKE_CURRENT_BINARY_DIR}/generated
+)
 
-    if(WIN32)
-        include_directories(SYSTEM $ENV{CONDA_PREFIX}/Library/include)
-        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{CONDA_PREFIX}/Library/lib")
-    else()
-        include_directories(SYSTEM $ENV{CONDA_PREFIX}/include)
-        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{CONDA_PREFIX}/lib")
-    endif()
-else()
-    message("-- Anaconda not found")
+target_include_directories(eqlib SYSTEM PRIVATE
+    ${eigen_SOURCE_DIR}
+    ${fmt_SOURCE_DIR}/include
+    ${spdlog_SOURCE_DIR}/include
+    ${robin_map_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_libraries
+)
+
+target_compile_definitions(eqlib PRIVATE
+    EIGEN_DEFAULT_TO_ROW_MAJOR
+    FMT_HEADER_ONLY
+    SPDLOG_FMT_EXTERNAL
+)
+
+# --- OpenMP (optional)
+
+find_package(OpenMP COMPONENTS CXX)
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(eqlib PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-if (DEFINED ENV{MKL_ROOT})
-    include_directories(SYSTEM $ENV{MKL_ROOT}/include)
+# --- MKL (optional)
+
+if(DEFINED ENV{MKL_ROOT})
+    target_include_directories(eqlib SYSTEM PRIVATE $ENV{MKL_ROOT}/include)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{MKL_ROOT}/lib")
 endif()
-
-find_package(OpenMP)
-target_link_libraries(eqlib PRIVATE OpenMP::OpenMP_CXX)
 
 find_library(MKL_LIBRARY mkl_rt)
 
 if(MKL_LIBRARY)
-    message("-- Found MKL: ${MKL_LIBRARY}")
-    add_definitions(-DEIGEN_USE_MKL_ALL -DEQLIB_USE_MKL)
+    message(STATUS "Found MKL: ${MKL_LIBRARY}")
+    target_compile_definitions(eqlib PRIVATE EIGEN_USE_MKL_ALL EQLIB_USE_MKL)
     target_link_libraries(eqlib PRIVATE ${MKL_LIBRARY})
-else()
-    message("-- MKL not found")
 endif()
 
+# --- install
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    target_compile_options(eqlib PUBLIC -fsized-deallocation)
-endif()
-
-
-configure_file(
-  ${CMAKE_SOURCE_DIR}/include/eqlib/Info.h.in
-  ${CMAKE_BINARY_DIR}/generated/eqlib/Info.h
-)
-
-
-install(TARGETS eqlib DESTINATION bin)
+install(TARGETS eqlib LIBRARY DESTINATION .)
