@@ -8,9 +8,9 @@
 #include <pybind11/stl_bind.h>
 
 #include <eqlib/Constraint.h>
-#include <eqlib/Objective.h>
 #include <eqlib/LambdaConstraint.h>
 #include <eqlib/LambdaObjective.h>
+#include <eqlib/Objective.h>
 
 namespace eqlib {
 

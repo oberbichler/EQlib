@@ -1,0 +1,12 @@
+Checks: >
+  bugprone-*,
+  performance-*,
+  modernize-*,
+  -bugprone-easily-swappable-parameters,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -modernize-use-nodiscard
+
+WarningsAsErrors: ''
+HeaderFilterRegex: 'include/eqlib/.*'
+FormatStyle: file

@@ -21,8 +21,8 @@ public: // constructors
     LambdaObjective(
         const std::vector<Pointer<Variable>>& variables,
         ComputeFunction compute)
-        : Objective{}
-        , m_compute{compute}
+        : Objective {}
+        , m_compute {compute}
     {
         m_variables = variables;
     }

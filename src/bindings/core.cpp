@@ -8,12 +8,12 @@
 #include <pybind11/stl_bind.h>
 
 #include <eqlib/Equation.h>
-#include <eqlib/Variable.h>
-#include <eqlib/Parameter.h>
 #include <eqlib/Log.h>
 #include <eqlib/Node.h>
-#include <eqlib/Timer.h>
+#include <eqlib/Parameter.h>
 #include <eqlib/SparseStructure.h>
+#include <eqlib/Timer.h>
+#include <eqlib/Variable.h>
 
 namespace eqlib {
 
@@ -86,16 +86,12 @@ void register_log(pybind11::module_& m)
         .def_property_static("info_level", [](py::object) { return Type::info_level(); }, [](py::object, const int value) { Type::set_info_level(value); })
         .def_static("debug", [](const std::string& message) { Type::debug("{}", message); }, "message"_a)
         .def_static("info", [](const std::string& message) { Type::info("{}", message); }, "message"_a)
-        .def_static("info", [](const int level, const std::string& message) { Type::info(level, "{}", message); },
-            "level"_a, "message"_a)
+        .def_static("info", [](const int level, const std::string& message) { Type::info(level, "{}", message); }, "level"_a, "message"_a)
         .def_static("error", [](const std::string& message) { Type::error("{}", message); }, "message"_a)
-        .def_static("error", [](const int level, const std::string& message) { Type::error(level, "{}", message); },
-            "level"_a, "message"_a)
-        .def_static("warn", [](const int level, const std::string& message) { Type::warn(level, "{}", message); },
-            "level"_a, "message"_a)
+        .def_static("error", [](const int level, const std::string& message) { Type::error(level, "{}", message); }, "level"_a, "message"_a)
+        .def_static("warn", [](const int level, const std::string& message) { Type::warn(level, "{}", message); }, "level"_a, "message"_a)
         .def_static("critical", [](const std::string& message) { Type::critical("{}", message); }, "message"_a)
-        .def_static("critical", [](const int level, const std::string& message) { Type::critical(level, "{}", message); },
-            "level"_a, "message"_a);
+        .def_static("critical", [](const int level, const std::string& message) { Type::critical(level, "{}", message); }, "level"_a, "message"_a);
 }
 
 void register_node(pybind11::module_& m)

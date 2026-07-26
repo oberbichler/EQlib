@@ -7,8 +7,8 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-#include <eqlib/objectives/IgaNormalDistanceAD.h>
 #include <eqlib/objectives/IgaMembrane3PAD.h>
+#include <eqlib/objectives/IgaNormalDistanceAD.h>
 #include <eqlib/objectives/IgaPointDistance.h>
 #include <eqlib/objectives/IgaPointDistanceAD.h>
 #include <eqlib/objectives/IgaPointLocation.h>

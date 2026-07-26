@@ -12,7 +12,7 @@
 namespace eqlib {
 
 class PardisoLDLT : public LinearSolver {
-private: //types
+private: // types
     using Type = PardisoLDLT;
 
 private: // variables

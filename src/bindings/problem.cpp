@@ -55,7 +55,7 @@ void register_problem(pybind11::module_& m)
             return csr_matrix(
                 std::make_tuple(values, structure.ja(), structure.ia()),
                 std::make_pair(self.nb_variables(), self.nb_variables()),
-                "copy"_a=true)
+                "copy"_a = true)
                 .release();
         })
         .def_property_readonly("structure_hm", &Type::structure_hm)
@@ -94,45 +94,33 @@ void register_problem(pybind11::module_& m)
         .def("f_of", [](Type& self, Ref<const Vector> x) {
             self.set_x(x);
             self.compute<false>(0);
-            return self.f();
-        },
-            "x"_a, py::call_guard<py::gil_scoped_release>())
+            return self.f(); }, "x"_a, py::call_guard<py::gil_scoped_release>())
         .def("g_of", [](Type& self, Ref<const Vector> x) {
             self.set_x(x);
             self.compute<false>(0);
-            return Vector(self.g());
-        },
-            "x"_a, py::call_guard<py::gil_scoped_release>())
+            return Vector(self.g()); }, "x"_a, py::call_guard<py::gil_scoped_release>())
         .def("df_of", [](Type& self, Ref<const Vector> x) {
             self.set_x(x);
             self.compute<false>(1);
-            return Vector(self.df());
-        },
-            "x"_a, py::call_guard<py::gil_scoped_release>())
+            return Vector(self.df()); }, "x"_a, py::call_guard<py::gil_scoped_release>())
         .def("dg_of", [=](Type& self, Ref<const Vector> x) {
             self.set_x(x);
             self.compute<false>(1);
             return csr_matrix(
                 std::make_tuple(self.dg_values(), self.dg_indices(), self.dg_indptr()),
                 std::make_pair(self.nb_equations(), self.nb_variables()))
-                .release();
-        },
-            "x"_a, py::call_guard<py::gil_scoped_release>())
+                .release(); }, "x"_a, py::call_guard<py::gil_scoped_release>())
         .def("hm_of", [=](Type& self, Ref<const Vector> x) {
             self.set_x(x);
             self.compute<false>(2);
             return csr_matrix(
                 std::make_tuple(self.hm_values(), self.hm_indices(), self.hm_indptr()),
                 std::make_pair(self.nb_variables(), self.nb_variables()))
-                .release();
-        },
-            "x"_a, py::call_guard<py::gil_scoped_release>())
+                .release(); }, "x"_a, py::call_guard<py::gil_scoped_release>())
         .def("hm_v_of", [=](Type& self, Ref<const Vector> x, Ref<const Vector> p) {
             self.set_x(x);
             self.compute<false>(2);
-            return self.hm_v(p);
-        },
-            "x"_a, "p"_a, py::call_guard<py::gil_scoped_release>())
+            return self.hm_v(p); }, "x"_a, "p"_a, py::call_guard<py::gil_scoped_release>())
         .def("scale", &Type::scale, "factor"_a);
 }
 

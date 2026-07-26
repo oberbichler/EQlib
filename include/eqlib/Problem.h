@@ -226,9 +226,9 @@ public: // constructors
         m_element_g_equation_indices.resize(nb_elements_g);
         m_element_g_variable_indices.resize(nb_elements_g);
 
-        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads)
         {
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_f; i++) {
                 const auto& variables = m_elements_f[i]->variables();
 
@@ -254,7 +254,7 @@ public: // constructors
 
             // equation indices g
 
-            #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& equations = m_elements_g[i]->equations();
 
@@ -278,7 +278,7 @@ public: // constructors
 
             // variable indices g
 
-            #pragma omp for schedule(dynamic, m_grainsize)
+#pragma omp for schedule(dynamic, m_grainsize)
             for (index i = 0; i < nb_elements_g; i++) {
                 const auto& variables = m_elements_g[i]->variables();
 
@@ -310,11 +310,11 @@ public: // constructors
 
         std::vector<std::vector<index>> pattern_dg(m);
         std::vector<std::vector<index>> pattern_hm(n);
-        
+
         std::vector<RobinSet<index>> pattern_dg_set(m);
         std::vector<RobinSet<index>> pattern_hm_set(n);
 
-        #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) shared(pattern_dg, pattern_hm)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) shared(pattern_dg, pattern_hm)
         {
             const auto current_nb_threats = omp_get_num_threads();
             const auto thread_id = omp_get_thread_num();
@@ -374,7 +374,7 @@ public: // constructors
                 std::vector<index> tmp;
 
                 tmp.reserve(length(pattern_dg_set[i]));
-                
+
                 tmp.insert(tmp.end(), pattern_dg_set[i].begin(), pattern_dg_set[i].end());
 
                 std::sort(tmp.begin(), tmp.end());
@@ -390,7 +390,7 @@ public: // constructors
                 std::vector<index> tmp;
 
                 tmp.reserve(length(pattern_hm_set[i]));
-                
+
                 tmp.insert(tmp.end(), pattern_hm_set[i].begin(), pattern_hm_set[i].end());
 
                 std::sort(tmp.begin(), tmp.end());
@@ -414,18 +414,17 @@ public: // constructors
 
         Log::task_step("Initialize linear solver...");
 
-        #ifdef EQLIB_USE_MKL
+#ifdef EQLIB_USE_MKL
         m_linear_solver = new_<PardisoLDLT>();
-        #else
+#else
         m_linear_solver = new_<SimplicialLDLT>();
-        #endif
+#endif
 
         Log::task_step("Initialize element boundaries...");
 
         m_element_f_variable_indices_hi.resize(nb_elements_f);
 
-        for (index i = 0; i < nb_elements_f; i++)
-        {
+        for (index i = 0; i < nb_elements_f; i++) {
             const auto& element_indices = m_element_f_variable_indices[i];
 
             std::vector<index> element_hi(length(element_indices));
@@ -598,7 +597,7 @@ public: // methods: computation
                 m_active_elements_f.emplace_back(i);
             }
         }
-        
+
         m_active_elements_g.clear();
 
         for (index i = 0; i < nb_elements_g(); i++) {
@@ -626,9 +625,9 @@ public: // methods: computation
         if constexpr (TParallel) {
             ProblemData l_data(m_data);
 
-            #pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
+#pragma omp parallel if (m_nb_threads != 1) num_threads(m_nb_threads) firstprivate(l_data)
             {
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_f(); i++) {
                     compute_element_f<TOrder>(l_data, i);
                 }
@@ -645,12 +644,12 @@ public: // methods: computation
                     }
                 }
 
-                #pragma omp for schedule(dynamic, m_grainsize) nowait
+#pragma omp for schedule(dynamic, m_grainsize) nowait
                 for (index i = 0; i < nb_elements_g(); i++) {
                     compute_element_g<TOrder>(l_data, i);
                 }
 
-                #pragma omp critical
+#pragma omp critical
                 m_data += l_data;
             }
         } else {

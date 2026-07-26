@@ -8,11 +8,11 @@
 #include <pybind11/stl_bind.h>
 
 #include <eqlib/Armijo.h>
-#include <eqlib/NewtonRaphson.h>
-#include <eqlib/SteepestDescent.h>
 #include <eqlib/LinearSolver.h>
+#include <eqlib/NewtonRaphson.h>
 #include <eqlib/SimplicialLDLT.h>
 #include <eqlib/SparseLU.h>
+#include <eqlib/SteepestDescent.h>
 #ifdef EQLIB_USE_MKL
 #include <eqlib/PardisoLDLT.h>
 #endif

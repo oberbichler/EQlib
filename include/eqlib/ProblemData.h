@@ -63,17 +63,17 @@ public: // methods
     template <index TOrder>
     void set_zero()
     {
-        if constexpr(TOrder == 0) {
+        if constexpr (TOrder == 0) {
             m_values(0) = 0;
         }
-        if constexpr(TOrder == 1) {
+        if constexpr (TOrder == 1) {
             m_values.head(1 + m_m + m_n).setZero();
         }
-        if constexpr(TOrder == 2) {
+        if constexpr (TOrder == 2) {
             m_values.setZero();
         }
 
-        if constexpr(TOrder > 0) {
+        if constexpr (TOrder > 0) {
             m_buffer.setZero();
         }
 
@@ -102,7 +102,7 @@ public: // methods
         new (&m_dg) Ref<Vector>(m_values.segment(1 + m + n, nb_nonzeros_dg));
         new (&m_hm) Ref<Vector>(m_values.segment(1 + m + n + nb_nonzeros_dg, nb_nonzeros_hm));
 
-        m_buffer.resize(std::max(index{1}, max_element_m) * max_element_n + std::max(index{1}, max_element_m) * max_element_n * max_element_n);
+        m_buffer.resize(std::max(index {1}, max_element_m) * max_element_n + std::max(index {1}, max_element_m) * max_element_n * max_element_n);
 
         set_zero<2>();
     }

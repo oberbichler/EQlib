@@ -23,8 +23,8 @@ public: // constructors
         const std::vector<Pointer<Equation>>& equations,
         const std::vector<Pointer<Variable>>& variables,
         ComputeFunction compute)
-        : Constraint{}
-        , m_compute{compute}
+        : Constraint {}
+        , m_compute {compute}
     {
         m_equations = equations;
         m_variables = variables;
