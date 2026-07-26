@@ -97,7 +97,7 @@ public: // methods
     virtual bool solve(const std::vector<int>& ia, const std::vector<int>& ja, Ref<const Vector> a, Ref<const Vector> b, Ref<Vector> x) override
     {
         pybind11::gil_scoped_acquire acquire;
-        PYBIND11_OVERRIDE_PURE(bool, T, factorize, ia, ja, a, b, x);
+        PYBIND11_OVERRIDE_PURE(bool, T, solve, ia, ja, a, b, x);
     }
 };
 
